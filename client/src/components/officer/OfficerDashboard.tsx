@@ -139,63 +139,88 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Queue */}
-        <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm">
-          <div className="flex items-center justify-between text-brand-slate-500 text-xs">
-            <span>Total in Queue</span>
-            <Layers className="w-4 h-4 text-brand-slate-400" />
+        <div className="relative group rounded-xl p-[1px] bg-brand-slate-200 hover:bg-gradient-to-r hover:from-teal-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-default shadow-civic-sm">
+          <div className="bg-white rounded-[11px] p-4 h-full w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between text-brand-slate-500 text-xs">
+                <span>Total in Queue</span>
+                <Layers className="w-4 h-4 text-brand-slate-400 group-hover:text-blue-500 transition-colors duration-300" />
+              </div>
+              <div className="text-2xl font-bold text-brand-slate-900 mt-2">
+                {totalCount}
+              </div>
+              <span className="text-[11px] text-brand-slate-400">Current matching filters</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-brand-slate-900 mt-2">
-            {totalCount}
-          </div>
-          <span className="text-[11px] text-brand-slate-400">Current matching filters</span>
         </div>
 
         {/* Pending Review */}
-        <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm">
-          <div className="flex items-center justify-between text-amber-800 text-xs">
-            <span>Pending Review</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+        <div className="relative group rounded-xl p-[1px] bg-brand-slate-200 hover:bg-gradient-to-r hover:from-teal-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-default shadow-civic-sm">
+          <div className="bg-white rounded-[11px] p-4 h-full w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between text-amber-800 text-xs">
+                <span>Pending Review</span>
+                <Clock className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="text-2xl font-bold text-amber-900 mt-2">
+                {pendingReviewCount}
+              </div>
+              <span className="text-[11px] text-amber-700/80">Awaiting officer triage</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-amber-900 mt-2">
-            {pendingReviewCount}
-          </div>
-          <span className="text-[11px] text-amber-700/80">Awaiting officer triage</span>
         </div>
 
         {/* High Duplicate Risk */}
-        <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm">
-          <div className="flex items-center justify-between text-rose-700 text-xs">
-            <span>Duplicate Alerts</span>
-            <ShieldAlert className="w-4 h-4 text-rose-600" />
+        <div className="relative group rounded-xl p-[1px] bg-brand-slate-200 hover:bg-gradient-to-r hover:from-teal-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-default shadow-civic-sm">
+          <div className="bg-white rounded-[11px] p-4 h-full w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 via-pink-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between text-rose-700 text-xs">
+                <span>Duplicate Alerts</span>
+                <ShieldAlert className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="text-2xl font-bold text-rose-900 mt-2">
+                {highDuplicateCount}
+              </div>
+              <span className="text-[11px] text-rose-600/80">Requires consolidation</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-rose-900 mt-2">
-            {highDuplicateCount}
-          </div>
-          <span className="text-[11px] text-rose-600/80">Requires consolidation</span>
         </div>
 
         {/* In Progress */}
-        <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm">
-          <div className="flex items-center justify-between text-brand-teal-800 text-xs">
-            <span>In Progress</span>
-            <Building2 className="w-4 h-4 text-brand-teal-600" />
+        <div className="relative group rounded-xl p-[1px] bg-brand-slate-200 hover:bg-gradient-to-r hover:from-teal-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-default shadow-civic-sm">
+          <div className="bg-white rounded-[11px] p-4 h-full w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-teal-500/5 via-emerald-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between text-brand-teal-800 text-xs">
+                <span>In Progress</span>
+                <Building2 className="w-4 h-4 text-brand-teal-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="text-2xl font-bold text-brand-teal-900 mt-2">
+                {inProgressCount}
+              </div>
+              <span className="text-[11px] text-brand-teal-700/80">Active field remediation</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-brand-teal-900 mt-2">
-            {inProgressCount}
-          </div>
-          <span className="text-[11px] text-brand-teal-700/80">Active field remediation</span>
         </div>
 
         {/* Resolved / Closed */}
-        <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-emerald-800 text-xs">
-            <span>Resolved</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="relative group col-span-2 lg:col-span-1 rounded-xl p-[1px] bg-brand-slate-200 hover:bg-gradient-to-r hover:from-teal-400 hover:via-blue-500 hover:to-purple-500 transition-all duration-500 hover:scale-[1.03] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-default shadow-civic-sm">
+          <div className="bg-white rounded-[11px] p-4 h-full w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between text-emerald-800 text-xs">
+                <span>Resolved</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-900 mt-2">
+                {resolvedCount}
+              </div>
+              <span className="text-[11px] text-emerald-700/80">Remediated & verified</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-emerald-900 mt-2">
-            {resolvedCount}
-          </div>
-          <span className="text-[11px] text-emerald-700/80">Remediated & verified</span>
         </div>
       </div>
 

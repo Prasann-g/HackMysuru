@@ -3,6 +3,66 @@ import { UserCheck, FilePlus, CheckSquare, Activity } from 'lucide-react';
 import { Card, CardBody } from './ui/Card';
 import { Badge } from './ui/Badge';
 
+const UserReportIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 9a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3z" />
+    <path d="M4 22v-3a4 4 0 0 1 4-4h4" />
+    <path d="M14 6a5 5 0 0 1 7.2 4.4v.61C21.2 11.66 22 13 22 13l-1.54-.51a5 5 0 0 1-6.46-6.49z" />
+    <line x1="17.5" y1="4" x2="17.5" y2="8" />
+    <line x1="17.5" y1="10" x2="17.51" y2="10" />
+  </svg>
+);
+
+const UserReportWarningIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    {/* Body */}
+    <path d="M5 20v-1a5 5 0 0 1 5-5h2" />
+    {/* Head */}
+    <circle cx="11" cy="8" r="4" />
+    {/* Speech Bubble */}
+    <path d="M16 4a4 4 0 0 1 4 4v1a4 4 0 0 1-2.7 3.8L15 14v-2.1A4 4 0 0 1 12 8a4 4 0 0 1 4-4z" />
+    {/* Exclamation */}
+    <line x1="16" y1="6" x2="16" y2="9.5" />
+    <line x1="16" y1="11.5" x2="16.01" y2="11.5" />
+  </svg>
+);
+
+const DashboardGridIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="3" y="3" width="7" height="11" rx="1.5" />
+    <rect x="3" y="16" width="7" height="5" rx="1.5" />
+    <rect x="14" y="3" width="7" height="5" rx="1.5" />
+    <rect x="14" y="10" width="7" height="11" rx="1.5" />
+  </svg>
+);
+
 export const HowItWorks: React.FC = () => {
   const steps = [
     {
@@ -17,7 +77,7 @@ export const HowItWorks: React.FC = () => {
       title: 'Submit Your Issue',
       description:
         'Provide the problem type, a brief description, landmark location, and photo evidence showing the condition.',
-      icon: <FilePlus className="w-5 h-5 text-brand-teal-700" />,
+      icon: <UserReportWarningIcon className="w-5 h-5 text-brand-teal-700" />,
     },
     {
       step: '03',
@@ -31,7 +91,7 @@ export const HowItWorks: React.FC = () => {
       title: 'Track Progress',
       description:
         'Follow your complaint through field inspection, department assignment, and final civic resolution.',
-      icon: <Activity className="w-5 h-5 text-brand-teal-700" />,
+      icon: <DashboardGridIcon className="w-5 h-5 text-brand-teal-700" />,
     },
   ];
 
