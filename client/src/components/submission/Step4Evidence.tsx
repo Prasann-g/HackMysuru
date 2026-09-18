@@ -73,10 +73,10 @@ export const Step4Evidence: React.FC<Step4Props> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-brand-slate-900">
+        <h2 className="text-lg sm:text-xl font-bold text-bridge-charcoal-900">
           Upload photo evidence
         </h2>
-        <p className="text-xs sm:text-sm text-brand-slate-600 mt-1">
+        <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
           Attach a photograph of the civic problem, ideally taken with the GPS Map Camera app showing visible location and timestamp stamps.
         </p>
       </div>
@@ -116,8 +116,8 @@ export const Step4Evidence: React.FC<Step4Props> = ({
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-150 flex flex-col items-center justify-center gap-3 ${
             isDragging
-              ? 'border-brand-teal-600 bg-brand-teal-50/50'
-              : 'border-brand-slate-300 hover:border-brand-teal-400 bg-white hover:bg-brand-slate-50'
+              ? 'border-bridge-gold-500 bg-bridge-gold-50/50'
+              : 'border-bridge-almond-300 hover:border-bridge-gold-400 bg-white hover:bg-bridge-almond-50/50'
           }`}
           role="button"
           tabIndex={0}
@@ -128,15 +128,15 @@ export const Step4Evidence: React.FC<Step4Props> = ({
           }}
           aria-label="Upload photo evidence"
         >
-          <div className="w-12 h-12 rounded-xl bg-brand-teal-50 border border-brand-teal-200 flex items-center justify-center text-brand-teal-700">
+          <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-700">
             <Upload className="w-6 h-6" />
           </div>
 
           <div>
-            <span className="text-sm font-semibold text-brand-slate-900 block">
+            <span className="text-sm font-semibold text-bridge-charcoal-900 block">
               Click to browse or drag and drop image here
             </span>
-            <span className="text-xs text-brand-slate-500 block mt-1">
+            <span className="text-xs text-bridge-charcoal-500 block mt-1">
               Supports JPEG, PNG, WebP (Max file size: {MAX_SIZE_MB} MB)
             </span>
           </div>
@@ -165,11 +165,11 @@ export const Step4Evidence: React.FC<Step4Props> = ({
         </div>
       ) : (
         /* Image Preview Box */
-        <div className="bg-white border border-brand-slate-200 rounded-2xl p-5 shadow-civic-sm space-y-4">
+        <div className="bg-white border border-bridge-almond-200 rounded-2xl p-5 shadow-civic-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-brand-slate-900">
+              <span className="text-xs font-semibold text-bridge-charcoal-900">
                 Photo Selected ({imageFile?.name})
               </span>
             </div>
@@ -183,7 +183,7 @@ export const Step4Evidence: React.FC<Step4Props> = ({
             </button>
           </div>
 
-          <div className="relative rounded-xl overflow-hidden bg-brand-slate-900 max-h-80 flex items-center justify-center border border-brand-slate-200">
+          <div className="relative rounded-xl overflow-hidden bg-bridge-charcoal-900 max-h-80 flex items-center justify-center border border-bridge-almond-200">
             <img
               src={imagePreviewUrl}
               alt="Submitted complaint evidence preview"
@@ -191,7 +191,7 @@ export const Step4Evidence: React.FC<Step4Props> = ({
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-slate-500 pt-2 border-t border-brand-slate-100">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-bridge-charcoal-500 pt-2 border-t border-bridge-almond-100">
             <span>
               Size: {imageFile ? (imageFile.size / 1024).toFixed(0) : 0} KB
             </span>

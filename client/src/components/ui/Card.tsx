@@ -14,8 +14,8 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`bg-white border border-brand-slate-200 rounded-xl shadow-civic-sm transition-all duration-200 ${
-        hoverable ? 'hover:shadow-civic-md hover:border-brand-teal-300' : ''
+      className={`bg-white border border-bridge-almond-200 rounded-xl shadow-bridge-card transition-all duration-200 ${
+        hoverable ? 'hover:shadow-bridge-modal hover:border-bridge-gold-400' : ''
       } ${className}`}
       {...props}
     >
@@ -29,7 +29,7 @@ export const CardHeader: React.FC<{ children: React.ReactNode; className?: strin
   className = '',
 }) => {
   return (
-    <div className={`p-5 border-b border-brand-slate-100 ${className}`}>
+    <div className={`p-5 border-b border-bridge-almond-200/80 ${className}`}>
       {children}
     </div>
   );
@@ -39,7 +39,7 @@ export const CardBody: React.FC<{ children: React.ReactNode; className?: string 
   children,
   className = '',
 }) => {
-  return <div className={`p-5 ${className}`}>{children}</div>;
+  return <div className={`p-5 text-bridge-charcoal-700 ${className}`}>{children}</div>;
 };
 
 export const CardFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({
@@ -47,7 +47,7 @@ export const CardFooter: React.FC<{ children: React.ReactNode; className?: strin
   className = '',
 }) => {
   return (
-    <div className={`p-4 bg-brand-slate-50 border-t border-brand-slate-100 rounded-b-xl ${className}`}>
+    <div className={`p-4 bg-bridge-almond-50/80 border-t border-bridge-almond-200/80 rounded-b-xl ${className}`}>
       {children}
     </div>
   );

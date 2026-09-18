@@ -13,7 +13,7 @@ export const Hero: React.FC<HeroProps> = ({
   onTrackComplaintClick,
 }) => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-teal-50/70 via-brand-slate-50 to-brand-slate-50 py-16 sm:py-24 border-b border-brand-slate-200">
+    <section className="relative overflow-hidden bg-gradient-to-b from-bridge-almond-100/80 via-bridge-ivory-50 to-bridge-ivory-50 py-16 sm:py-24 border-b border-bridge-almond-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Locality Badge */}
@@ -24,16 +24,16 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-slate-900 tracking-tight leading-tight sm:leading-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-bridge-charcoal-900 tracking-tight leading-tight sm:leading-tight">
             Report and follow up on civic issues in{' '}
-            <span className="text-brand-teal-700 underline decoration-brand-mint-300 decoration-4 underline-offset-4">
+            <span className="text-bridge-charcoal-900 underline decoration-bridge-gold-400 decoration-4 underline-offset-4">
               Mysuru
             </span>
           </h1>
 
           {/* Citizen-friendly Supporting Text */}
-          <p className="mt-6 text-base sm:text-lg text-brand-slate-700 leading-relaxed max-w-2xl mx-auto">
-            Civic Trust connects residents directly with local ward engineers to resolve potholes, waste accumulation, streetlight outages, and neighborhood civic concerns with transparent progress tracking.
+          <p className="mt-6 text-base sm:text-lg text-bridge-charcoal-600 leading-relaxed max-w-2xl mx-auto">
+            CivicBridge connects residents directly with local ward engineers to resolve potholes, waste accumulation, streetlight outages, and neighborhood civic concerns with transparent progress tracking.
           </p>
 
           {/* CTAs */}
@@ -57,13 +57,13 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
 
           {/* Citizen Assurance Highlights */}
-          <div className="mt-12 pt-6 border-t border-brand-slate-200/80 flex flex-wrap items-center justify-center gap-6 text-xs text-brand-slate-600">
+          <div className="mt-12 pt-6 border-t border-bridge-almond-200 flex flex-wrap items-center justify-center gap-6 text-xs text-bridge-charcoal-600">
             <div className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-brand-teal-700 shrink-0" />
+              <Building2 className="w-4 h-4 text-bridge-gold-700 shrink-0" />
               <span>MCC Wards 1 to 65 Supported</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-brand-teal-700 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-bridge-gold-700 shrink-0" />
               <span>Direct Ward Engineer Routing</span>
             </div>
             <div className="flex items-center gap-1.5">

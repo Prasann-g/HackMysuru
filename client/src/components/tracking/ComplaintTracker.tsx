@@ -189,16 +189,16 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
         <Badge variant="info" size="md" icon={<Search className="w-3.5 h-3.5" />}>
           Mysuru City Corporation Tracking Portal
         </Badge>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-slate-900 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-bridge-charcoal-900 tracking-tight">
           Track Civic Complaint Progress
         </h1>
-        <p className="text-sm text-brand-slate-600 leading-relaxed">
+        <p className="text-sm text-bridge-charcoal-600 leading-relaxed">
           Enter your unique tracking token to inspect live resolution progress, assigned municipal department, and automated verification signals.
         </p>
       </div>
 
       {/* Search Bar Card */}
-      <Card className="border-brand-slate-200 shadow-civic-md">
+      <Card className="border-bridge-almond-200 shadow-civic-md">
         <CardBody className="p-5 sm:p-7">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -208,10 +208,10 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
                   placeholder="e.g. TRK-XXXX-XXXX"
-                  className="w-full px-4 py-3 pl-11 text-sm sm:text-base font-mono rounded-xl border border-brand-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal-600 focus:border-transparent uppercase tracking-wider bg-white placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-brand-slate-400"
+                  className="w-full px-4 py-3 pl-11 text-sm sm:text-base font-mono rounded-xl border border-bridge-almond-300 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent uppercase tracking-wider bg-white placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-bridge-charcoal-400"
                   aria-label="Complaint Tracking Token"
                 />
-                <Search className="w-5 h-5 text-brand-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                <Search className="w-5 h-5 text-bridge-charcoal-400 absolute left-3.5 top-3.5 pointer-events-none" />
               </div>
               <div className="flex gap-2">
                 <Button
@@ -245,11 +245,11 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
       {/* Loading State */}
       {loading && (
         <div className="py-14 text-center space-y-3">
-          <Loader2 className="w-8 h-8 text-brand-teal-600 animate-spin mx-auto" />
-          <p className="text-sm font-medium text-brand-slate-700">
+          <Loader2 className="w-8 h-8 text-bridge-gold-600 animate-spin mx-auto" />
+          <p className="text-sm font-medium text-bridge-charcoal-700">
             Querying municipal complaint registry...
           </p>
-          <p className="text-xs text-brand-slate-400">
+          <p className="text-xs text-bridge-charcoal-400">
             Verifying token: <span className="font-mono">{tokenInput}</span>
           </p>
         </div>
@@ -284,12 +284,12 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
           )}
 
           {/* Primary Summary Header Card */}
-          <Card className="border-brand-teal-200 bg-brand-teal-50/30">
+          <Card className="border-bridge-gold-300 bg-bridge-gold-50/40">
             <CardBody className="p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-teal-100 pb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bridge-gold-200/60 pb-5">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-brand-teal-800">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-bridge-gold-800">
                       Public Tracking Token
                     </span>
                     {record.isDemo && (
@@ -299,7 +299,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xl sm:text-2xl font-black text-brand-slate-900 tracking-tight">
+                    <span className="font-mono text-xl sm:text-2xl font-black text-bridge-charcoal-900 tracking-tight">
                       {record.trackingToken}
                     </span>
                     <Button
@@ -314,7 +314,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                 </div>
 
                 <div className="flex flex-col sm:items-end">
-                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider">
+                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider">
                     Current Lifecycle Status
                   </span>
                   <div className="pt-1">
@@ -339,41 +339,41 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
               {/* Quick Meta Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 text-xs">
                 <div>
-                  <span className="text-brand-slate-500 font-medium flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-brand-slate-400" />
+                  <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                     Department:
                   </span>
-                  <p className="font-bold text-brand-slate-900 mt-0.5">
+                  <p className="font-bold text-bridge-charcoal-900 mt-0.5">
                     {record.assignedDepartment || 'MCC Engineering Division'}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-brand-slate-500 font-medium flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-brand-slate-400" />
+                  <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                     Ward / Area:
                   </span>
-                  <p className="font-bold text-brand-slate-900 mt-0.5">
+                  <p className="font-bold text-bridge-charcoal-900 mt-0.5">
                     {record.locationArea}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-brand-slate-500 font-medium flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-brand-slate-400" />
+                  <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                     Observed Date:
                   </span>
-                  <p className="font-bold text-brand-slate-900 mt-0.5">
+                  <p className="font-bold text-bridge-charcoal-900 mt-0.5">
                     {record.observedDate}
                   </p>
                 </div>
 
                 <div>
-                  <span className="text-brand-slate-500 font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-brand-slate-400" />
+                  <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                     Submitted:
                   </span>
-                  <p className="font-bold text-brand-slate-900 mt-0.5">
+                  <p className="font-bold text-bridge-charcoal-900 mt-0.5">
                     {new Date(record.createdAt).toLocaleDateString(undefined, {
                       year: 'numeric',
                       month: 'short',
@@ -386,14 +386,14 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
           </Card>
 
           {/* Lifecycle Progress Timeline */}
-          <Card className="border-brand-slate-200">
+          <Card className="border-bridge-almond-200">
             <CardBody className="p-6 space-y-6">
-              <div className="flex items-center justify-between border-b border-brand-slate-100 pb-3">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-brand-slate-800 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-brand-teal-700" />
+              <div className="flex items-center justify-between border-b border-bridge-almond-100 pb-3">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-800 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-bridge-gold-600" />
                   Resolution Lifecycle Timeline
                 </h2>
-                <span className="text-[11px] text-brand-slate-500">
+                <span className="text-[11px] text-bridge-charcoal-500">
                   Last updated: {new Date(record.updatedAt).toLocaleDateString()}
                 </span>
               </div>
@@ -416,10 +416,10 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                         key={step.id}
                         className={`relative p-4 rounded-xl border transition-all ${
                           isCurrent
-                            ? 'bg-brand-teal-50 border-brand-teal-300 ring-2 ring-brand-teal-500/20'
+                            ? 'bg-bridge-gold-50/70 border-bridge-gold-300 ring-2 ring-bridge-gold-500/20'
                             : isCompleted
                               ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
-                              : 'bg-brand-slate-50 border-brand-slate-200 text-brand-slate-400'
+                              : 'bg-bridge-almond-50/50 border-bridge-almond-200 text-bridge-charcoal-400'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-2">
@@ -428,8 +428,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                               isCompleted
                                 ? 'bg-emerald-600 text-white'
                                 : isCurrent
-                                  ? 'bg-brand-teal-600 text-white animate-pulse'
-                                  : 'bg-brand-slate-200 text-brand-slate-500'
+                                  ? 'bg-bridge-gold-600 text-white animate-pulse'
+                                  : 'bg-bridge-almond-200 text-bridge-charcoal-500'
                             }`}
                           >
                             {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
@@ -437,10 +437,10 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                           <span
                             className={`text-xs font-bold ${
                               isCurrent
-                                ? 'text-brand-teal-900'
+                                ? 'text-bridge-charcoal-900'
                                 : isCompleted
                                   ? 'text-emerald-900'
-                                  : 'text-brand-slate-600'
+                                  : 'text-bridge-charcoal-500'
                             }`}
                           >
                             {step.title}
@@ -449,10 +449,10 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                         <p
                           className={`text-[11px] leading-relaxed ${
                             isCurrent
-                              ? 'text-brand-teal-800 font-medium'
+                              ? 'text-bridge-charcoal-800 font-medium'
                               : isCompleted
                                 ? 'text-emerald-800'
-                                : 'text-brand-slate-500'
+                                : 'text-bridge-charcoal-500'
                           }`}
                         >
                           {step.description}
@@ -483,40 +483,40 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
           {/* Details & Verification Breakdown Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left: Issue Description */}
-            <Card className="border-brand-slate-200">
+            <Card className="border-bridge-almond-200">
               <CardBody className="p-6 space-y-4">
-                <div className="flex items-center gap-2 border-b border-brand-slate-100 pb-3">
-                  <FileText className="w-4 h-4 text-brand-teal-700" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-brand-slate-900">
+                <div className="flex items-center gap-2 border-b border-bridge-almond-100 pb-3">
+                  <FileText className="w-4 h-4 text-bridge-gold-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-900">
                     Registered Issue Details
                   </h3>
                 </div>
 
                 <div className="space-y-3 text-xs sm:text-sm">
                   <div>
-                    <span className="text-brand-slate-500 font-medium text-xs">
+                    <span className="text-bridge-charcoal-500 font-medium text-xs">
                       Category:
                     </span>
-                    <p className="font-bold text-brand-slate-900">
+                    <p className="font-bold text-bridge-charcoal-900">
                       {CATEGORY_LABELS[record.category] || record.category}
                       {record.customCategory && ` (${record.customCategory})`}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-brand-slate-500 font-medium text-xs">
+                    <span className="text-bridge-charcoal-500 font-medium text-xs">
                       Reported Description:
                     </span>
-                    <p className="mt-1 p-3 bg-brand-slate-50 border border-brand-slate-100 rounded-lg text-brand-slate-800 leading-relaxed font-sans">
+                    <p className="mt-1 p-3 bg-bridge-almond-50/60 border border-bridge-almond-200 rounded-lg text-bridge-charcoal-800 leading-relaxed font-sans">
                       {record.description}
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-brand-slate-500 font-medium text-xs">
+                    <span className="text-bridge-charcoal-500 font-medium text-xs">
                       Reported Location:
                     </span>
-                    <p className="font-semibold text-brand-slate-900 mt-0.5">
+                    <p className="font-semibold text-bridge-charcoal-900 mt-0.5">
                       {record.locationArea}
                     </p>
                   </div>
@@ -525,18 +525,18 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
             </Card>
 
             {/* Right: Explainable Verification & Triage Signals */}
-            <Card className="border-brand-slate-200">
+            <Card className="border-bridge-almond-200">
               <CardBody className="p-6 space-y-4">
-                <div className="flex items-center gap-2 border-b border-brand-slate-100 pb-3">
-                  <ShieldCheck className="w-4 h-4 text-brand-teal-700" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-brand-slate-900">
+                <div className="flex items-center gap-2 border-b border-bridge-almond-100 pb-3">
+                  <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-900">
                     Automated Verification Signals
                   </h3>
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between p-2.5 bg-brand-slate-50 rounded-lg border border-brand-slate-100">
-                    <span className="text-brand-slate-600 font-medium">Duplicate Risk:</span>
+                  <div className="flex items-center justify-between p-2.5 bg-bridge-almond-50/60 rounded-lg border border-bridge-almond-200">
+                    <span className="text-bridge-charcoal-600 font-medium">Duplicate Risk:</span>
                     <Badge
                       variant={
                         record.duplicateRisk === 'HIGH'
@@ -551,8 +551,8 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between p-2.5 bg-brand-slate-50 rounded-lg border border-brand-slate-100">
-                    <span className="text-brand-slate-600 font-medium">Verification Outcome:</span>
+                  <div className="flex items-center justify-between p-2.5 bg-bridge-almond-50/60 rounded-lg border border-bridge-almond-200">
+                    <span className="text-bridge-charcoal-600 font-medium">Verification Outcome:</span>
                     <Badge variant="info" size="sm">
                       {record.verificationOutcome?.replace('_', ' ') || 'PROCESSED'}
                     </Badge>
@@ -561,10 +561,10 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   {/* Signals List */}
                   {record.signals && record.signals.length > 0 && (
                     <div className="space-y-1.5 pt-1">
-                      <span className="text-brand-slate-500 font-medium">
+                      <span className="text-bridge-charcoal-500 font-medium">
                         Computed Verification Signals:
                       </span>
-                      <ul className="space-y-1 list-disc list-inside text-brand-slate-700 pl-1 text-[11px] leading-relaxed">
+                      <ul className="space-y-1 list-disc list-inside text-bridge-charcoal-700 pl-1 text-[11px] leading-relaxed">
                         {record.signals.map((signal, idx) => (
                           <li key={idx}>{signal}</li>
                         ))}
@@ -573,7 +573,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   )}
 
                   {/* System Limitations & Transparency */}
-                  <div className="pt-2 border-t border-brand-slate-100 text-[11px] text-brand-slate-500 italic space-y-1">
+                  <div className="pt-2 border-t border-bridge-almond-100 text-[11px] text-bridge-charcoal-500 italic space-y-1">
                     <p>• {record.disclaimer}</p>
                     <p>• Automated similarity scores support municipal triage and do not prove or disprove complaint authenticity.</p>
                   </div>
@@ -583,7 +583,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
           </div>
 
           {/* Action Footer */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-brand-slate-200">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-bridge-almond-200">
             <Button
               type="button"
               variant="outline"

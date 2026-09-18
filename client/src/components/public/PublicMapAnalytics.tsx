@@ -41,7 +41,7 @@ const CATEGORY_BADGES: Record<string, string> = {
   overflowing_bin: 'bg-purple-50 text-purple-800 border-purple-200',
   unsegregated_waste: 'bg-lime-50 text-lime-800 border-lime-200',
   construction_debris: 'bg-orange-50 text-orange-800 border-orange-200',
-  other: 'bg-brand-slate-100 text-brand-slate-700 border-brand-slate-200',
+  other: 'bg-bridge-almond-100 text-bridge-charcoal-700 border-bridge-almond-200',
 };
 
 const STATUS_LABELS: Record<string, { label: string; variant: 'verified' | 'review' | 'info' | 'neutral' }> = {
@@ -141,11 +141,11 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
   }, [data]);
 
   return (
-    <div className="py-8 sm:py-12 bg-brand-slate-50 min-h-screen">
+    <div className="py-8 sm:py-12 bg-bridge-ivory-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* 1. Header & Civic Assurance Banner */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-brand-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-bridge-almond-200">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="info" size="sm" icon={<BarChart3 className="w-3.5 h-3.5" />}>
@@ -155,10 +155,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 100% PII Protected
               </Badge>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-bridge-charcoal-900 tracking-tight">
               Public Map & Grievance Analytics
             </h1>
-            <p className="text-sm text-brand-slate-600 mt-1 max-w-2xl">
+            <p className="text-sm text-bridge-charcoal-600 mt-1 max-w-2xl">
               Real-time transparency into civic grievance volumes, verification outcomes, and neighborhood reporting distribution across Mysuru.
             </p>
           </div>
@@ -186,8 +186,8 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
         {/* Loading State */}
         {loading && !data && (
           <div className="py-16 text-center space-y-4">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-teal-600 border-r-transparent" />
-            <p className="text-sm font-medium text-brand-slate-600">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-bridge-gold-500 border-r-transparent" />
+            <p className="text-sm font-medium text-bridge-charcoal-600">
               Aggregating authentic municipal grievance data from database...
             </p>
           </div>
@@ -215,17 +215,17 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <Card>
                 <CardBody className="p-5 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider block">
+                    <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                       Total Complaints
                     </span>
-                    <span className="text-3xl font-extrabold text-brand-slate-900 mt-1 block">
+                    <span className="text-3xl font-extrabold text-bridge-charcoal-900 mt-1 block">
                       {data.totalComplaints}
                     </span>
-                    <span className="text-xs text-brand-slate-500 mt-1 block">
+                    <span className="text-xs text-bridge-charcoal-500 mt-1 block">
                       Authentic citizen submissions
                     </span>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-brand-teal-50 border border-brand-teal-200 flex items-center justify-center text-brand-teal-700">
+                  <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-700">
                     <Building2 className="w-6 h-6" />
                   </div>
                 </CardBody>
@@ -234,13 +234,13 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <Card>
                 <CardBody className="p-5 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider block">
+                    <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                       Active In Progress
                     </span>
                     <span className="text-3xl font-extrabold text-amber-600 mt-1 block">
                       {activeCount}
                     </span>
-                    <span className="text-xs text-brand-slate-500 mt-1 block">
+                    <span className="text-xs text-bridge-charcoal-500 mt-1 block">
                       Under review or field execution
                     </span>
                   </div>
@@ -253,13 +253,13 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <Card>
                 <CardBody className="p-5 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider block">
+                    <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                       Resolution Rate
                     </span>
                     <span className="text-3xl font-extrabold text-emerald-600 mt-1 block">
                       {data.resolutionRatePercent}%
                     </span>
-                    <span className="text-xs text-brand-slate-500 mt-1 block">
+                    <span className="text-xs text-bridge-charcoal-500 mt-1 block">
                       {(data.byStatus['RESOLVED'] || 0) + (data.byStatus['CLOSED'] || 0)} cases resolved
                     </span>
                   </div>
@@ -272,17 +272,17 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <Card>
                 <CardBody className="p-5 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider block">
+                    <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                       Verified Integrity
                     </span>
-                    <span className="text-3xl font-extrabold text-brand-teal-700 mt-1 block">
+                    <span className="text-3xl font-extrabold text-bridge-gold-700 mt-1 block">
                       {data.verifiedRatePercent}%
                     </span>
-                    <span className="text-xs text-brand-slate-500 mt-1 block">
+                    <span className="text-xs text-bridge-charcoal-500 mt-1 block">
                       AI & deterministic validated
                     </span>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-brand-mint-50 border border-brand-mint-200 flex items-center justify-center text-brand-teal-800">
+                  <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-800">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                 </CardBody>
@@ -296,10 +296,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-bold text-brand-slate-900">
+                      <h2 className="text-base font-bold text-bridge-charcoal-900">
                         Grievances by Category
                       </h2>
-                      <p className="text-xs text-brand-slate-500 mt-0.5">
+                      <p className="text-xs text-bridge-charcoal-500 mt-0.5">
                         Distribution across civic departments in Mysuru
                       </p>
                     </div>
@@ -310,7 +310,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 </CardHeader>
                 <CardBody className="p-5 space-y-4">
                   {Object.keys(data.byCategory).length === 0 ? (
-                    <p className="text-xs text-brand-slate-500 italic py-4 text-center">
+                    <p className="text-xs text-bridge-charcoal-500 italic py-4 text-center">
                       No complaints recorded in this period.
                     </p>
                   ) : (
@@ -323,16 +323,16 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                         return (
                           <div key={cat} className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs font-medium">
-                              <span className="text-brand-slate-800 flex items-center gap-1.5">
+                              <span className="text-bridge-charcoal-800 flex items-center gap-1.5">
                                 <span className="font-semibold">{CATEGORY_LABELS[cat] || cat}</span>
                               </span>
-                              <span className="text-brand-slate-600">
+                              <span className="text-bridge-charcoal-600">
                                 {count} ({percent}%)
                               </span>
                             </div>
-                            <div className="w-full bg-brand-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div className="w-full bg-bridge-almond-200 rounded-full h-2.5 overflow-hidden">
                               <div
-                                className="bg-brand-teal-600 h-2.5 rounded-full transition-all duration-500"
+                                className="bg-bridge-gold-600 h-2.5 rounded-full transition-all duration-500"
                                 style={{ width: `${percent}%` }}
                               />
                             </div>
@@ -348,10 +348,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-base font-bold text-brand-slate-900">
+                      <h2 className="text-base font-bold text-bridge-charcoal-900">
                         Verification & Governance Ledger
                       </h2>
-                      <p className="text-xs text-brand-slate-500 mt-0.5">
+                      <p className="text-xs text-bridge-charcoal-500 mt-0.5">
                         Explainable verification outcomes & workflow pipeline
                       </p>
                     </div>
@@ -363,15 +363,15 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 <CardBody className="p-5 space-y-5">
                   {/* Status Pipeline Grid */}
                   <div>
-                    <span className="text-xs font-semibold text-brand-slate-700 uppercase tracking-wider block mb-2.5">
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 uppercase tracking-wider block mb-2.5">
                       Grievance Resolution Pipeline
                     </span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-                      <div className="p-3 bg-brand-slate-50 border border-brand-slate-200 rounded-xl">
-                        <span className="text-xl font-bold text-brand-slate-800 block">
+                      <div className="p-3 bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl">
+                        <span className="text-xl font-bold text-bridge-charcoal-800 block">
                           {data.byStatus['SUBMITTED'] || 0}
                         </span>
-                        <span className="text-[11px] text-brand-slate-500 block mt-0.5">
+                        <span className="text-[11px] text-bridge-charcoal-500 block mt-0.5">
                           Fresh Intake
                         </span>
                       </div>
@@ -383,11 +383,11 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                           Under Review
                         </span>
                       </div>
-                      <div className="p-3 bg-brand-teal-50 border border-brand-teal-200 rounded-xl">
-                        <span className="text-xl font-bold text-brand-teal-700 block">
+                      <div className="p-3 bg-bridge-gold-50 border border-bridge-gold-200 rounded-xl">
+                        <span className="text-xl font-bold text-bridge-gold-800 block">
                           {(data.byStatus['IN_PROGRESS'] || 0) + (data.byStatus['FORWARDED'] || 0)}
                         </span>
-                        <span className="text-[11px] text-brand-teal-800 block mt-0.5">
+                        <span className="text-[11px] text-bridge-gold-900 block mt-0.5">
                           In Progress
                         </span>
                       </div>
@@ -403,8 +403,8 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   </div>
 
                   {/* Verification Outcome Summary */}
-                  <div className="pt-4 border-t border-brand-slate-100">
-                    <span className="text-xs font-semibold text-brand-slate-700 uppercase tracking-wider block mb-2.5">
+                  <div className="pt-4 border-t border-bridge-almond-100">
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 uppercase tracking-wider block mb-2.5">
                       Explainable Verification Signals
                     </span>
                     <div className="space-y-2 text-xs">
@@ -440,11 +440,11 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
-                    <h2 className="text-base font-bold text-brand-slate-900 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-brand-teal-700" />
+                    <h2 className="text-base font-bold text-bridge-charcoal-900 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-bridge-gold-700" />
                       <span>Neighborhood Distribution &amp; Geographic Explorer</span>
                     </h2>
-                    <p className="text-xs text-brand-slate-500 mt-0.5">
+                    <p className="text-xs text-bridge-charcoal-500 mt-0.5">
                       Authentic reporting frequency aggregated by Mysuru locality
                     </p>
                   </div>
@@ -458,13 +458,13 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 {/* Area Distribution Chips */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-brand-slate-700 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 uppercase tracking-wider">
                       Reporting Density by Locality
                     </span>
                     {selectedArea !== 'ALL' && (
                       <button
                         onClick={() => setSelectedArea('ALL')}
-                        className="text-xs text-brand-teal-700 hover:text-brand-teal-800 font-semibold cursor-pointer"
+                        className="text-xs text-bridge-gold-700 hover:text-bridge-gold-800 font-semibold cursor-pointer"
                       >
                         Reset Filter (Show All)
                       </button>
@@ -479,16 +479,16 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                           onClick={() => setSelectedArea(isSelected ? 'ALL' : area)}
                           className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-brand-teal-50 border-brand-teal-500 ring-2 ring-brand-teal-200'
-                              : 'bg-white border-brand-slate-200 hover:border-brand-teal-300 hover:bg-brand-slate-50/50'
+                              ? 'bg-bridge-gold-50 border-bridge-gold-500 ring-2 ring-bridge-gold-200'
+                              : 'bg-white border-bridge-almond-200 hover:border-bridge-gold-300 hover:bg-bridge-almond-50/50'
                           }`}
                         >
-                          <span className="text-xs font-bold text-brand-slate-900 block truncate">
+                          <span className="text-xs font-bold text-bridge-charcoal-900 block truncate">
                             {area}
                           </span>
                           <div className="flex items-center justify-between mt-2">
-                            <span className="text-[11px] text-brand-slate-500">Grievances</span>
-                            <span className="text-xs font-extrabold text-brand-teal-700 bg-brand-teal-100/60 px-1.5 py-0.5 rounded-md">
+                            <span className="text-[11px] text-bridge-charcoal-500">Grievances</span>
+                            <span className="text-xs font-extrabold text-bridge-gold-800 bg-bridge-gold-100/70 px-1.5 py-0.5 rounded-md">
                               {count}
                             </span>
                           </div>
@@ -499,17 +499,17 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 </div>
 
                 {/* Honest Geographic Coordinate Coverage Indicator */}
-                <div className="p-4 rounded-xl bg-brand-slate-100/70 border border-brand-slate-200 space-y-3">
+                <div className="p-4 rounded-xl bg-bridge-almond-50 border border-bridge-almond-200 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-brand-teal-100 flex items-center justify-center text-brand-teal-800">
+                      <div className="w-8 h-8 rounded-lg bg-bridge-gold-100 flex items-center justify-center text-bridge-gold-800">
                         <MapPin className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-brand-slate-900 block">
+                        <span className="text-xs font-bold text-bridge-charcoal-900 block">
                           Geographic Coordinate Coverage Status
                         </span>
-                        <span className="text-[11px] text-brand-slate-600 block">
+                        <span className="text-[11px] text-bridge-charcoal-600 block">
                           Verified GPS Pins vs. Landmark Area Submissions
                         </span>
                       </div>
@@ -520,14 +520,14 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   </div>
 
                   {/* Anti-Hallucination Transparency Notice */}
-                  <div className="flex items-start gap-2 text-xs text-brand-slate-600 leading-relaxed bg-white/80 p-3 rounded-lg border border-brand-slate-200/80">
-                    <Info className="w-4 h-4 text-brand-teal-700 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-xs text-bridge-charcoal-600 leading-relaxed bg-white/80 p-3 rounded-lg border border-bridge-almond-200">
+                    <Info className="w-4 h-4 text-bridge-gold-700 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-brand-slate-800">
+                      <p className="font-semibold text-bridge-charcoal-800">
                         Rule 3 Compliance — Anti-Hallucination &amp; Spatial Veracity:
                       </p>
                       <p className="mt-0.5">
-                        Citizens can submit grievances via landmark search (e.g. &quot;Kuvempunagar 4th Cross&quot;) without active GPS device permissions. In strict accordance with CivicTrust anti-hallucination rules, missing coordinates are <strong>never fabricated, interpolated, or simulated</strong>. The platform displays real, authentic reporting areas.
+                        Citizens can submit grievances via landmark search (e.g. &quot;Kuvempunagar 4th Cross&quot;) without active GPS device permissions. In strict accordance with CivicBridge anti-hallucination rules, missing coordinates are <strong>never fabricated, interpolated, or simulated</strong>. The platform displays real, authentic reporting areas.
                       </p>
                     </div>
                   </div>
@@ -535,17 +535,17 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   {/* Verified Pin Explorer (if any complaints possess real GPS coordinates) */}
                   {complaintsWithCoords.length > 0 ? (
                     <div className="mt-3 space-y-2">
-                      <span className="text-xs font-semibold text-brand-slate-800 block">
+                      <span className="text-xs font-semibold text-bridge-charcoal-800 block">
                         Verified Coordinate Markers:
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {complaintsWithCoords.map((c) => (
-                          <div key={c.id} className="p-2.5 rounded-lg bg-white border border-brand-slate-200 text-xs flex items-center justify-between">
+                          <div key={c.id} className="p-2.5 rounded-lg bg-white border border-bridge-almond-200 text-xs flex items-center justify-between">
                             <div>
-                              <span className="font-mono text-brand-teal-800 font-bold block">
+                              <span className="font-mono text-bridge-gold-800 font-bold block">
                                 {c.id}
                               </span>
-                              <span className="text-brand-slate-600 text-[11px] block mt-0.5">
+                              <span className="text-bridge-charcoal-600 text-[11px] block mt-0.5">
                                 {c.locationArea} • Lat: {c.latitude?.toFixed(4)}, Lng: {c.longitude?.toFixed(4)}
                               </span>
                             </div>
@@ -553,7 +553,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                               href={`https://www.openstreetmap.org/?mlat=${c.latitude}&mlon=${c.longitude}#map=16/${c.latitude}/${c.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-brand-teal-700 hover:text-brand-teal-900 font-medium inline-flex items-center gap-1 text-[11px]"
+                              className="text-bridge-gold-700 hover:text-bridge-gold-900 font-medium inline-flex items-center gap-1 text-[11px]"
                             >
                               <span>View OSM</span>
                               <ExternalLink className="w-3 h-3" />
@@ -563,7 +563,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-brand-slate-500 italic">
+                    <p className="text-xs text-bridge-charcoal-500 italic">
                       No active complaints have hardware GPS coordinates registered; all records currently utilize verified Mysuru neighborhood landmark identification.
                     </p>
                   )}
@@ -577,31 +577,31 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-bold text-brand-slate-900">
+                    <h2 className="text-base font-bold text-bridge-charcoal-900">
                       Recent Public Transparency Log
                     </h2>
-                    <p className="text-xs text-brand-slate-500 mt-0.5">
+                    <p className="text-xs text-bridge-charcoal-500 mt-0.5">
                       Sanitized public ledger • Sensitive personal citizen details are protected
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-brand-slate-500">
+                    <span className="text-xs text-bridge-charcoal-500">
                       Showing {filteredComplaints.length} of {data.recentComplaints.length}
                     </span>
                   </div>
                 </div>
 
                 {/* Filter and Search Controls */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-brand-slate-100">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-bridge-almond-100">
                   {/* Search Bar */}
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-brand-slate-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-bridge-charcoal-400" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search ID or locality..."
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-brand-slate-50 border border-brand-slate-200 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600"
+                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
                     />
                   </div>
 
@@ -609,7 +609,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs bg-brand-slate-50 border border-brand-slate-200 rounded-lg text-brand-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600"
+                    className="px-2.5 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
                   >
                     <option value="ALL">All Categories</option>
                     {Object.keys(data.byCategory).map((cat) => (
@@ -623,7 +623,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs bg-brand-slate-50 border border-brand-slate-200 rounded-lg text-brand-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600"
+                    className="px-2.5 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="SUBMITTED">Submitted</option>
@@ -637,7 +637,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               <CardBody className="p-0 overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-brand-slate-50/80 border-b border-brand-slate-200 text-brand-slate-600 uppercase tracking-wider font-semibold">
+                    <tr className="bg-bridge-almond-50/80 border-b border-bridge-almond-200 text-bridge-charcoal-600 uppercase tracking-wider font-semibold">
                       <th className="py-3 px-4">Grievance ID</th>
                       <th className="py-3 px-4">Category</th>
                       <th className="py-3 px-4">Neighborhood Locality</th>
@@ -647,10 +647,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                       <th className="py-3 px-4 text-right">Track</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-brand-slate-100">
+                  <tbody className="divide-y divide-bridge-almond-100">
                     {filteredComplaints.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-brand-slate-500 italic">
+                        <td colSpan={7} className="py-8 text-center text-bridge-charcoal-500 italic">
                           No matching complaints found for the selected filters.
                         </td>
                       </tr>
@@ -659,8 +659,8 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                         const statusConfig = STATUS_LABELS[c.status] || { label: c.status, variant: 'neutral' };
                         const catBadgeClass = CATEGORY_BADGES[c.category] || CATEGORY_BADGES.other;
                         return (
-                          <tr key={c.id} className="hover:bg-brand-teal-50/20 transition-colors">
-                            <td className="py-3 px-4 font-mono font-bold text-brand-teal-800">
+                          <tr key={c.id} className="hover:bg-bridge-almond-50/60 transition-colors">
+                            <td className="py-3 px-4 font-mono font-bold text-bridge-gold-800">
                               {c.id}
                             </td>
                             <td className="py-3 px-4">
@@ -668,9 +668,9 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                                 {CATEGORY_LABELS[c.category] || c.category}
                               </span>
                             </td>
-                            <td className="py-3 px-4 font-medium text-brand-slate-900">
+                            <td className="py-3 px-4 font-medium text-bridge-charcoal-900">
                               <div className="flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5 text-brand-slate-400 shrink-0" />
+                                <MapPin className="w-3.5 h-3.5 text-bridge-charcoal-400 shrink-0" />
                                 <span>{c.locationArea}</span>
                               </div>
                             </td>
@@ -697,7 +697,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-brand-slate-500 whitespace-nowrap">
+                            <td className="py-3 px-4 text-bridge-charcoal-500 whitespace-nowrap">
                               {new Date(c.createdAt).toLocaleDateString('en-IN', {
                                 day: 'numeric',
                                 month: 'short',
@@ -707,7 +707,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                             <td className="py-3 px-4 text-right">
                               <button
                                 onClick={() => onNavigateToTrack()}
-                                className="text-brand-teal-700 hover:text-brand-teal-900 font-semibold inline-flex items-center gap-0.5 p-1 rounded hover:bg-brand-teal-50 cursor-pointer"
+                                className="text-bridge-gold-700 hover:text-bridge-gold-900 font-semibold inline-flex items-center gap-0.5 p-1 rounded hover:bg-bridge-gold-50 cursor-pointer"
                                 title="Look up complaint progress"
                               >
                                 <span>Track</span>
@@ -724,14 +724,14 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
             </Card>
 
             {/* 6. Footer Disclaimer on Trust & Transparency */}
-            <div className="p-4 rounded-xl bg-white border border-brand-slate-200 text-xs text-brand-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="p-4 rounded-xl bg-white border border-bridge-almond-200 text-xs text-bridge-charcoal-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-brand-teal-700 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-bridge-gold-700 shrink-0" />
                 <span>
                   {data.disclaimer}
                 </span>
               </div>
-              <span className="text-[11px] text-brand-slate-400 shrink-0">
+              <span className="text-[11px] text-bridge-charcoal-400 shrink-0">
                 Generated: {new Date(data.generatedAt).toLocaleTimeString()}
               </span>
             </div>

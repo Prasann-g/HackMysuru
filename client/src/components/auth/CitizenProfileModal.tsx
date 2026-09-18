@@ -103,19 +103,19 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-slate-900/50 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bridge-charcoal-900/60 backdrop-blur-xs animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="citizen-modal-title"
     >
       <div
-        className={`bg-white rounded-2xl w-full p-6 sm:p-7 shadow-civic-lg border border-brand-slate-200 transition-all ${
+        className={`bg-white rounded-2xl w-full p-6 sm:p-7 shadow-bridge-modal border border-bridge-almond-200 transition-all ${
           view === 'complaints' ? 'max-w-2xl' : 'max-w-lg'
         }`}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-teal-50 border border-brand-teal-200 flex items-center justify-center text-brand-teal-700">
+            <div className="w-10 h-10 rounded-xl bg-bridge-almond-50 border border-bridge-almond-200 flex items-center justify-center text-bridge-gold-700">
               {view === 'profile' ? <User className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
             </div>
             <div>
@@ -126,7 +126,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
               >
                 {user.role === 'OFFICER' ? 'MCC Officer Account' : 'Citizen Account'}
               </Badge>
-              <h2 id="citizen-modal-title" className="text-xl font-bold text-brand-slate-900">
+              <h2 id="citizen-modal-title" className="text-xl font-bold text-bridge-charcoal-900">
                 {view === 'profile'
                   ? user.role === 'OFFICER'
                     ? 'Officer Profile'
@@ -137,7 +137,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-brand-slate-400 hover:text-brand-slate-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-brand-teal-600 cursor-pointer"
+            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -146,38 +146,38 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
 
         {view === 'profile' ? (
           <div className="mt-5 space-y-4 text-xs sm:text-sm">
-            <div className="p-4 rounded-xl bg-brand-slate-50 border border-brand-slate-200 space-y-3">
-              <div className="flex items-center justify-between border-b border-brand-slate-200 pb-2">
-                <span className="text-brand-slate-500 font-medium">Name:</span>
-                <span className="font-bold text-brand-slate-900">{user.name}</span>
+            <div className="p-4 rounded-xl bg-bridge-almond-50/70 border border-bridge-almond-200 space-y-3">
+              <div className="flex items-center justify-between border-b border-bridge-almond-200/80 pb-2">
+                <span className="text-bridge-charcoal-500 font-medium">Name:</span>
+                <span className="font-bold text-bridge-charcoal-900">{user.name}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-brand-slate-200 pb-2">
-                <span className="text-brand-slate-500 font-medium flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-brand-slate-400" />
+              <div className="flex items-center justify-between border-b border-bridge-almond-200/80 pb-2">
+                <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                   Email Address:
                 </span>
-                <span className="font-semibold text-brand-slate-900">{user.email}</span>
+                <span className="font-semibold text-bridge-charcoal-900">{user.email}</span>
               </div>
               {user.department && (
-                <div className="flex items-center justify-between border-b border-brand-slate-200 pb-2">
-                  <span className="text-brand-slate-500 font-medium">Department:</span>
+                <div className="flex items-center justify-between border-b border-bridge-almond-200/80 pb-2">
+                  <span className="text-bridge-charcoal-500 font-medium">Department:</span>
                   <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs">
                     {user.department}
                   </span>
                 </div>
               )}
-              <div className="flex items-center justify-between border-b border-brand-slate-200 pb-2">
-                <span className="text-brand-slate-500 font-medium flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-brand-slate-400" />
+              <div className="flex items-center justify-between border-b border-bridge-almond-200/80 pb-2">
+                <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                   Assigned Ward / Locality:
                 </span>
-                <span className="font-semibold text-brand-slate-900">
+                <span className="font-semibold text-bridge-charcoal-900">
                   {user.ward || 'Not specified'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-brand-slate-500 font-medium flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-brand-slate-400" />
+                <span className="text-bridge-charcoal-500 font-medium flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-bridge-charcoal-400" />
                   Account Status:
                 </span>
                 <span className="font-medium text-emerald-700">
@@ -186,8 +186,8 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-brand-teal-50 border border-brand-teal-200 rounded-lg text-xs text-brand-teal-900 flex items-start gap-2">
-              <ShieldCheck className="w-4 h-4 text-brand-teal-700 shrink-0 mt-0.5" />
+            <div className="p-3 bg-bridge-gold-50 border border-bridge-gold-200 rounded-lg text-xs text-bridge-charcoal-900 flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-bridge-gold-700 shrink-0 mt-0.5" />
               <span>
                 {user.role === 'OFFICER'
                   ? 'Authenticated as official Mysuru City Corporation (MCC) staff. Authorized for complaint review and duplicate resolution.'
@@ -200,8 +200,8 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
             {/* Loading State */}
             {loading && (
               <div className="py-12 text-center space-y-2">
-                <Loader2 className="w-6 h-6 text-brand-teal-600 animate-spin mx-auto" />
-                <p className="text-xs text-brand-slate-600">Retrieving your registered complaints...</p>
+                <Loader2 className="w-6 h-6 text-bridge-gold-600 animate-spin mx-auto" />
+                <p className="text-xs text-bridge-charcoal-600">Retrieving your registered complaints...</p>
               </div>
             )}
 
@@ -227,12 +227,12 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
 
             {/* Empty State */}
             {!loading && !error && complaints.length === 0 && (
-              <div className="text-center py-8 px-4 bg-brand-slate-50 rounded-xl border border-dashed border-brand-slate-300">
-                <FileText className="w-10 h-10 text-brand-slate-400 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-brand-slate-800">
+              <div className="text-center py-8 px-4 bg-bridge-almond-50 rounded-xl border border-dashed border-bridge-almond-300">
+                <FileText className="w-10 h-10 text-bridge-charcoal-400 mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-bridge-charcoal-800">
                   No complaints submitted yet
                 </h3>
-                <p className="text-xs text-brand-slate-500 max-w-xs mx-auto mt-1">
+                <p className="text-xs text-bridge-charcoal-500 max-w-xs mx-auto mt-1">
                   When you submit a civic complaint, its tracking token and resolution status will appear here.
                 </p>
                 <div className="mt-4">
@@ -256,17 +256,17 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                 {complaints.map((c) => (
                   <div
                     key={c.id}
-                    className="p-4 rounded-xl border border-brand-slate-200 bg-brand-slate-50/50 hover:bg-white hover:border-brand-teal-300 transition-all space-y-2.5"
+                    className="p-4 rounded-xl border border-bridge-almond-200 bg-bridge-almond-50/50 hover:bg-white hover:border-bridge-gold-400 transition-all space-y-2.5"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs sm:text-sm font-bold text-brand-slate-900 bg-white px-2 py-0.5 rounded border border-brand-slate-200">
+                        <span className="font-mono text-xs sm:text-sm font-bold text-bridge-charcoal-900 bg-white px-2 py-0.5 rounded border border-bridge-almond-200">
                           {c.trackingToken}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleCopy(c.trackingToken)}
-                          className="text-brand-slate-400 hover:text-brand-slate-700 cursor-pointer"
+                          className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 cursor-pointer"
                           title="Copy tracking token"
                         >
                           {copiedToken === c.trackingToken ? (
@@ -308,22 +308,22 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-brand-slate-900">
+                      <h4 className="text-xs sm:text-sm font-bold text-bridge-charcoal-900">
                         {CATEGORY_LABELS[c.category] || c.category}
                       </h4>
-                      <p className="text-xs text-brand-slate-600 line-clamp-2 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-bridge-charcoal-600 line-clamp-2 mt-0.5 leading-relaxed">
                         {c.description}
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-1 border-t border-brand-slate-100 text-[11px] text-brand-slate-500 gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-1 border-t border-bridge-almond-200/80 text-[11px] text-bridge-charcoal-500 gap-2">
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-brand-slate-400" />
+                          <MapPin className="w-3 h-3 text-bridge-charcoal-400" />
                           {c.locationArea}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-brand-slate-400" />
+                          <Calendar className="w-3 h-3 text-bridge-charcoal-400" />
                           {c.observedDate}
                         </span>
                       </div>
@@ -335,7 +335,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                             onClose();
                             onNavigateToTrack(c.trackingToken);
                           }}
-                          className="text-brand-teal-700 hover:text-brand-teal-900 font-semibold flex items-center gap-1 cursor-pointer"
+                          className="text-bridge-gold-700 hover:text-bridge-gold-900 font-semibold flex items-center gap-1 cursor-pointer"
                         >
                           <span>Track Progress</span>
                           <ExternalLink className="w-3 h-3" />

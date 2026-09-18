@@ -90,23 +90,23 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4"
+      className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4"
     >
-      <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
+      <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
         <div className="flex items-center gap-2">
-          <FileEdit className="w-4 h-4 text-brand-teal-700" />
-          <h4 className="font-semibold text-brand-slate-800 text-sm">
+          <FileEdit className="w-4 h-4 text-bridge-gold-600" />
+          <h4 className="font-semibold text-bridge-charcoal-800 text-sm">
             Officer Verification & Lifecycle Decision
           </h4>
         </div>
-        <span className="text-xs text-brand-slate-500 font-mono">
+        <span className="text-xs text-bridge-charcoal-500 font-mono">
           Officer: {currentOfficer?.name || 'Authorized Staff'}
         </span>
       </div>
 
       {/* Quick Action Decision Presets */}
       <div>
-        <label className="block text-xs font-semibold text-brand-slate-600 mb-1.5">
+        <label className="block text-xs font-semibold text-bridge-charcoal-600 mb-1.5">
           Quick Decision Presets:
         </label>
         <div className="flex flex-wrap gap-2 text-xs">
@@ -130,7 +130,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
                 'Dispatched junior engineer and field team for physical remediation.'
               )
             }
-            className="px-2.5 py-1 bg-brand-teal-50 text-brand-teal-800 hover:bg-brand-teal-100 border border-brand-teal-200 rounded-lg text-xs transition-colors"
+            className="px-2.5 py-1 bg-bridge-gold-50 text-bridge-gold-800 hover:bg-bridge-gold-100 border border-bridge-gold-200 rounded-lg text-xs transition-colors"
           >
             Dispatch Field Crew
           </button>
@@ -152,7 +152,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
       {/* Lifecycle Status & Department Routing */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="review-status" className="block text-xs font-semibold text-brand-slate-700 mb-1">
+          <label htmlFor="review-status" className="block text-xs font-semibold text-bridge-charcoal-700 mb-1">
             Review Status
           </label>
           <select
@@ -160,7 +160,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             disabled={isUpdating}
-            className="w-full bg-white border border-brand-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-brand-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-teal-500 focus:border-transparent transition"
+            className="w-full bg-white border border-bridge-almond-300 rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -171,14 +171,14 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-brand-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-bridge-charcoal-700 mb-1">
             Assigned Responsible Department
           </label>
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
             disabled={isUpdating}
-            className="w-full bg-white border border-brand-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-brand-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-teal-500 focus:border-transparent transition"
+            className="w-full bg-white border border-bridge-almond-300 rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
           >
             {MCC_DEPARTMENTS.map((dept) => (
               <option key={dept} value={dept}>
@@ -192,10 +192,10 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
       {/* Internal Review Notes */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label htmlFor="reviewNotes" className="block text-xs font-semibold text-brand-slate-700">
+          <label htmlFor="reviewNotes" className="block text-xs font-semibold text-bridge-charcoal-700">
             Internal Verification & Review Notes
           </label>
-          <span className="text-[11px] text-brand-slate-500 italic">
+          <span className="text-[11px] text-bridge-charcoal-500 italic">
             Confidential — restricted to municipal staff
           </span>
         </div>
@@ -206,7 +206,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
           onChange={(e) => setReviewNotes(e.target.value)}
           placeholder="Record inspection findings, contractor dispatch numbers, duplicate cross-references, or on-site notes..."
           disabled={isUpdating}
-          className="w-full bg-white border border-brand-slate-200 rounded-lg p-3 text-xs text-brand-slate-800 placeholder-brand-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-teal-500 focus:border-transparent transition"
+          className="w-full bg-white border border-bridge-almond-300 rounded-lg p-3 text-xs text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
         />
       </div>
 
@@ -227,7 +227,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
 
       {/* Submit Button */}
       <div className="flex items-center justify-between pt-2">
-        <span className="text-[11px] text-brand-slate-500">
+        <span className="text-[11px] text-bridge-charcoal-500">
           Last status: <strong className="font-semibold">{complaint.status}</strong>
         </span>
         <Button

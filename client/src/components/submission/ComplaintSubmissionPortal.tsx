@@ -7,12 +7,14 @@ import { Step3Location } from './Step3Location';
 import { Step4Evidence } from './Step4Evidence';
 import { Step5Review } from './Step5Review';
 import type { ComplaintFormData, FormErrors, IssueCategory } from './types';
+import type { ComplaintRecord } from '../../services/api';
 import { Button } from '../ui/Button';
 import { Card, CardBody } from '../ui/Card';
 
 interface ComplaintSubmissionPortalProps {
   onBackToHome: () => void;
   onNavigateToTrack?: (token: string) => void;
+  onSuccess?: (complaint: ComplaintRecord) => void;
 }
 
 const STEP_LABELS = [
@@ -37,6 +39,7 @@ const INITIAL_FORM_DATA: ComplaintFormData = {
 export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps> = ({
   onBackToHome,
   onNavigateToTrack,
+  onSuccess,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<ComplaintFormData>(INITIAL_FORM_DATA);
@@ -151,29 +154,29 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
           <button
             type="button"
             onClick={onBackToHome}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-teal-700 hover:text-brand-teal-800 p-1 rounded-md focus-visible:ring-2 focus-visible:ring-brand-teal-600 cursor-pointer mb-2"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-bridge-gold-700 hover:text-bridge-gold-800 p-1 rounded-md focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Home</span>
           </button>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-bridge-charcoal-900 tracking-tight">
               Submit a Civic Complaint
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-brand-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
             Mysuru City Corporation (MCC) Citizen Verification Portal
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-brand-teal-50 border border-brand-teal-200 rounded-lg px-3 py-1.5 text-xs text-brand-teal-800 self-start sm:self-center">
-          <ShieldCheck className="w-4 h-4 text-brand-teal-700 shrink-0" />
+        <div className="flex items-center gap-2 bg-bridge-gold-50 border border-bridge-gold-200 rounded-lg px-3 py-1.5 text-xs text-bridge-gold-800 self-start sm:self-center">
+          <ShieldCheck className="w-4 h-4 text-bridge-gold-700 shrink-0" />
           <span>Evidence-Guided Reporting</span>
         </div>
       </div>
 
       {/* Stepper Navigation */}
-      <div className="mb-8 bg-white p-4 sm:p-6 rounded-2xl border border-brand-slate-200 shadow-civic-sm">
+      <div className="mb-8 bg-white p-4 sm:p-6 rounded-2xl border border-bridge-almond-200 shadow-civic-sm">
         <Stepper
           currentStep={currentStep}
           totalSteps={5}
@@ -183,7 +186,7 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
       </div>
 
       {/* Step Content Container */}
-      <Card className="border-brand-slate-200 shadow-civic">
+      <Card className="border-bridge-almond-200 shadow-civic">
         <CardBody className="p-6 sm:p-8">
           {currentStep === 1 && (
             <Step1IssueDetails
@@ -261,12 +264,14 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
               }}
               onReset={handleReset}
               onNavigateToTrack={onNavigateToTrack}
+              onSuccess={onSuccess}
+              onDone={onBackToHome}
             />
           )}
 
           {/* Navigation Buttons for Steps 1 - 4 */}
           {currentStep < 5 && (
-            <div className="mt-8 pt-6 border-t border-brand-slate-100 flex items-center justify-between">
+            <div className="mt-8 pt-6 border-t border-bridge-almond-200 flex items-center justify-between">
               {currentStep > 1 ? (
                 <Button
                   type="button"

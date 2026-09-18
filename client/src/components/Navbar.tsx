@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ShieldCheck,
   Menu,
   X,
-  FileText,
-  Search,
-  BarChart3,
-  Home,
   User as UserIcon,
   LogOut,
   ChevronDown,
   UserCheck,
   Building2,
+  PlusCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { BrandLogo } from './common/BrandLogo';
 import type { CitizenUser } from '../types/auth';
 
-export type NavTab = 'home' | 'submit' | 'track' | 'dashboard' | 'officer';
+export type NavTab = 'home' | 'dashboard' | 'officer' | 'submit' | 'track' | 'analytics';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -25,18 +23,17 @@ interface NavbarProps {
   onTabChange: (tab: NavTab) => void;
   onOpenAuth: (mode: 'login' | 'signup' | 'officer') => void;
   onLogout: () => void;
-  onOpenMyComplaints: () => void;
   onOpenProfile: () => void;
+  onOpenReportGrievance?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
   currentUser,
   onTabChange,
   onOpenAuth,
   onLogout,
-  onOpenMyComplaints,
   onOpenProfile,
+  onOpenReportGrievance,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -52,184 +49,163 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
-    { id: 'submit', label: 'Report Issue', icon: <FileText className="w-4 h-4" /> },
-    { id: 'track', label: 'Track Complaint', icon: <Search className="w-4 h-4" /> },
-    { id: 'dashboard', label: 'Public Map & Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-    ...(currentUser?.role === 'OFFICER'
-      ? [
-          {
-            id: 'officer' as NavTab,
-            label: 'Officer Queue',
-            icon: <Building2 className="w-4 h-4 text-brand-teal-700" />,
-            badge: 'MCC',
-          },
-        ]
-      : []),
-  ];
-
-  const handleNavClick = (tab: NavTab) => {
-    onTabChange(tab);
+  const handleLogoClick = () => {
+    if (currentUser?.role === 'OFFICER') {
+      onTabChange('officer');
+    } else if (currentUser?.role === 'CITIZEN') {
+      onTabChange('dashboard');
+    } else {
+      onTabChange('home');
+    }
     setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-brand-slate-200 shadow-civic-sm">
+    <header className="sticky top-0 z-40 bg-white border-b border-bridge-almond-200 shadow-bridge-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => handleNavClick('home')}
-              className="flex items-center gap-2.5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 rounded-lg p-1"
-              aria-label="Civic Trust Home"
+              onClick={handleLogoClick}
+              className="flex items-center text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 rounded-lg p-1 cursor-pointer"
+              aria-label="CivicBridge Home"
             >
-              <div className="w-10 h-10 rounded-lg bg-brand-teal-600 flex items-center justify-center text-white shadow-civic-sm group-hover:bg-brand-teal-700 transition-colors">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="font-bold text-lg text-brand-slate-900 tracking-tight block leading-tight">
-                  Civic Trust
-                </span>
-                <p className="text-xs text-brand-slate-600 font-medium leading-none mt-0.5">
-                  Mysuru City Corporation
-                </p>
-              </div>
+              <BrandLogo size="md" variant="full" />
             </button>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Main Navigation">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-brand-teal-50 text-brand-teal-700 border border-brand-teal-200'
-                      : 'text-brand-slate-700 hover:text-brand-slate-900 hover:bg-brand-slate-100'
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="text-[10px] font-medium bg-brand-slate-100 text-brand-slate-600 px-1.5 py-0.2 rounded border border-brand-slate-200">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Desktop Authentication / Profile Area */}
-          <div className="hidden md:flex items-center gap-2.5">
-            {currentUser ? (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-brand-slate-200 bg-brand-slate-50 hover:bg-brand-slate-100 text-brand-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-brand-teal-600 cursor-pointer"
-                  aria-expanded={profileDropdownOpen}
-                  aria-label="Citizen account menu"
-                >
-                  <div className="w-7 h-7 rounded-full bg-brand-teal-600 text-white flex items-center justify-center text-xs font-bold">
-                    {currentUser.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-xs font-semibold max-w-[120px] truncate">
-                    {currentUser.name}
+          {/* Desktop Center Context Indicator (Zero separate page links when authenticated) */}
+          <div className="hidden md:flex items-center gap-2">
+            {currentUser?.role === 'OFFICER' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-700 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-bridge-gold-700" />
+                  <span>MCC Verification Console</span>
+                </span>
+                {currentUser.ward && (
+                  <span className="text-xs text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-0.5 rounded-full">
+                    Ward: {currentUser.ward}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-brand-slate-500" />
-                </button>
+                )}
+              </div>
+            ) : currentUser?.role === 'CITIZEN' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-700 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-bridge-gold-700" />
+                  <span>Mysuru Citizen Workspace</span>
+                </span>
+                {currentUser.ward && (
+                  <span className="text-xs text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-0.5 rounded-full">
+                    Ward: {currentUser.ward}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-xs text-bridge-charcoal-500">
+                <span>Mysuru City Corporation</span>
+                <span>•</span>
+                <span>Explainable Civic Verification Platform</span>
+              </div>
+            )}
+          </div>
 
-                {/* Profile Dropdown Menu */}
-                {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-civic-lg border border-brand-slate-200 py-2 z-50 animate-fadeIn">
-                    {/* User Info Header */}
-                    <div className="px-4 py-2.5 border-b border-brand-slate-100">
-                      <p className="text-xs font-bold text-brand-slate-900 truncate">
-                        {currentUser.name}
-                      </p>
-                      <p className="text-[11px] text-brand-slate-500 truncate mt-0.5">
-                        {currentUser.email}
-                      </p>
-                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                        <Badge
-                          variant={currentUser.role === 'OFFICER' ? 'review' : 'verified'}
-                          size="sm"
-                          icon={<UserCheck className="w-3 h-3" />}
-                        >
-                          {currentUser.role === 'OFFICER' ? 'MCC Officer' : 'Active Citizen'}
-                        </Badge>
-                        {currentUser.department && (
-                          <span className="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-medium">
-                            {currentUser.department}
-                          </span>
-                        )}
-                        {currentUser.ward && (
-                          <span className="text-[10px] text-brand-slate-600 bg-brand-slate-100 px-1.5 py-0.5 rounded border border-brand-slate-200">
-                            {currentUser.ward}
-                          </span>
-                        )}
-                      </div>
+          {/* Desktop Authentication / Action Area */}
+          <div className="hidden md:flex items-center gap-3">
+            {currentUser ? (
+              <div className="flex items-center gap-3">
+                {/* Citizen Quick Report CTA right in header */}
+                {currentUser.role === 'CITIZEN' && onOpenReportGrievance && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onOpenReportGrievance}
+                    icon={<PlusCircle className="w-4 h-4" />}
+                  >
+                    Report Grievance
+                  </Button>
+                )}
+
+                {/* User Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-bridge-almond-200 bg-bridge-almond-50 hover:bg-bridge-almond-100 text-bridge-charcoal-800 transition-colors focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+                    aria-expanded={profileDropdownOpen}
+                    aria-label="Account menu"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-bridge-charcoal-800 text-white flex items-center justify-center text-xs font-bold">
+                      {currentUser.name.charAt(0).toUpperCase()}
                     </div>
+                    <span className="text-xs font-semibold max-w-[120px] truncate">
+                      {currentUser.name}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-bridge-charcoal-500" />
+                  </button>
 
-                    {/* Menu Actions */}
-                    <div className="py-1">
-                      {currentUser.role === 'OFFICER' && (
+                  {/* Profile Dropdown Menu */}
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-bridge-modal border border-bridge-almond-200 py-2 z-50 animate-fadeIn">
+                      {/* User Info Header */}
+                      <div className="px-4 py-2.5 border-b border-bridge-almond-200/80">
+                        <p className="text-xs font-bold text-bridge-charcoal-900 truncate">
+                          {currentUser.name}
+                        </p>
+                        <p className="text-[11px] text-bridge-charcoal-500 truncate mt-0.5">
+                          {currentUser.email}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                          <Badge
+                            variant={currentUser.role === 'OFFICER' ? 'review' : 'verified'}
+                            size="sm"
+                            icon={<UserCheck className="w-3 h-3" />}
+                          >
+                            {currentUser.role === 'OFFICER' ? 'MCC Officer' : 'Active Citizen'}
+                          </Badge>
+                          {currentUser.department && (
+                            <span className="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-medium truncate max-w-[180px]">
+                              {currentUser.department}
+                            </span>
+                          )}
+                          {currentUser.ward && (
+                            <span className="text-[10px] text-bridge-charcoal-600 bg-bridge-almond-100 px-1.5 py-0.5 rounded border border-bridge-almond-200 font-medium">
+                              {currentUser.ward}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Menu Actions */}
+                      <div className="py-1">
                         <button
                           onClick={() => {
                             setProfileDropdownOpen(false);
-                            onTabChange('officer');
+                            onOpenProfile();
                           }}
-                          className="w-full text-left px-4 py-2 text-xs font-semibold text-brand-teal-800 bg-brand-teal-50/60 hover:bg-brand-teal-50 flex items-center gap-2 cursor-pointer border-b border-brand-slate-100"
+                          className="w-full text-left px-4 py-2 text-xs text-bridge-charcoal-700 hover:bg-bridge-almond-50 hover:text-bridge-charcoal-900 flex items-center gap-2 cursor-pointer"
                         >
-                          <Building2 className="w-3.5 h-3.5 text-brand-teal-700" />
-                          <span>Officer Review Queue</span>
+                          <UserIcon className="w-3.5 h-3.5 text-bridge-gold-700" />
+                          <span>Profile Details</span>
                         </button>
-                      )}
+                      </div>
 
-                      <button
-                        onClick={() => {
-                          setProfileDropdownOpen(false);
-                          onOpenMyComplaints();
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-brand-slate-700 hover:bg-brand-slate-50 hover:text-brand-slate-900 flex items-center gap-2 cursor-pointer"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-brand-teal-700" />
-                        <span>My Complaints</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setProfileDropdownOpen(false);
-                          onOpenProfile();
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-brand-slate-700 hover:bg-brand-slate-50 hover:text-brand-slate-900 flex items-center gap-2 cursor-pointer"
-                      >
-                        <UserIcon className="w-3.5 h-3.5 text-brand-teal-700" />
-                        <span>Citizen Profile</span>
-                      </button>
+                      {/* Log out */}
+                      <div className="border-t border-bridge-almond-200/80 pt-1">
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            onLogout();
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Log Out</span>
+                        </button>
+                      </div>
                     </div>
-
-                    {/* Log out */}
-                    <div className="border-t border-brand-slate-100 pt-1">
-                      <button
-                        onClick={() => {
-                          setProfileDropdownOpen(false);
-                          onLogout();
-                        }}
-                        className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-medium"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Log Out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -262,7 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-brand-slate-600 hover:text-brand-slate-900 hover:bg-brand-slate-100 focus-visible:ring-2 focus-visible:ring-brand-teal-600"
+              className="p-2 rounded-lg text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100 focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >
@@ -274,101 +250,100 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-brand-slate-200 bg-white px-4 pt-3 pb-5 space-y-3 shadow-civic-md animate-fadeIn">
+        <div className="md:hidden border-t border-bridge-almond-200 bg-white px-4 pt-3 pb-5 space-y-3 shadow-bridge-modal animate-fadeIn">
           {/* User Status Card if Logged in */}
           {currentUser ? (
-            <div className="p-3 bg-brand-teal-50/70 border border-brand-teal-200 rounded-xl space-y-2">
+            <div className="p-3 bg-bridge-almond-50 border border-bridge-almond-200 rounded-xl space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-brand-teal-600 text-white flex items-center justify-center text-xs font-bold">
+                  <div className="w-8 h-8 rounded-full bg-bridge-charcoal-800 text-white flex items-center justify-center text-xs font-bold">
                     {currentUser.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-brand-slate-900">{currentUser.name}</p>
-                    <p className="text-[11px] text-brand-slate-500">{currentUser.email}</p>
+                    <p className="text-xs font-bold text-bridge-charcoal-900">{currentUser.name}</p>
+                    <p className="text-[11px] text-bridge-charcoal-500">{currentUser.email}</p>
                   </div>
                 </div>
                 <Badge variant="verified" size="sm">
-                  Active
+                  {currentUser.role === 'OFFICER' ? 'Officer' : 'Citizen'}
                 </Badge>
               </div>
 
-              <div className="pt-2 border-t border-brand-teal-200 flex items-center justify-between text-xs">
+              {currentUser.role === 'CITIZEN' && onOpenReportGrievance && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenReportGrievance();
+                  }}
+                  icon={<PlusCircle className="w-4 h-4" />}
+                >
+                  Report Grievance
+                </Button>
+              )}
+
+              <div className="pt-2 border-t border-bridge-almond-200 flex items-center justify-between text-xs">
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    onOpenMyComplaints();
+                    onOpenProfile();
                   }}
-                  className="text-brand-teal-800 font-semibold hover:underline"
+                  className="text-bridge-gold-700 font-semibold hover:underline cursor-pointer"
                 >
-                  My Complaints
+                  Profile Details
                 </button>
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     onLogout();
                   }}
-                  className="text-rose-600 font-semibold hover:underline"
+                  className="text-rose-600 font-semibold hover:underline cursor-pointer"
                 >
                   Log Out
                 </button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 pt-1 pb-2">
+            <div className="space-y-2 pt-1 pb-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth('login');
+                  }}
+                >
+                  Log In
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth('signup');
+                  }}
+                >
+                  Create Account
+                </Button>
+              </div>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 className="w-full"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenAuth('login');
+                  onOpenAuth('officer');
                 }}
               >
-                Log In
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                className="w-full"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAuth('signup');
-                }}
-              >
-                Create Account
+                MCC Officer Portal
               </Button>
             </div>
           )}
-
-          {/* Navigation Links */}
-          <div className="space-y-1 pt-1 border-t border-brand-slate-100">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg text-left cursor-pointer ${
-                    isActive
-                      ? 'bg-brand-teal-50 text-brand-teal-700 border border-brand-teal-200'
-                      : 'text-brand-slate-700 hover:bg-brand-slate-100'
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <div className="flex items-center gap-2">
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="text-[10px] font-medium bg-brand-slate-100 text-brand-slate-600 px-1.5 py-0.5 rounded border border-brand-slate-200">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
         </div>
       )}
     </header>

@@ -68,10 +68,10 @@ export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProp
   if (loading) {
     return (
       <div
-        className={`bg-brand-slate-100 border border-brand-slate-200 rounded-lg flex flex-col items-center justify-center p-4 text-brand-slate-400 ${className}`}
+        className={`bg-bridge-almond-100 border border-bridge-almond-200 rounded-lg flex flex-col items-center justify-center p-4 text-bridge-charcoal-400 ${className}`}
         style={aspectRatio ? { aspectRatio } : undefined}
       >
-        <Loader2 className="w-5 h-5 animate-spin mb-1 text-brand-teal-600" />
+        <Loader2 className="w-5 h-5 animate-spin mb-1 text-bridge-gold-600" />
         <span className="text-[11px]">Loading evidence photo...</span>
       </div>
     );
@@ -80,12 +80,12 @@ export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProp
   if (failed || !blobUrl) {
     return (
       <div
-        className={`bg-brand-slate-100 border border-dashed border-brand-slate-300 rounded-lg flex flex-col items-center justify-center p-4 text-brand-slate-400 ${className}`}
+        className={`bg-bridge-almond-50 border border-dashed border-bridge-almond-300 rounded-lg flex flex-col items-center justify-center p-4 text-bridge-charcoal-400 ${className}`}
         style={aspectRatio ? { aspectRatio } : undefined}
       >
-        <ImageOff className="w-6 h-6 mb-1 text-brand-slate-400" />
-        <span className="text-[11px] font-medium text-brand-slate-500">Image unavailable</span>
-        <span className="text-[10px] text-brand-slate-400">Photo record unreadable or unattached</span>
+        <ImageOff className="w-6 h-6 mb-1 text-bridge-charcoal-400" />
+        <span className="text-[11px] font-medium text-bridge-charcoal-600">Image unavailable</span>
+        <span className="text-[10px] text-bridge-charcoal-400">Photo record unreadable or unattached</span>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProp
         style={aspectRatio ? { aspectRatio } : undefined}
         data-test-id={dataTestId}
       />
-      <div className="absolute top-2 left-2 bg-brand-slate-900/70 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1 opacity-90">
+      <div className="absolute top-2 left-2 bg-bridge-charcoal-900/80 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1 opacity-90">
         <Camera className="w-3 h-3" />
         Evidence Photo
       </div>

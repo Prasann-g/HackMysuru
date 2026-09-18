@@ -37,7 +37,7 @@ export const Stepper: React.FC<StepperProps> = ({
                     type="button"
                     onClick={() => isClickable && onStepClick(stepNumber)}
                     disabled={!isClickable}
-                    className={`flex items-center gap-2.5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 rounded-lg p-1 ${
+                    className={`flex items-center gap-2.5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 rounded-lg p-1 ${
                       isClickable ? 'cursor-pointer' : 'cursor-default'
                     }`}
                     aria-current={isCurrent ? 'step' : undefined}
@@ -46,10 +46,10 @@ export const Stepper: React.FC<StepperProps> = ({
                     <span
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
                         isCompleted
-                          ? 'bg-brand-teal-600 text-white'
+                          ? 'bg-bridge-charcoal-800 text-white'
                           : isCurrent
-                          ? 'bg-brand-teal-50 border-2 border-brand-teal-600 text-brand-teal-700 font-bold'
-                          : 'bg-brand-slate-100 border border-brand-slate-300 text-brand-slate-500'
+                          ? 'bg-bridge-gold-50 border-2 border-bridge-gold-500 text-bridge-gold-700 font-bold'
+                          : 'bg-bridge-almond-100 border border-bridge-almond-300 text-bridge-charcoal-400'
                       }`}
                     >
                       {isCompleted ? <Check className="w-4 h-4" /> : stepNumber}
@@ -60,10 +60,10 @@ export const Stepper: React.FC<StepperProps> = ({
                       <span
                         className={`text-xs font-semibold tracking-wider uppercase ${
                           isCurrent
-                            ? 'text-brand-teal-700'
+                            ? 'text-bridge-gold-700 font-bold'
                             : isCompleted
-                            ? 'text-brand-slate-800'
-                            : 'text-brand-slate-500'
+                            ? 'text-bridge-charcoal-800'
+                            : 'text-bridge-charcoal-400'
                         }`}
                       >
                         Step {stepNumber}
@@ -71,10 +71,10 @@ export const Stepper: React.FC<StepperProps> = ({
                       <span
                         className={`text-xs font-medium ${
                           isCurrent
-                            ? 'text-brand-slate-900 font-bold'
+                            ? 'text-bridge-charcoal-900 font-bold'
                             : isCompleted
-                            ? 'text-brand-slate-700'
-                            : 'text-brand-slate-500'
+                            ? 'text-bridge-charcoal-700'
+                            : 'text-bridge-charcoal-500'
                         }`}
                       >
                         {label}
@@ -87,8 +87,8 @@ export const Stepper: React.FC<StepperProps> = ({
                     <div
                       className={`hidden sm:block flex-1 h-0.5 ml-4 transition-colors ${
                         stepNumber < currentStep
-                          ? 'bg-brand-teal-600'
-                          : 'bg-brand-slate-200'
+                          ? 'bg-bridge-gold-500'
+                          : 'bg-bridge-almond-200'
                       }`}
                       aria-hidden="true"
                     />
@@ -103,16 +103,16 @@ export const Stepper: React.FC<StepperProps> = ({
       {/* Mobile Stepper View */}
       <div className="sm:hidden">
         <div className="flex items-center justify-between text-xs mb-2">
-          <span className="font-semibold text-brand-teal-700 uppercase tracking-wider">
+          <span className="font-semibold text-bridge-gold-700 uppercase tracking-wider">
             Step {currentStep} of {totalSteps}
           </span>
-          <span className="font-bold text-brand-slate-900">
+          <span className="font-bold text-bridge-charcoal-900">
             {stepLabels[currentStep - 1]}
           </span>
         </div>
-        <div className="w-full bg-brand-slate-200 rounded-full h-1.5 overflow-hidden">
+        <div className="w-full bg-bridge-almond-200 rounded-full h-1.5 overflow-hidden">
           <div
-            className="bg-brand-teal-600 h-1.5 rounded-full transition-all duration-300"
+            className="bg-bridge-gold-500 h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${(currentStep / totalSteps) * 100}%` }}
           />
         </div>

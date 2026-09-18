@@ -1,4 +1,4 @@
-# CivicTrust AI
+# CivicBridge
 
 **AI-powered civic complaint verification platform for Mysuru.**  
 Built for HackMysuru 1.0.
@@ -7,7 +7,7 @@ Built for HackMysuru 1.0.
 
 ## What it does
 
-CivicTrust AI helps citizens submit civic complaints (potholes, garbage dumping, broken streetlights, etc.) and uses explainable AI signals to flag possible duplicates before they reach municipal officers. Officers get a prioritised review queue with verification context. The public can track complaints and view anonymised municipal analytics.
+CivicBridge helps citizens submit civic complaints (potholes, garbage dumping, broken streetlights, etc.) and uses explainable AI signals to flag possible duplicates before they reach municipal officers. Officers get a prioritised review queue with verification context. The public can track complaints and view anonymised municipal analytics.
 
 ---
 
@@ -31,7 +31,7 @@ CivicTrust AI helps citizens submit civic complaints (potholes, garbage dumping,
 
 ---
 
-## Quick Start (Demo)
+## Quick Start
 
 ### 1. Configure the backend
 
@@ -65,7 +65,7 @@ Edit `client/.env`:
 VITE_API_URL=http://localhost:5000
 ```
 
-> For a remotely hosted demo, set `VITE_API_URL=https://<your-server-host>`.
+> For a remotely hosted environment, set `VITE_API_URL=https://<your-server-host>`.
 
 ### 3. Install dependencies
 
@@ -93,15 +93,13 @@ Open **http://localhost:5173** in your browser.
 
 ---
 
-## Demo Credentials
+## Authentication & Role Access
 
-| Role | Email | Password |
-|------|-------|----------|
-| Citizen | `suresh.gowda@example.com` | `password123` |
-| Citizen | `meera.iyer@example.com` | `password123` |
-| MCC Officer | `officer.ward48@mcc.gov.in` | `Officer@Mysuru48` |
+In production-first mode, default and demo credentials tables have been removed for data security:
 
----
+- **Citizens:** Register or authenticate directly through the Citizen Portal using mobile number or email with password. Authenticated citizens can track their personal submissions, view review stages, and access profile details.
+- **Municipal Officers:** MCC administrative officers sign in to access the Officer Queue and Review Action Panel. New officer account registration requires a valid municipal invite key matching `OFFICER_INVITE_SECRET`.
+
 
 ## Core Demo Flows
 
@@ -175,4 +173,4 @@ HackMysuru/
 
 ---
 
-*CivicTrust AI — HackMysuru 1.0*
+*CivicBridge — HackMysuru 1.0*

@@ -183,19 +183,19 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
   };
 
   return (
-    <div data-test-id="complaint-drawer" className="fixed inset-0 z-50 overflow-hidden bg-brand-slate-900/50 backdrop-blur-xs flex justify-end animate-fadeIn">
-      <div className="relative w-full max-w-3xl bg-brand-slate-50 h-full flex flex-col shadow-civic-lg border-l border-brand-slate-200 overflow-y-auto">
+    <div data-test-id="complaint-drawer" className="fixed inset-0 z-50 overflow-hidden bg-bridge-charcoal-900/50 backdrop-blur-xs flex justify-end animate-fadeIn">
+      <div className="relative w-full max-w-3xl bg-bridge-ivory-50 h-full flex flex-col shadow-civic-lg border-l border-bridge-almond-200 overflow-y-auto">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-20 bg-white border-b border-brand-slate-200 px-6 py-4 flex items-center justify-between shadow-civic-sm">
+        <div className="sticky top-0 z-20 bg-white border-b border-bridge-almond-200 px-6 py-4 flex items-center justify-between shadow-civic-sm">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono font-bold text-brand-slate-900 text-base">
+              <span className="font-mono font-bold text-bridge-charcoal-900 text-base">
                 {complaint?.id || complaintId}
               </span>
               <button
                 type="button"
                 onClick={() => handleCopy(complaint?.id || complaintId, 'header-id')}
-                className="text-brand-slate-400 hover:text-brand-slate-700 p-0.5 rounded"
+                className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-0.5 rounded"
                 title="Copy ID"
               >
                 {copiedField === 'header-id' ? (
@@ -206,12 +206,12 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               </button>
 
               {complaint?.trackingToken && (
-                <span className="text-xs font-mono text-brand-slate-600 bg-brand-slate-100 border border-brand-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="text-xs font-mono text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2 py-0.5 rounded flex items-center gap-1">
                   <span>TRK: {complaint.trackingToken}</span>
                   <button
                     type="button"
                     onClick={() => handleCopy(complaint.trackingToken, 'header-trk')}
-                    className="text-brand-slate-400 hover:text-brand-slate-700"
+                    className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700"
                     title="Copy Token"
                   >
                     {copiedField === 'header-trk' ? (
@@ -230,10 +230,10 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-brand-slate-500">
-              <span>Category: <strong className="capitalize text-brand-slate-800">{complaint?.category.replace(/_/g, ' ')}</strong></span>
-              <span className="text-brand-slate-300">•</span>
-              <span>Ward: <strong className="text-brand-slate-800">{complaint?.locationArea}</strong></span>
+            <div className="flex items-center gap-2 text-xs text-bridge-charcoal-500">
+              <span>Category: <strong className="capitalize text-bridge-charcoal-800">{complaint?.category.replace(/_/g, ' ')}</strong></span>
+              <span className="text-bridge-charcoal-300">•</span>
+              <span>Ward: <strong className="text-bridge-charcoal-800">{complaint?.locationArea}</strong></span>
             </div>
           </div>
 
@@ -246,7 +246,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-brand-slate-400 hover:text-brand-slate-700 hover:bg-brand-slate-100 rounded-lg transition"
+              className="p-1.5 text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 rounded-lg transition"
               aria-label="Close drawer"
             >
               <X className="w-5 h-5" />
@@ -258,11 +258,11 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
         <div className="p-6 space-y-6 flex-1">
           {isLoading ? (
             <div className="py-24 flex flex-col items-center justify-center text-center space-y-3">
-              <Loader2 className="w-8 h-8 text-brand-teal-600 animate-spin" />
-              <p className="text-sm text-brand-slate-700 font-medium">
+              <Loader2 className="w-8 h-8 text-bridge-gold-600 animate-spin" />
+              <p className="text-sm text-bridge-charcoal-700 font-medium">
                 Retrieving complaint dossier, evidence, and verification ledger...
               </p>
-              <span className="text-xs text-brand-slate-400 font-mono">
+              <span className="text-xs text-bridge-charcoal-400 font-mono">
                 Query ID: {complaintId}
               </span>
             </div>
@@ -288,38 +288,38 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
           ) : (
             <>
               {/* STATUS & CONSOLIDATION SUMMARY HERO */}
-              <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm space-y-2.5">
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-4 shadow-civic-sm space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-brand-teal-700 shrink-0" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-brand-slate-600">
+                    <Clock className="w-4 h-4 text-bridge-gold-600 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-600">
                       Lifecycle Stage:
                     </span>
-                    <span className="font-bold text-xs text-brand-slate-900">
+                    <span className="font-bold text-xs text-bridge-charcoal-900">
                       {complaint.status}
                     </span>
                   </div>
                   {complaint.duplicateClusterId && (
-                    <span className="text-[11px] font-mono font-semibold bg-brand-slate-100 text-brand-slate-700 px-2 py-0.5 rounded border border-brand-slate-200">
+                    <span className="text-[11px] font-mono font-semibold bg-bridge-almond-100 text-bridge-charcoal-700 px-2 py-0.5 rounded border border-bridge-almond-200">
                       Cluster: {complaint.duplicateClusterId}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-brand-slate-600 leading-relaxed bg-brand-slate-50 p-2.5 rounded-lg border border-brand-slate-200/70">
+                <p className="text-xs text-bridge-charcoal-600 leading-relaxed bg-bridge-almond-50/60 p-2.5 rounded-lg border border-bridge-almond-200">
                   {getStatusDescription(complaint.status)}
                 </p>
 
                 {/* Primary Complaint Link if Consolidated */}
                 {complaint.primaryComplaintId && (
-                  <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between text-xs text-teal-950">
+                  <div className="p-3 bg-bridge-gold-50/70 border border-bridge-gold-200 rounded-lg flex items-center justify-between text-xs text-bridge-gold-950">
                     <div className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-brand-teal-700 shrink-0" />
+                      <Layers className="w-4 h-4 text-bridge-gold-600 shrink-0" />
                       <span>
                         Consolidated into Primary Ticket:{' '}
-                        <strong className="font-mono text-brand-teal-900">#{complaint.primaryComplaintId}</strong>
+                        <strong className="font-mono text-bridge-gold-900">#{complaint.primaryComplaintId}</strong>
                       </span>
                     </div>
-                    <span className="text-[11px] font-semibold text-brand-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">
+                    <span className="text-[11px] font-semibold text-bridge-gold-800 bg-white px-2 py-0.5 rounded border border-bridge-gold-200">
                       Merged Secondary
                     </span>
                   </div>
@@ -327,11 +327,11 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               </div>
 
               {/* SECTION 1: CITIZEN STATEMENT & METADATA OVERVIEW */}
-              <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-brand-teal-700" />
-                    <h3 className="text-sm font-semibold text-brand-slate-800">
+                    <User className="w-4 h-4 text-bridge-gold-600" />
+                    <h3 className="text-sm font-semibold text-bridge-charcoal-800">
                       Citizen Dossier & Grievance Particulars
                     </h3>
                   </div>
@@ -341,63 +341,63 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 </div>
 
                 {/* Citizen Contact Grid */}
-                <div data-test-id="citizen-info" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-brand-slate-50 p-3 rounded-lg border border-brand-slate-200/70">
+                <div data-test-id="citizen-info" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-bridge-almond-50/60 p-3 rounded-lg border border-bridge-almond-200">
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px]">Citizen Name</span>
-                    <span className="font-semibold text-brand-slate-800">
+                    <span className="text-bridge-charcoal-400 block text-[11px]">Citizen Name</span>
+                    <span className="font-semibold text-bridge-charcoal-800">
                       {detail?.citizen?.name || 'Registered Citizen'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px]">Contact Email</span>
-                    <span className="font-mono text-brand-slate-800 truncate block">
+                    <span className="text-bridge-charcoal-400 block text-[11px]">Contact Email</span>
+                    <span className="font-mono text-bridge-charcoal-800 truncate block">
                       {detail?.citizen?.email || 'Confidential'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px]">Registered Ward</span>
-                    <span className="font-medium text-brand-slate-800">
+                    <span className="text-bridge-charcoal-400 block text-[11px]">Registered Ward</span>
+                    <span className="font-medium text-bridge-charcoal-800">
                       {detail?.citizen?.ward || complaint.locationArea}
                     </span>
                   </div>
                 </div>
 
                 {/* Structured Metadata Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-brand-slate-50 p-3 rounded-lg border border-brand-slate-200/70 text-brand-slate-700">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-bridge-almond-50/60 p-3 rounded-lg border border-bridge-almond-200 text-bridge-charcoal-700">
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-brand-teal-600" />
+                    <span className="text-bridge-charcoal-400 block text-[11px] flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-bridge-gold-600" />
                       Observed Date
                     </span>
-                    <span className="font-medium text-brand-slate-800">{complaint.observedDate}</span>
+                    <span className="font-medium text-bridge-charcoal-800">{complaint.observedDate}</span>
                   </div>
 
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-brand-teal-600" />
+                    <span className="text-bridge-charcoal-400 block text-[11px] flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-bridge-gold-600" />
                       Reported At
                     </span>
-                    <span className="font-medium text-brand-slate-800 text-[11px]">
+                    <span className="font-medium text-bridge-charcoal-800 text-[11px]">
                       {new Date(complaint.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
-                      <Building2 className="w-3 h-3 text-brand-teal-600" />
+                    <span className="text-bridge-charcoal-400 block text-[11px] flex items-center gap-1">
+                      <Building2 className="w-3 h-3 text-bridge-gold-600" />
                       Department
                     </span>
-                    <span className="font-medium text-brand-slate-800 truncate block">
+                    <span className="font-medium text-bridge-charcoal-800 truncate block">
                       {complaint.assignedDepartment || 'Routing Pending'}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
-                      <Compass className="w-3 h-3 text-brand-teal-600" />
+                    <span className="text-bridge-charcoal-400 block text-[11px] flex items-center gap-1">
+                      <Compass className="w-3 h-3 text-bridge-gold-600" />
                       Coordinates
                     </span>
-                    <span className="font-mono text-brand-slate-800 text-[11px]">
+                    <span className="font-mono text-bridge-charcoal-800 text-[11px]">
                       {complaint.latitude && complaint.longitude
                         ? `${complaint.latitude.toFixed(4)}, ${complaint.longitude.toFixed(4)}`
                         : 'Area Only'}
@@ -406,35 +406,35 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 </div>
 
                 {/* Geographic Address */}
-                <div className="text-xs flex items-start gap-2 text-brand-slate-600 bg-brand-slate-50 p-2.5 rounded-lg border border-brand-slate-200/60">
-                  <MapPin className="w-4 h-4 text-brand-teal-600 shrink-0 mt-0.5" />
+                <div className="text-xs flex items-start gap-2 text-bridge-charcoal-600 bg-bridge-almond-50/60 p-2.5 rounded-lg border border-bridge-almond-200">
+                  <MapPin className="w-4 h-4 text-bridge-gold-600 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-semibold text-brand-slate-800">
+                    <span className="font-semibold text-bridge-charcoal-800">
                       {complaint.locationArea}
                     </span>
                     {complaint.addressText && (
-                      <span className="text-brand-slate-600"> — {complaint.addressText}</span>
+                      <span className="text-bridge-charcoal-600"> — {complaint.addressText}</span>
                     )}
                   </div>
                 </div>
 
                 {/* Submitted Description Statement */}
                 <div>
-                  <span className="text-xs font-semibold text-brand-slate-700 block mb-1">
+                  <span className="text-xs font-semibold text-bridge-charcoal-700 block mb-1">
                     Submitted Grievance Description:
                   </span>
-                  <div className="p-3 bg-brand-slate-50 rounded-lg border border-brand-slate-200 text-brand-slate-800 text-xs leading-relaxed whitespace-pre-wrap font-normal">
+                  <div className="p-3 bg-bridge-almond-50/60 rounded-lg border border-bridge-almond-200 text-bridge-charcoal-800 text-xs leading-relaxed whitespace-pre-wrap font-normal">
                     {complaint.description}
                   </div>
                 </div>
               </div>
 
               {/* SECTION 2: STRUCTURED EVIDENCE REVIEW & FORENSICS (Rule 7 Compliance) */}
-              <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
                   <div className="flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-brand-teal-700" />
-                    <h3 className="text-sm font-semibold text-brand-slate-800">
+                    <Camera className="w-4 h-4 text-bridge-gold-600" />
+                    <h3 className="text-sm font-semibold text-bridge-charcoal-800">
                       Evidence Dossier & Forensics
                     </h3>
                   </div>
@@ -452,7 +452,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 {complaint.hasImage ? (
                   <div className="space-y-4">
                     {/* Visual Evidence Preview with Expand Button */}
-                    <div className="relative group bg-brand-slate-100 rounded-xl overflow-hidden border border-brand-slate-200">
+                    <div className="relative group bg-bridge-almond-100 rounded-xl overflow-hidden border border-bridge-almond-200">
                       <AuthenticatedEvidenceImage
                         complaintId={complaint.id}
                         className="w-full h-64 sm:h-72 object-cover"
@@ -461,7 +461,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsImageModalOpen(true)}
-                        className="absolute bottom-3 right-3 bg-brand-slate-900/80 hover:bg-brand-slate-900 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-xs transition shadow-civic-sm cursor-pointer"
+                        className="absolute bottom-3 right-3 bg-bridge-charcoal-900/80 hover:bg-bridge-charcoal-900 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-xs transition shadow-civic-sm cursor-pointer"
                       >
                         <Maximize2 className="w-3.5 h-3.5" />
                         <span>Enlarge Evidence</span>
@@ -469,38 +469,38 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                     </div>
 
                     {/* Cryptographic & File Metadata Inspection Card */}
-                    <div className="bg-brand-slate-50 rounded-xl p-4 border border-brand-slate-200 text-xs space-y-3">
-                      <div className="font-semibold text-brand-slate-800 flex items-center justify-between">
+                    <div className="bg-bridge-almond-50/60 rounded-xl p-4 border border-bridge-almond-200 text-xs space-y-3">
+                      <div className="font-semibold text-bridge-charcoal-800 flex items-center justify-between">
                         <span>Photographic File & Cryptographic Signatures:</span>
-                        <span className="text-[11px] font-mono text-brand-slate-500">
+                        <span className="text-[11px] font-mono text-bridge-charcoal-500">
                           Secure Multipart Ingestion
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
                         <div>
-                          <span className="text-brand-slate-400 block">Filename:</span>
-                          <span className="font-mono text-brand-slate-800 truncate block font-medium">
+                          <span className="text-bridge-charcoal-400 block">Filename:</span>
+                          <span className="font-mono text-bridge-charcoal-800 truncate block font-medium">
                             {complaint.evidenceMetadata?.filename || 'Attachment'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-400 block">File Size:</span>
-                          <span className="font-mono text-brand-slate-800 font-medium">
+                          <span className="text-bridge-charcoal-400 block">File Size:</span>
+                          <span className="font-mono text-bridge-charcoal-800 font-medium">
                             {complaint.evidenceMetadata?.sizeBytes
                               ? `${Math.round(complaint.evidenceMetadata.sizeBytes / 1024)} KB`
                               : 'Recorded'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-400 block">MIME Type:</span>
-                          <span className="font-mono text-brand-slate-800 font-medium">
+                          <span className="text-bridge-charcoal-400 block">MIME Type:</span>
+                          <span className="font-mono text-bridge-charcoal-800 font-medium">
                             {complaint.evidenceMetadata?.mimetype || 'Image'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-400 block">Stamp Analysis:</span>
-                          <span className="text-brand-slate-700 font-medium flex items-center gap-1">
+                          <span className="text-bridge-charcoal-400 block">Stamp Analysis:</span>
+                          <span className="text-bridge-charcoal-700 font-medium flex items-center gap-1">
                             <HelpCircle className="w-3 h-3 text-amber-600" />
                             Requires Officer Visual Review
                           </span>
@@ -508,18 +508,18 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                       </div>
 
                       {/* Cryptographic SHA-256 and Perceptual Hashes */}
-                      <div className="pt-2 border-t border-brand-slate-200/80 space-y-1.5">
+                      <div className="pt-2 border-t border-bridge-almond-200 space-y-1.5">
                         {complaint.imageSha256 && (
-                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-brand-slate-200 font-mono text-[11px]">
+                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-bridge-almond-200 font-mono text-[11px]">
                             <div className="flex items-center gap-1.5 truncate">
-                              <Hash className="w-3.5 h-3.5 text-brand-teal-600 shrink-0" />
-                              <span className="text-brand-slate-400 shrink-0">SHA-256:</span>
-                              <span className="text-brand-slate-800 truncate">{complaint.imageSha256}</span>
+                              <Hash className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                              <span className="text-bridge-charcoal-400 shrink-0">SHA-256:</span>
+                              <span className="text-bridge-charcoal-800 truncate">{complaint.imageSha256}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleCopy(complaint.imageSha256!, 'sha256')}
-                              className="text-brand-slate-400 hover:text-brand-slate-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                              className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
                               title="Copy SHA-256 Hash"
                             >
                               {copiedField === 'sha256' ? (
@@ -532,16 +532,16 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                         )}
 
                         {complaint.imagePhash && (
-                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-brand-slate-200 font-mono text-[11px]">
+                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-bridge-almond-200 font-mono text-[11px]">
                             <div className="flex items-center gap-1.5 truncate">
-                              <Camera className="w-3.5 h-3.5 text-brand-teal-600 shrink-0" />
-                              <span className="text-brand-slate-400 shrink-0">dHash (64-bit gradient):</span>
-                              <span className="text-brand-slate-800 truncate">{complaint.imagePhash}</span>
+                              <Camera className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                              <span className="text-bridge-charcoal-400 shrink-0">dHash (64-bit gradient):</span>
+                              <span className="text-bridge-charcoal-800 truncate">{complaint.imagePhash}</span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleCopy(complaint.imagePhash!, 'phash')}
-                              className="text-brand-slate-400 hover:text-brand-slate-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                              className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
                               title="Copy Perceptual Hash"
                             >
                               {copiedField === 'phash' ? (
@@ -573,22 +573,22 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   </div>
                 ) : (
                   /* Clean Structured Empty State */
-                  <div className="bg-brand-slate-50 border border-dashed border-brand-slate-300 rounded-xl p-6 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-brand-slate-100 border border-brand-slate-200 flex items-center justify-center mx-auto text-brand-slate-400">
+                  <div className="bg-bridge-almond-50/50 border border-dashed border-bridge-almond-300 rounded-xl p-6 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-bridge-almond-100 border border-bridge-almond-200 flex items-center justify-center mx-auto text-bridge-charcoal-400">
                       <ImageOff className="w-6 h-6" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-bold text-brand-slate-800 text-xs">
+                      <h4 className="font-bold text-bridge-charcoal-800 text-xs">
                         No Photographic Evidence Attached
                       </h4>
-                      <p className="text-xs text-brand-slate-500 max-w-md mx-auto leading-relaxed">
+                      <p className="text-xs text-bridge-charcoal-500 max-w-md mx-auto leading-relaxed">
                         This grievance was lodged as a textual statement without image files.
                         Prior to issuing contractor work orders, on-site physical survey by ward engineering staff is advised.
                       </p>
                     </div>
 
-                    <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-brand-slate-200 text-[11px] text-brand-slate-600">
-                      <MapPin className="w-3.5 h-3.5 text-brand-teal-600" />
+                    <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-bridge-almond-200 text-[11px] text-bridge-charcoal-600">
+                      <MapPin className="w-3.5 h-3.5 text-bridge-gold-600" />
                       <span>Physical site verification required for ward dispatch</span>
                     </div>
                   </div>
@@ -597,11 +597,11 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
 
               {/* SECTION 3: EXPLAINABLE AI VERIFICATION LEDGER (Rule 8 Compliance) */}
               {verification ? (
-                <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
+                <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
                     <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-brand-teal-700" />
-                      <h3 className="text-sm font-semibold text-brand-slate-800">
+                      <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
+                      <h3 className="text-sm font-semibold text-bridge-charcoal-800">
                         Explainable Verification Signals
                       </h3>
                     </div>
@@ -651,8 +651,8 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   </div>
 
                   {/* Recommended Next Protocol */}
-                  <div className="p-3.5 bg-brand-teal-50/80 border border-brand-teal-200 rounded-xl text-xs text-brand-teal-950">
-                    <strong className="font-bold text-brand-teal-950 block mb-0.5">
+                  <div className="p-3.5 bg-bridge-gold-50/80 border border-bridge-gold-200 rounded-xl text-xs text-bridge-gold-950">
+                    <strong className="font-bold text-bridge-gold-950 block mb-0.5">
                       Recommended Officer Protocol:
                     </strong>
                     <span className="leading-relaxed">{verification.recommendedAction}</span>
@@ -660,13 +660,13 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 </div>
               ) : (
                 /* Verification Pending / Empty State */
-                <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm text-center text-xs text-brand-slate-500">
+                <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm text-center text-xs text-bridge-charcoal-500">
                   Verification signals are being computed for this intake submission.
                 </div>
               )}
 
               {/* SECTION 4: DUPLICATE CLUSTER INSPECTOR */}
-              <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm">
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm">
                 <DuplicateClusterInspector
                   currentComplaint={complaint}
                   matchedCandidates={detail?.matchedCandidates || []}
@@ -690,25 +690,25 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
 
       {/* Enlarged Photo Modal */}
       {isImageModalOpen && complaint && (
-        <div className="fixed inset-0 z-60 bg-brand-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-civic-lg border border-brand-slate-200 flex flex-col max-h-[90vh]">
-            <div className="bg-brand-slate-50 px-5 py-3 border-b border-brand-slate-200 flex items-center justify-between">
+        <div className="fixed inset-0 z-60 bg-bridge-charcoal-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-civic-lg border border-bridge-almond-200 flex flex-col max-h-[90vh]">
+            <div className="bg-bridge-almond-50 px-5 py-3 border-b border-bridge-almond-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-brand-teal-700" />
-                <span className="font-bold text-xs text-brand-slate-900">
+                <Camera className="w-4 h-4 text-bridge-gold-600" />
+                <span className="font-bold text-xs text-bridge-charcoal-900">
                   Evidence Inspection: #{complaint.id}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsImageModalOpen(false)}
-                className="text-brand-slate-400 hover:text-brand-slate-700 p-1 rounded-lg"
+                className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 bg-brand-slate-900 flex items-center justify-center overflow-auto max-h-[70vh]">
+            <div className="p-4 bg-bridge-charcoal-900 flex items-center justify-center overflow-auto max-h-[70vh]">
               <AuthenticatedEvidenceImage
                 complaintId={complaint.id}
                 className="max-h-[65vh] w-auto object-contain rounded-lg shadow-civic-md"
@@ -717,8 +717,8 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               />
             </div>
 
-            <div className="p-4 bg-white border-t border-brand-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="font-mono text-[11px] text-brand-slate-500">
+            <div className="p-4 bg-white border-t border-bridge-almond-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="font-mono text-[11px] text-bridge-charcoal-500">
                 {complaint.evidenceMetadata?.filename || 'Attachment'} •{' '}
                 {complaint.evidenceMetadata?.sizeBytes
                   ? `${Math.round(complaint.evidenceMetadata.sizeBytes / 1024)} KB`

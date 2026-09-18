@@ -12,7 +12,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
 import type { CitizenUser, AuthMode } from '../../types/auth';
 import { apiLogin, apiRegisterCitizen } from '../../services/api';
 
@@ -115,39 +114,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-slate-900/50 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bridge-charcoal-900/40 backdrop-blur-xs animate-fadeIn"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-civic-lg border border-brand-slate-200">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-civic-lg border border-bridge-almond-200">
         {/* Modal Header */}
         <div className="flex items-start justify-between">
           <div>
-            <Badge
-              variant={mode === 'officer' ? 'review' : 'info'}
-              size="sm"
-              className="mb-1.5"
-            >
-              {mode === 'officer' ? 'MCC Officer Portal' : 'Citizen Access'}
-            </Badge>
-            <h2 id="auth-modal-title" className="text-xl font-bold text-brand-slate-900">
-              {mode === 'login' && 'Log in to Civic Trust'}
+            <h3 id="auth-modal-title" className="text-lg font-bold text-bridge-charcoal-900 tracking-tight">
+              {mode === 'login' && 'Citizen Sign In'}
               {mode === 'signup' && 'Create Citizen Account'}
-              {mode === 'officer' && 'MCC Officer Login'}
-            </h2>
-            <p className="text-xs text-brand-slate-600 mt-0.5">
+              {mode === 'officer' && 'MCC Officer Access'}
+            </h3>
+            <p className="text-xs text-bridge-charcoal-600 mt-1">
               {mode === 'login' &&
                 'Sign in to submit complaints and track your neighborhood reports.'}
               {mode === 'signup' &&
-                'Register with Civic Trust to report civic issues and follow resolution.'}
+                'Register with CivicBridge to report civic issues and follow resolution.'}
               {mode === 'officer' &&
                 'Secure access for verified Mysuru City Corporation ward engineers.'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-brand-slate-400 hover:text-brand-slate-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-brand-teal-600 cursor-pointer"
+            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -156,7 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Action Reason Banner */}
         {reasonMessage && (
-          <div className="mt-4 p-3 rounded-lg bg-brand-teal-50 border border-brand-teal-200 text-xs text-brand-teal-900 leading-normal">
+          <div className="mt-4 p-3 rounded-lg bg-bridge-gold-50 border border-bridge-gold-200 text-xs text-bridge-charcoal-900 leading-normal">
             {reasonMessage}
           </div>
         )}
@@ -173,7 +165,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Mode Toggle Tabs */}
-        <div className="mt-5 flex border-b border-brand-slate-200">
+        <div className="mt-5 flex border-b border-bridge-almond-200">
           <button
             type="button"
             onClick={() => {
@@ -182,8 +174,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
               mode === 'login'
-                ? 'border-brand-teal-600 text-brand-teal-700'
-                : 'border-transparent text-brand-slate-500 hover:text-brand-slate-800'
+                ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
             }`}
           >
             Citizen Login
@@ -196,8 +188,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
               mode === 'signup'
-                ? 'border-brand-teal-600 text-brand-teal-700'
-                : 'border-transparent text-brand-slate-500 hover:text-brand-slate-800'
+                ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
             }`}
           >
             Register
@@ -210,8 +202,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
               mode === 'officer'
-                ? 'border-amber-600 text-amber-700'
-                : 'border-transparent text-brand-slate-500 hover:text-brand-slate-800'
+                ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
             }`}
           >
             MCC Officer
@@ -246,12 +238,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div>
               <label
                 htmlFor="auth-name"
-                className="block text-xs font-semibold text-brand-slate-900 mb-1"
+                className="block text-xs font-semibold text-bridge-charcoal-900 mb-1"
               >
                 Full Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-brand-slate-400 absolute left-3 top-2.5" />
+                <UserIcon className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
                 <input
                   id="auth-name"
                   type="text"
@@ -259,7 +251,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ramesh Rao"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-brand-slate-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 disabled:opacity-60"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
                 />
               </div>
             </div>
@@ -268,13 +260,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div>
             <label
               htmlFor="auth-email"
-              className="block text-xs font-semibold text-brand-slate-900 mb-1"
+              className="block text-xs font-semibold text-bridge-charcoal-900 mb-1"
             >
               {mode === 'officer' ? 'Official MCC Email' : 'Email Address'}{' '}
               <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-brand-slate-400 absolute left-3 top-2.5" />
+              <Mail className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
               <input
                 id="auth-email"
                 type="email"
@@ -284,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder={
                   mode === 'officer' ? 'officer.ward48@mcc.gov.in' : 'name@example.com'
                 }
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-brand-slate-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 disabled:opacity-60"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
               />
             </div>
           </div>
@@ -293,13 +285,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div>
               <label
                 htmlFor="auth-ward"
-                className="block text-xs font-semibold text-brand-slate-900 mb-1"
+                className="block text-xs font-semibold text-bridge-charcoal-900 mb-1"
               >
                 Mysuru Locality / Ward{' '}
-                <span className="text-brand-slate-400 font-normal">(Optional)</span>
+                <span className="text-bridge-charcoal-400 font-normal">(Optional)</span>
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-brand-slate-400 absolute left-3 top-2.5" />
+                <MapPin className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
                 <input
                   id="auth-ward"
                   type="text"
@@ -307,7 +299,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={ward}
                   onChange={(e) => setWard(e.target.value)}
                   placeholder="e.g. Kuvempunagar, Ward 48"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-brand-slate-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 disabled:opacity-60"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
                 />
               </div>
             </div>
@@ -316,12 +308,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div>
             <label
               htmlFor="auth-password"
-              className="block text-xs font-semibold text-brand-slate-900 mb-1"
+              className="block text-xs font-semibold text-bridge-charcoal-900 mb-1"
             >
               Password <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-brand-slate-400 absolute left-3 top-2.5" />
+              <Lock className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
               <input
                 id="auth-password"
                 type="password"
@@ -329,7 +321,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-brand-slate-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 disabled:opacity-60"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
               />
             </div>
           </div>
@@ -337,7 +329,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="pt-2">
             <Button
               type="submit"
-              variant={mode === 'officer' ? 'primary' : 'primary'}
+              variant="primary"
               size="md"
               disabled={isLoading}
               className="w-full"
@@ -357,14 +349,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         </form>
 
-        <div className="mt-4 pt-3 border-t border-brand-slate-100 text-center text-xs text-brand-slate-500">
+        <div className="mt-4 pt-3 border-t border-bridge-almond-200/80 text-center text-xs text-bridge-charcoal-500">
           {mode === 'login' && (
             <span>
               Don&apos;t have an account yet?{' '}
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className="text-brand-teal-700 font-semibold hover:underline cursor-pointer"
+                className="text-bridge-gold-700 font-semibold hover:underline cursor-pointer"
               >
                 Create one now
               </button>
@@ -376,7 +368,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className="text-brand-teal-700 font-semibold hover:underline cursor-pointer"
+                className="text-bridge-gold-700 font-semibold hover:underline cursor-pointer"
               >
                 Log in
               </button>
@@ -388,7 +380,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className="text-brand-teal-700 font-semibold hover:underline cursor-pointer"
+                className="text-bridge-gold-700 font-semibold hover:underline cursor-pointer"
               >
                 Citizen Login
               </button>

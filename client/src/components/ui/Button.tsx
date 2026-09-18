@@ -16,7 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-teal-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-bridge-gold-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer';
 
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',
@@ -25,10 +25,10 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-brand-teal-600 text-white hover:bg-brand-teal-700 shadow-civic-sm active:bg-brand-teal-800',
-    secondary: 'bg-brand-mint-100 text-brand-teal-800 hover:bg-brand-mint-200 border border-brand-mint-300 active:bg-brand-mint-300',
-    outline: 'bg-white text-brand-slate-700 hover:bg-brand-slate-50 border border-brand-slate-200 shadow-civic-sm active:bg-brand-slate-100',
-    ghost: 'text-brand-slate-700 hover:bg-brand-slate-100 active:bg-brand-slate-200',
+    primary: 'bg-bridge-charcoal-800 text-white hover:bg-bridge-charcoal-900 shadow-bridge-sm active:bg-bridge-charcoal-950 border border-bridge-charcoal-700',
+    secondary: 'bg-bridge-almond-100 text-bridge-charcoal-800 hover:bg-bridge-almond-200 border border-bridge-almond-300 active:bg-bridge-almond-300',
+    outline: 'bg-white text-bridge-charcoal-800 hover:bg-bridge-ivory-100 border border-bridge-almond-300 shadow-bridge-sm active:bg-bridge-almond-200',
+    ghost: 'text-bridge-charcoal-700 hover:bg-bridge-almond-100/80 hover:text-bridge-charcoal-900 active:bg-bridge-almond-200',
   };
 
   return (

@@ -119,19 +119,19 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
   };
 
   return (
-    <div className="bg-white border border-brand-slate-200 rounded-xl shadow-civic-sm overflow-hidden flex flex-col">
+    <div className="bg-white border border-bridge-almond-200 rounded-xl shadow-civic-sm overflow-hidden flex flex-col">
       {/* Search & Filter Bar */}
-      <div className="p-4 border-b border-brand-slate-100 bg-brand-slate-50/70 space-y-3">
+      <div className="p-4 border-b border-bridge-almond-200 bg-bridge-almond-50/70 space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Free Text Search */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-brand-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={filters.q || ''}
               onChange={handleSearchChange}
               placeholder="Search by ID, Tracking Token, description, street..."
-              className="w-full bg-white border border-brand-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-brand-slate-800 placeholder-brand-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-teal-500 transition"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg pl-9 pr-3 py-1.5 text-xs text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition"
             />
           </div>
 
@@ -156,7 +156,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleResetFilters}
-                  className="text-xs text-brand-slate-500 hover:text-brand-slate-800"
+                  className="text-xs text-bridge-charcoal-500 hover:text-bridge-charcoal-800"
                 >
                   Clear Filters
                 </Button>
@@ -171,7 +171,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.status || 'ALL'}
               onChange={handleStatusChange}
-              className="w-full bg-white border border-brand-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-brand-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-teal-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
             >
               <option value="ALL">All Statuses</option>
               <option value="SUBMITTED">Submitted</option>
@@ -188,7 +188,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.duplicateRisk || 'ALL'}
               onChange={handleRiskChange}
-              className="w-full bg-white border border-brand-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-brand-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-teal-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
             >
               <option value="ALL">All Duplicate Risks</option>
               <option value="HIGH">High Duplicate Risk</option>
@@ -202,7 +202,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.locationArea || 'All Localities'}
               onChange={handleLocalityChange}
-              className="w-full bg-white border border-brand-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-brand-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-teal-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
             >
               {LOCALITY_OPTIONS.map((loc) => (
                 <option key={loc} value={loc}>
@@ -217,7 +217,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.category || ''}
               onChange={handleCategoryChange}
-              className="w-full bg-white border border-brand-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-brand-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-teal-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
             >
               {CATEGORY_OPTIONS.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -233,7 +233,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-brand-slate-50/80 border-b border-brand-slate-200 text-brand-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+            <tr className="bg-bridge-almond-100/70 border-b border-bridge-almond-200 text-bridge-charcoal-700 font-semibold uppercase tracking-wider text-[11px]">
               <th className="py-3 px-4">Grievance & Token</th>
               <th className="py-3 px-4">Category & Locality</th>
               <th className="py-3 px-4">Observed Date</th>
@@ -242,25 +242,25 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brand-slate-100">
+          <tbody className="divide-y divide-bridge-almond-100">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-brand-slate-500">
+                <td colSpan={6} className="py-12 text-center text-bridge-charcoal-500">
                   <div className="flex flex-col items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-brand-teal-600 border-t-transparent rounded-full animate-spin mb-2" />
+                    <div className="w-6 h-6 border-2 border-bridge-gold-500 border-t-transparent rounded-full animate-spin mb-2" />
                     <span>Loading municipal complaints queue...</span>
                   </div>
                 </td>
               </tr>
             ) : complaints.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-brand-slate-500">
+                <td colSpan={6} className="py-12 text-center text-bridge-charcoal-500">
                   <div className="max-w-sm mx-auto space-y-2">
-                    <AlertCircle className="w-8 h-8 text-brand-slate-300 mx-auto" />
-                    <p className="font-semibold text-brand-slate-700 text-sm">
+                    <AlertCircle className="w-8 h-8 text-bridge-charcoal-300 mx-auto" />
+                    <p className="font-semibold text-bridge-charcoal-700 text-sm">
                       No complaints match the selected criteria
                     </p>
-                    <p className="text-xs text-brand-slate-400">
+                    <p className="text-xs text-bridge-charcoal-400">
                       Try clearing or adjusting search filters to view more records.
                     </p>
                     <Button
@@ -286,15 +286,15 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                     data-test-id="complaint-row"
                     data-complaint-id={item.id}
                     onClick={() => onSelectComplaint(item.id)}
-                    className={`queue-row cursor-pointer ${isSelected ? 'bg-brand-teal-50/60 border-l-4 border-l-brand-teal-600' : ''
+                    className={`queue-row cursor-pointer ${isSelected ? 'bg-bridge-gold-50/70 border-l-4 border-l-bridge-gold-600' : ''
                       }`}
                   >
                     {/* ID & Token */}
                     <td className="py-3 px-4">
-                      <div className="font-mono font-semibold text-brand-slate-800">
+                      <div className="font-mono font-semibold text-bridge-charcoal-800">
                         {item.id}
                       </div>
-                      <div className="font-mono text-[11px] text-brand-slate-400">
+                      <div className="font-mono text-[11px] text-bridge-charcoal-400">
                         {item.trackingToken}
                       </div>
                       {item.isDemo && (
@@ -306,19 +306,19 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
 
                     {/* Category & Locality */}
                     <td className="py-3 px-4">
-                      <div className="font-medium text-brand-slate-800 capitalize">
+                      <div className="font-medium text-bridge-charcoal-800 capitalize">
                         {item.category}
                       </div>
-                      <div className="text-brand-slate-500 text-[11px] flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-brand-teal-600 shrink-0" />
+                      <div className="text-bridge-charcoal-500 text-[11px] flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 text-bridge-gold-600 shrink-0" />
                         <span>{item.locationArea}</span>
                       </div>
                     </td>
 
                     {/* Observed Date */}
-                    <td className="py-3 px-4 text-brand-slate-600 whitespace-nowrap">
+                    <td className="py-3 px-4 text-bridge-charcoal-600 whitespace-nowrap">
                       <div>{item.observedDate}</div>
-                      <div className="text-[10px] text-brand-slate-400">
+                      <div className="text-[10px] text-bridge-charcoal-400">
                         {new Date(item.createdAt).toLocaleDateString()}
                       </div>
                     </td>
@@ -337,7 +337,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                       </Badge>
                       {item.verificationResult?.matches &&
                         item.verificationResult.matches.length > 0 && (
-                          <div className="text-[10px] text-brand-slate-500 mt-0.5">
+                          <div className="text-[10px] text-bridge-charcoal-500 mt-0.5">
                             {item.verificationResult.matches.length} cluster match
                             {item.verificationResult.matches.length > 1 ? 'es' : ''}
                           </div>
@@ -356,7 +356,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                         }}
                         className="text-xs py-1 px-2.5"
                       >
-                        <Eye className="w-3.5 h-3.5 mr-1 text-brand-teal-700" />
+                        <Eye className="w-3.5 h-3.5 mr-1 text-bridge-gold-700" />
                         Inspect Dossier
                       </Button>
                     </td>
@@ -369,9 +369,9 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 bg-brand-slate-50 border-t border-brand-slate-100 flex items-center justify-between text-[11px] text-brand-slate-500">
+      <div className="p-3 bg-bridge-almond-50/80 border-t border-bridge-almond-200 flex items-center justify-between text-[11px] text-bridge-charcoal-500">
         <span>
-          Showing <strong className="text-brand-slate-700">{complaints.length}</strong> grievance record
+          Showing <strong className="text-bridge-charcoal-700">{complaints.length}</strong> grievance record
           {complaints.length === 1 ? '' : 's'}
         </span>
         <span className="italic">

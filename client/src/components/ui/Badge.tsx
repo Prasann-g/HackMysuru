@@ -23,11 +23,11 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles = {
-    verified: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    verified: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     review: 'bg-amber-50 text-amber-800 border-amber-200',
-    duplicate: 'bg-rose-50 text-rose-700 border-rose-200',
-    info: 'bg-brand-teal-50 text-brand-teal-800 border-brand-teal-200',
-    neutral: 'bg-brand-slate-100 text-brand-slate-700 border-brand-slate-200',
+    duplicate: 'bg-rose-50 text-rose-800 border-rose-200',
+    info: 'bg-bridge-gold-50 text-bridge-gold-800 border-bridge-gold-200',
+    neutral: 'bg-bridge-almond-100 text-bridge-charcoal-700 border-bridge-almond-200',
   };
 
   return (

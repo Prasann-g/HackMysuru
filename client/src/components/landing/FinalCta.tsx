@@ -16,12 +16,12 @@ export const FinalCta: React.FC<FinalCtaProps> = ({
   onNavigateToTrack,
 }) => {
   return (
-    <section className="py-16 sm:py-20 bg-gradient-to-b from-brand-slate-50 to-brand-teal-50/40 border-b border-brand-slate-200">
+    <section className="py-16 sm:py-20 bg-gradient-to-b from-bridge-ivory-50 to-bridge-almond-100/60 border-b border-bridge-almond-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-slate-900 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-bridge-charcoal-900 tracking-tight">
           Ready to report a civic issue?
         </h2>
-        <p className="mt-3 text-sm sm:text-base text-brand-slate-600 max-w-xl mx-auto leading-relaxed">
+        <p className="mt-3 text-sm sm:text-base text-bridge-charcoal-600 max-w-xl mx-auto leading-relaxed">
           {isAuthenticated
             ? 'Your citizen account is active. Report a new issue in your Mysuru locality or track the status of existing complaints.'
             : 'Join residents across Mysuru helping maintain cleaner streets, safer roads, and reliable public infrastructure.'}

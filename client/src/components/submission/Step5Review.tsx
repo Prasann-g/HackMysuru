@@ -30,6 +30,8 @@ interface Step5Props {
   onEditStep: (step: number) => void;
   onReset: () => void;
   onNavigateToTrack?: (token: string) => void;
+  onSuccess?: (complaint: ComplaintRecord) => void;
+  onDone?: () => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -47,6 +49,8 @@ export const Step5Review: React.FC<Step5Props> = ({
   onEditStep,
   onReset,
   onNavigateToTrack,
+  onSuccess,
+  onDone,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -107,6 +111,7 @@ export const Step5Review: React.FC<Step5Props> = ({
       });
 
       setSubmittedComplaint(response.complaint);
+      onSuccess?.(response.complaint);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       if (
@@ -161,18 +166,18 @@ export const Step5Review: React.FC<Step5Props> = ({
                 <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider block">
                   Reference to Existing Complaint in Mysore Registry
                 </span>
-                <p className="text-xs text-brand-slate-600 mt-0.5">
+                <p className="text-xs text-bridge-charcoal-600 mt-0.5">
                   An active grievance was already registered with the exact same evidence. Citizen identity and personal details are strictly protected.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
                     Public Tracking Token
                   </span>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="font-mono text-sm sm:text-base font-bold text-brand-slate-900">
+                    <span className="font-mono text-sm sm:text-base font-bold text-bridge-charcoal-900">
                       {existing.trackingToken}
                     </span>
                     <Button
@@ -187,33 +192,33 @@ export const Step5Review: React.FC<Step5Props> = ({
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
                     Current Status & Category
                   </span>
                   <div className="flex items-center gap-2 mt-1.5">
                     <Badge variant="duplicate" size="sm">
                       {existing.status}
                     </Badge>
-                    <span className="text-xs font-semibold text-brand-slate-800">
+                    <span className="text-xs font-semibold text-bridge-charcoal-800">
                       {CATEGORY_LABELS[existing.category] || existing.category}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
                     Observed Area
                   </span>
-                  <span className="text-xs font-semibold text-brand-slate-800 mt-1 block">
+                  <span className="text-xs font-semibold text-bridge-charcoal-800 mt-1 block">
                     {existing.locationArea || 'Mysuru'}
                   </span>
                 </div>
 
                 <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
                     Registration Date
                   </span>
-                  <span className="text-xs font-semibold text-brand-slate-800 mt-1 block">
+                  <span className="text-xs font-semibold text-bridge-charcoal-800 mt-1 block">
                     {existing.observedDate}
                   </span>
                 </div>
@@ -223,17 +228,17 @@ export const Step5Review: React.FC<Step5Props> = ({
         )}
 
         {/* Explainability & Privacy Notice */}
-        <div className="p-4 bg-brand-slate-50 border border-brand-slate-200 rounded-xl space-y-1.5 text-xs text-brand-slate-600">
-          <div className="flex items-center gap-2 font-semibold text-brand-slate-800">
-            <ShieldCheck className="w-4 h-4 text-brand-teal-700" />
-            Civic Trust Anti-Duplication Integrity Guarantee
+        <div className="p-4 bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl space-y-1.5 text-xs text-bridge-charcoal-600">
+          <div className="flex items-center gap-2 font-semibold text-bridge-charcoal-800">
+            <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
+            CivicBridge Anti-Duplication Integrity Guarantee
           </div>
           <p>
             {isImageDuplicate
               ? 'Exact cryptographic match (SHA-256) detected identical image data already filed in the municipal database. No duplicate database record or redundant field inspection order was created.'
               : 'High-confidence text similarity detected an identical active complaint in this municipal ward. No duplicate record was created.'}
           </p>
-          <p className="text-[11px] text-brand-slate-500">
+          <p className="text-[11px] text-bridge-charcoal-500">
             To prevent municipal queue clogging and facilitate rapid resolution, you can track the existing grievance directly using its tracking token.
           </p>
         </div>
@@ -289,13 +294,13 @@ export const Step5Review: React.FC<Step5Props> = ({
 
         {/* Tracking Token & Complaint ID Card */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="border-brand-teal-200 bg-brand-teal-50/50">
+          <Card className="border-bridge-gold-300 bg-bridge-gold-50/40">
             <CardBody className="p-4 space-y-1">
-              <span className="text-[11px] font-semibold text-brand-teal-800 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-bridge-gold-800 uppercase tracking-wider">
                 Public Tracking Token
               </span>
               <div className="flex items-center justify-between pt-1">
-                <span className="font-mono text-base sm:text-lg font-bold text-brand-slate-900">
+                <span className="font-mono text-base sm:text-lg font-bold text-bridge-charcoal-900">
                   {submittedComplaint.trackingToken}
                 </span>
                 <Button
@@ -307,7 +312,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                   {copiedToken ? 'Copied' : 'Copy'}
                 </Button>
               </div>
-              <p className="text-[11px] text-brand-slate-600 pt-1">
+              <p className="text-[11px] text-bridge-charcoal-600 pt-1">
                 Use this token to track resolution progress publicly without exposing your personal information.
               </p>
             </CardBody>
@@ -315,14 +320,14 @@ export const Step5Review: React.FC<Step5Props> = ({
 
           <Card>
             <CardBody className="p-4 space-y-1">
-              <span className="text-[11px] font-semibold text-brand-slate-500 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                 Assigned Department
               </span>
-              <p className="text-sm font-bold text-brand-slate-900 pt-1">
+              <p className="text-sm font-bold text-bridge-charcoal-900 pt-1">
                 {submittedComplaint.assignedDepartment || 'Department Routing in Progress'}
               </p>
               <div className="pt-2 flex items-center gap-2">
-                <span className="text-[11px] text-brand-slate-500">Lifecycle Status:</span>
+                <span className="text-[11px] text-bridge-charcoal-500">Lifecycle Status:</span>
                 <Badge variant="verified" size="sm">
                   {submittedComplaint.status}
                 </Badge>
@@ -333,18 +338,18 @@ export const Step5Review: React.FC<Step5Props> = ({
 
         {/* Explainable Verification Breakdown */}
         {vr && (
-          <Card className="border-brand-slate-200">
+          <Card className="border-bridge-almond-200">
             <CardBody className="p-5 space-y-3">
-              <div className="flex items-center gap-2 border-b border-brand-slate-100 pb-2">
-                <ShieldCheck className="w-4 h-4 text-brand-teal-700" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-slate-900">
+              <div className="flex items-center gap-2 border-b border-bridge-almond-100 pb-2">
+                <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-900">
                   Automated Evidence & Similarity Signals
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <span className="text-brand-slate-500 font-medium">Duplicate Risk Assessment:</span>
+                  <span className="text-bridge-charcoal-500 font-medium">Duplicate Risk Assessment:</span>
                   <div className="mt-1">
                     <Badge
                       variant={
@@ -362,8 +367,8 @@ export const Step5Review: React.FC<Step5Props> = ({
                 </div>
 
                 <div>
-                  <span className="text-brand-slate-500 font-medium">Recommended Action:</span>
-                  <p className="text-brand-slate-800 font-medium mt-1">
+                  <span className="text-bridge-charcoal-500 font-medium">Recommended Action:</span>
+                  <p className="text-bridge-charcoal-800 font-medium mt-1">
                     {vr.recommendedAction}
                   </p>
                 </div>
@@ -371,8 +376,8 @@ export const Step5Review: React.FC<Step5Props> = ({
 
               {vr.signals.length > 0 && (
                 <div className="pt-2">
-                  <span className="text-[11px] font-semibold text-brand-slate-600">Signals Detected:</span>
-                  <ul className="mt-1 space-y-1 list-disc list-inside text-xs text-brand-slate-700">
+                  <span className="text-[11px] font-semibold text-bridge-charcoal-600">Signals Detected:</span>
+                  <ul className="mt-1 space-y-1 list-disc list-inside text-xs text-bridge-charcoal-700">
                     {vr.signals.map((sig: string, idx: number) => (
                       <li key={idx}>{sig}</li>
                     ))}
@@ -381,7 +386,7 @@ export const Step5Review: React.FC<Step5Props> = ({
               )}
 
               {/* Uncertainties & Limitations (Honest Disclosure) */}
-              <div className="pt-2 border-t border-brand-slate-100 space-y-1 text-[11px] text-brand-slate-500 italic">
+              <div className="pt-2 border-t border-bridge-almond-100 space-y-1 text-[11px] text-bridge-charcoal-500 italic">
                 <p>• Photo evidence is treated as citizen-submitted evidence only. Authenticity unverified.</p>
                 <p>• Text and proximity similarity scores support human decision-making and do not prove whether a claim is genuine.</p>
               </div>
@@ -411,6 +416,17 @@ export const Step5Review: React.FC<Step5Props> = ({
               Track Complaint Progress
             </Button>
           )}
+
+          {onDone && (
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={onDone}
+            >
+              Done / Return to Dashboard
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -420,10 +436,10 @@ export const Step5Review: React.FC<Step5Props> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-brand-slate-900">
+        <h2 className="text-lg sm:text-xl font-bold text-bridge-charcoal-900">
           Review your complaint details
         </h2>
-        <p className="text-xs sm:text-sm text-brand-slate-600 mt-1">
+        <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
           Verify that all information is accurate before submitting. You can click &quot;Edit&quot; on any section to make corrections.
         </p>
       </div>
@@ -445,8 +461,8 @@ export const Step5Review: React.FC<Step5Props> = ({
           <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5 text-brand-teal-700 shrink-0" />
-                <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider">
+                <Tag className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Issue Type
                 </span>
               </div>
@@ -455,7 +471,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                   {categoryName}
                 </Badge>
                 {formData.category === 'other' && formData.customCategory && (
-                  <span className="text-xs text-brand-slate-700 font-medium">
+                  <span className="text-xs text-bridge-charcoal-700 font-medium">
                     ({formData.customCategory})
                   </span>
                 )}
@@ -480,16 +496,16 @@ export const Step5Review: React.FC<Step5Props> = ({
           <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5 text-brand-teal-700 shrink-0" />
-                <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider">
+                <Calendar className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Description & Date Observed
                 </span>
               </div>
-              <p className="text-sm text-brand-slate-900 whitespace-pre-wrap leading-relaxed">
-                {formData.description || <span className="text-brand-slate-400 italic">No description provided</span>}
+              <p className="text-sm text-bridge-charcoal-900 whitespace-pre-wrap leading-relaxed">
+                {formData.description || <span className="text-bridge-charcoal-400 italic">No description provided</span>}
               </p>
-              <div className="flex items-center gap-1.5 text-xs text-brand-slate-600 pt-1">
-                <span className="font-semibold text-brand-slate-800">Observed On:</span>
+              <div className="flex items-center gap-1.5 text-xs text-bridge-charcoal-600 pt-1">
+                <span className="font-semibold text-bridge-charcoal-800">Observed On:</span>
                 <span>{formData.observedDate || 'Not specified'}</span>
               </div>
             </div>
@@ -512,16 +528,16 @@ export const Step5Review: React.FC<Step5Props> = ({
           <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-brand-teal-700 shrink-0" />
-                <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Location in Mysuru
                 </span>
               </div>
-              <p className="text-sm font-semibold text-brand-slate-900">
+              <p className="text-sm font-semibold text-bridge-charcoal-900">
                 {formData.locationSearch || 'Not selected'}
               </p>
               {formData.addressText && (
-                <p className="text-xs text-brand-slate-600">
+                <p className="text-xs text-bridge-charcoal-600">
                   {formData.addressText}
                 </p>
               )}
@@ -545,8 +561,8 @@ export const Step5Review: React.FC<Step5Props> = ({
           <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <ImageIcon className="w-3.5 h-3.5 text-brand-teal-700 shrink-0" />
-                <span className="text-xs font-semibold text-brand-slate-500 uppercase tracking-wider">
+                <ImageIcon className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
+                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Photo Evidence
                 </span>
               </div>
@@ -557,20 +573,20 @@ export const Step5Review: React.FC<Step5Props> = ({
                     <img
                       src={formData.imagePreviewUrl}
                       alt="Uploaded evidence thumbnail"
-                      className="w-14 h-14 object-cover rounded-lg border border-brand-slate-200"
+                      className="w-14 h-14 object-cover rounded-lg border border-bridge-almond-200"
                     />
                   )}
                   <div>
-                    <p className="text-xs font-semibold text-brand-slate-900 truncate max-w-xs">
+                    <p className="text-xs font-semibold text-bridge-charcoal-900 truncate max-w-xs">
                       {formData.imageFile.name}
                     </p>
-                    <p className="text-[11px] text-brand-slate-500">
+                    <p className="text-[11px] text-bridge-charcoal-500">
                       {(formData.imageFile.size / 1024).toFixed(1)} KB • {formData.imageFile.type}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-brand-slate-500 italic">
+                <p className="text-xs text-bridge-charcoal-500 italic">
                   No photo evidence attached
                 </p>
               )}
@@ -591,7 +607,7 @@ export const Step5Review: React.FC<Step5Props> = ({
       </div>
 
       {/* Action Bar */}
-      <div className="pt-4 border-t border-brand-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="pt-4 border-t border-bridge-almond-200 flex flex-col sm:flex-row items-center justify-between gap-3">
         <Button
           type="button"
           variant="ghost"

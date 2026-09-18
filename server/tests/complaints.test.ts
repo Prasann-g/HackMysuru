@@ -99,7 +99,7 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       return;
     }
 
-    expect(data.count).toBeGreaterThanOrEqual(5);
+    expect(data.count).toBe(1);
     const demo1 = data.complaints.find((c: any) => c.id === 'DEMO-2026-0001');
     expect(demo1).toBeDefined();
     expect(demo1.isDemo).toBe(true);

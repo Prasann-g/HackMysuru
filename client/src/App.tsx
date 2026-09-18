@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Navbar, type NavTab } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { WhyCivicTrust } from './components/landing/WhyCivicTrust';
-import { HowItWorks } from './components/HowItWorks';
-import { TrustTransparency } from './components/landing/TrustTransparency';
-import { FinalCta } from './components/landing/FinalCta';
-import { ComplaintSubmissionPortal } from './components/submission/ComplaintSubmissionPortal';
-import { ComplaintTracker } from './components/tracking/ComplaintTracker';
+import { LandingPage } from './components/landing/LandingPage';
+import { CitizenDashboard } from './components/citizen/CitizenDashboard';
 import { OfficerDashboard } from './components/officer/OfficerDashboard';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/auth/AuthModal';
 import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
-import { PublicMapAnalytics } from './components/public/PublicMapAnalytics';
+import { CitizenTrackingDrawer } from './components/citizen/CitizenTrackingDrawer';
 import type { CitizenUser, AuthMode } from './types/auth';
 import { apiGetMe, clearStoredToken } from './services/api';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<NavTab>('home');
-  const [trackingToken, setTrackingToken] = useState<string>('');
+  // Read existing session to avoid unauthenticated flash on refresh
   const [currentUser, setCurrentUser] = useState<CitizenUser | null>(() => {
     try {
       const stored = sessionStorage.getItem('civictrust_citizen_user');
@@ -27,7 +21,14 @@ export function App() {
     }
   });
 
-  // Verify server session on initial boot
+  // State to trigger Report modal inside CitizenDashboard from Navbar or post-login
+  const [openCitizenReportTrigger, setOpenCitizenReportTrigger] = useState<number>(0);
+
+  // Landing Page Public Tracker state
+  const [landingTrackerOpen, setLandingTrackerOpen] = useState(false);
+  const [landingTrackingToken, setLandingTrackingToken] = useState<string | null>(null);
+
+  // Verify server session with backend token on boot
   useEffect(() => {
     apiGetMe().then((verifiedUser) => {
       if (verifiedUser) {
@@ -35,7 +36,7 @@ export function App() {
         try {
           sessionStorage.setItem('civictrust_citizen_user', JSON.stringify(verifiedUser));
         } catch {
-          // Ignore storage errors
+          // Ignore storage error
         }
       } else {
         setCurrentUser(null);
@@ -43,7 +44,7 @@ export function App() {
         try {
           sessionStorage.removeItem('civictrust_citizen_user');
         } catch {
-          // Ignore storage errors
+          // Ignore storage error
         }
       }
     });
@@ -54,90 +55,67 @@ export function App() {
   const [authModalMode, setAuthModalMode] = useState<AuthMode>('login');
   const [authReason, setAuthReason] = useState<string | undefined>(undefined);
 
-  // Citizen Profile / My Complaints Modal State
-  const [citizenModalView, setCitizenModalView] = useState<'profile' | 'complaints' | null>(null);
+  // Citizen Profile Modal State
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
+  // Auth Success Handler
   const handleLoginSuccess = (user: CitizenUser) => {
     setCurrentUser(user);
     try {
       sessionStorage.setItem('civictrust_citizen_user', JSON.stringify(user));
     } catch {
-      // Ignore storage errors
+      // Ignore storage error
     }
-    // If officer logged in, direct immediately to officer review queue
-    if (user.role === 'OFFICER') {
-      setActiveTab('officer');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (authReason && authReason.includes('submit')) {
-      setActiveTab('submit');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // If user attempted to report, automatically trigger report modal inside CitizenDashboard
+    if (user.role === 'CITIZEN' && authReason && authReason.includes('report')) {
+      setOpenCitizenReportTrigger((prev) => prev + 1);
     }
+
+    setAuthModalOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Logout Handler (cleans credentials & routes directly to Public Landing Page)
   const handleLogout = () => {
     setCurrentUser(null);
     clearStoredToken();
     try {
       sessionStorage.removeItem('civictrust_citizen_user');
     } catch {
-      // Ignore storage errors
+      // Ignore storage error
     }
-    if (activeTab === 'submit' || activeTab === 'officer') {
-      setActiveTab('home');
-    }
+    setProfileModalOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Protected Action: Report a Civic Issue
-  const handleInitiateReport = () => {
-    if (currentUser) {
-      setActiveTab('submit');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Protected Action: Initiate Report Grievance from Landing Page
+  const handleInitiateReportFromLanding = () => {
+    if (currentUser?.role === 'CITIZEN') {
+      setOpenCitizenReportTrigger((prev) => prev + 1);
     } else {
       setAuthModalMode('login');
-      setAuthReason('Please log in or create a citizen account to submit a civic complaint.');
+      setAuthReason('Please sign in or create a citizen account to report a municipal grievance.');
       setAuthModalOpen(true);
     }
   };
 
-  // Public Action: Track a Complaint
-  const handleOpenTracker = (token?: string) => {
-    if (token) {
-      setTrackingToken(token);
-    }
-    setActiveTab('track');
-    setCitizenModalView(null);
+  // Public Tracking Action from Landing Page
+  const handleOpenTrackerFromLanding = (token?: string) => {
+    setLandingTrackingToken(token || null);
+    setLandingTrackerOpen(true);
+  };
+
+  // Top Nav Tab Change (Routes authenticated users to their unified dashboard)
+  const handleTabChange = (_tab: NavTab) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Top Nav Tab Switcher with Auth Gate
-  const handleTabChange = (tab: NavTab) => {
-    if (tab === 'home') {
-      setActiveTab('home');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (tab === 'submit') {
-      handleInitiateReport();
-    } else if (tab === 'track') {
-      handleOpenTracker();
-    } else if (tab === 'officer') {
-      if (currentUser?.role === 'OFFICER') {
-        setActiveTab('officer');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        setAuthModalMode('officer');
-        setAuthReason('Please log in with authorized MCC Officer credentials.');
-        setAuthModalOpen(true);
-      }
-    } else if (tab === 'dashboard') {
-      setActiveTab('dashboard');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-brand-slate-50 text-brand-slate-900 selection:bg-brand-teal-100 selection:text-brand-teal-900">
-      {/* Top Navigation */}
+    <div className="min-h-screen flex flex-col bg-bridge-ivory-50 text-bridge-charcoal-900 selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900">
+      {/* Top Navigation Bar */}
       <Navbar
-        activeTab={activeTab}
+        activeTab={currentUser ? (currentUser.role === 'OFFICER' ? 'officer' : 'dashboard') : 'home'}
         currentUser={currentUser}
         onTabChange={handleTabChange}
         onOpenAuth={(mode) => {
@@ -146,63 +124,40 @@ export function App() {
           setAuthModalOpen(true);
         }}
         onLogout={handleLogout}
-        onOpenMyComplaints={() => setCitizenModalView('complaints')}
-        onOpenProfile={() => setCitizenModalView('profile')}
+        onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenReportGrievance={() => {
+          setOpenCitizenReportTrigger((prev) => prev + 1);
+        }}
       />
 
-      {/* Main Content Area */}
+      {/* Main Unified Workspace Area */}
       <main className="flex-1">
-        {activeTab === 'submit' && currentUser ? (
-          <ComplaintSubmissionPortal
-            onBackToHome={() => setActiveTab('home')}
-            onNavigateToTrack={handleOpenTracker}
+        {currentUser?.role === 'CITIZEN' ? (
+          /* ONE UNIFIED CITIZEN DASHBOARD */
+          <CitizenDashboard
+            key={`citizen-dash-${openCitizenReportTrigger}`}
+            currentUser={currentUser}
+            initialOpenReportModal={openCitizenReportTrigger > 0}
           />
-        ) : activeTab === 'track' ? (
-          <ComplaintTracker
-            initialToken={trackingToken}
-            onReportIssue={handleInitiateReport}
-            onBackToHome={() => setActiveTab('home')}
-          />
-        ) : activeTab === 'officer' && currentUser?.role === 'OFFICER' ? (
+        ) : currentUser?.role === 'OFFICER' ? (
+          /* ONE UNIFIED MCC OFFICER CONSOLE */
           <OfficerDashboard currentOfficer={currentUser} />
-        ) : activeTab === 'dashboard' ? (
-          <PublicMapAnalytics
-            onNavigateToReport={handleInitiateReport}
-            onNavigateToTrack={handleOpenTracker}
-          />
         ) : (
-          <>
-            {/* 1. Hero Section */}
-            <Hero
-              onReportIssueClick={handleInitiateReport}
-              onTrackComplaintClick={() => handleOpenTracker()}
-            />
-
-            {/* 2. Why Civic Trust */}
-            <WhyCivicTrust />
-
-            {/* 3. How It Works (Citizen Journey) */}
-            <HowItWorks />
-
-            {/* 4. Trust & Transparency Section */}
-            <TrustTransparency />
-
-            {/* 5. Final CTA */}
-            <FinalCta
-              isAuthenticated={!!currentUser}
-              onOpenAuth={(mode) => {
-                setAuthModalMode(mode);
-                setAuthReason(undefined);
-                setAuthModalOpen(true);
-              }}
-              onNavigateToSubmit={handleInitiateReport}
-              onNavigateToTrack={() => handleOpenTracker()}
-            />
-          </>
+          /* PUBLIC UNAUTHENTICATED LANDING PAGE */
+          <LandingPage
+            isAuthenticated={false}
+            onInitiateReport={handleInitiateReportFromLanding}
+            onOpenTracker={handleOpenTrackerFromLanding}
+            onOpenAuth={(mode) => {
+              setAuthModalMode(mode);
+              setAuthReason(undefined);
+              setAuthModalOpen(true);
+            }}
+          />
         )}
       </main>
 
-      {/* 6. Simple Citizen-Focused Footer */}
+      {/* Municipal Governance Enterprise Footer */}
       <Footer />
 
       {/* Authentication Modal */}
@@ -215,14 +170,34 @@ export function App() {
         onAuthSuccess={handleLoginSuccess}
       />
 
-      {/* Citizen Profile & My Complaints Modal */}
+      {/* Citizen Profile Details Modal */}
       <CitizenProfileModal
-        isOpen={citizenModalView !== null}
-        view={citizenModalView}
+        isOpen={profileModalOpen}
+        view="profile"
         user={currentUser}
-        onClose={() => setCitizenModalView(null)}
-        onNavigateToSubmit={handleInitiateReport}
-        onNavigateToTrack={handleOpenTracker}
+        onClose={() => setProfileModalOpen(false)}
+        onNavigateToSubmit={() => {
+          setProfileModalOpen(false);
+          setOpenCitizenReportTrigger((prev) => prev + 1);
+        }}
+        onNavigateToTrack={(token) => {
+          setProfileModalOpen(false);
+          handleOpenTrackerFromLanding(token);
+        }}
+      />
+
+      {/* Public Landing Page Tracking Drawer */}
+      <CitizenTrackingDrawer
+        isOpen={landingTrackerOpen}
+        token={landingTrackingToken}
+        onClose={() => {
+          setLandingTrackerOpen(false);
+          setLandingTrackingToken(null);
+        }}
+        onReportIssue={() => {
+          setLandingTrackerOpen(false);
+          handleInitiateReportFromLanding();
+        }}
       />
     </div>
   );

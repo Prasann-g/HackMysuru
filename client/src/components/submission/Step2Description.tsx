@@ -25,10 +25,10 @@ export const Step2Description: React.FC<Step2Props> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-brand-slate-900">
+        <h2 className="text-lg sm:text-xl font-bold text-bridge-charcoal-900">
           Describe the problem & when it was observed
         </h2>
-        <p className="text-xs sm:text-sm text-brand-slate-600 mt-1">
+        <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
           Detailed descriptions help the verification system identify similar complaints and assist ward engineers in dispatching the right team.
         </p>
       </div>
@@ -38,13 +38,13 @@ export const Step2Description: React.FC<Step2Props> = ({
         <div className="flex items-center justify-between">
           <label
             htmlFor="complaint-description"
-            className="block text-xs font-semibold text-brand-slate-900 flex items-center gap-1.5"
+            className="block text-xs font-semibold text-bridge-charcoal-900 flex items-center gap-1.5"
           >
-            <FileText className="w-3.5 h-3.5 text-brand-teal-700" />
+            <FileText className="w-3.5 h-3.5 text-bridge-gold-700" />
             <span>Complaint Description</span>
             <span className="text-rose-500 font-bold">*</span>
           </label>
-          <span className="text-[11px] text-brand-slate-500">
+          <span className="text-[11px] text-bridge-charcoal-500">
             {description.length} / 1000 characters
           </span>
         </div>
@@ -58,10 +58,10 @@ export const Step2Description: React.FC<Step2Props> = ({
           placeholder="Please describe what you observed, including any specific hazards, extent of damage, or prominent nearby landmarks (e.g. Near Kuvempunagar Double Road junction, deep pothole posing risk to two-wheelers)..."
           aria-invalid={!!errors.description}
           aria-describedby={errors.description ? 'desc-error' : 'desc-hint'}
-          className={`w-full px-3.5 py-2.5 text-sm bg-white border rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 placeholder:text-brand-slate-400 transition-colors ${
+          className={`w-full px-3.5 py-2.5 text-sm bg-white border rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 placeholder:text-bridge-charcoal-400 transition-colors ${
             errors.description
               ? 'border-rose-400 bg-rose-50/20'
-              : 'border-brand-slate-300'
+              : 'border-bridge-almond-300'
           }`}
         />
 
@@ -71,7 +71,7 @@ export const Step2Description: React.FC<Step2Props> = ({
             <span>{errors.description}</span>
           </p>
         ) : (
-          <p id="desc-hint" className="text-[11px] text-brand-slate-500">
+          <p id="desc-hint" className="text-[11px] text-bridge-charcoal-500">
             Minimum 10 characters required. Avoid using sensitive citizen personal information.
           </p>
         )}
@@ -81,9 +81,9 @@ export const Step2Description: React.FC<Step2Props> = ({
       <div className="space-y-1.5 max-w-sm">
         <label
           htmlFor="observed-date"
-          className="block text-xs font-semibold text-brand-slate-900 flex items-center gap-1.5"
+          className="block text-xs font-semibold text-bridge-charcoal-900 flex items-center gap-1.5"
         >
-          <Calendar className="w-3.5 h-3.5 text-brand-teal-700" />
+          <Calendar className="w-3.5 h-3.5 text-bridge-gold-700" />
           <span>Date Issue Was Observed</span>
           <span className="text-rose-500 font-bold">*</span>
         </label>
@@ -96,10 +96,10 @@ export const Step2Description: React.FC<Step2Props> = ({
           onChange={(e) => onChangeObservedDate(e.target.value)}
           aria-invalid={!!errors.observedDate}
           aria-describedby={errors.observedDate ? 'date-error' : undefined}
-          className={`w-full px-3.5 py-2 text-sm bg-white border rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal-600 text-brand-slate-900 transition-colors ${
+          className={`w-full px-3.5 py-2 text-sm bg-white border rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 transition-colors ${
             errors.observedDate
               ? 'border-rose-400 bg-rose-50/20'
-              : 'border-brand-slate-300'
+              : 'border-bridge-almond-300'
           }`}
         />
 
@@ -109,8 +109,8 @@ export const Step2Description: React.FC<Step2Props> = ({
             <span>{errors.observedDate}</span>
           </p>
         ) : (
-          <p className="text-[11px] text-brand-slate-500">
-            Select the date when this civic issue was first spotted. Cannot be a future date.
+          <p className="text-[11px] text-bridge-charcoal-500">
+            Cannot select a future date.
           </p>
         )}
       </div>

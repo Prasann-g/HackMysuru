@@ -68,32 +68,32 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
   return (
     <div className="space-y-5">
       {/* Cluster Overview Header */}
-      <div className="bg-brand-slate-50 border border-brand-slate-200 rounded-xl p-4 space-y-3">
+      <div className="bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-brand-teal-700 shrink-0" />
+            <Layers className="w-5 h-5 text-bridge-gold-600 shrink-0" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-slate-500">
+                <span className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-500">
                   Cluster Identification:
                 </span>
-                <span className="font-mono text-xs font-bold text-brand-teal-900 bg-brand-teal-50 border border-brand-teal-200 px-2 py-0.5 rounded">
+                <span className="font-mono text-xs font-bold text-bridge-gold-900 bg-bridge-gold-50 border border-bridge-gold-200 px-2 py-0.5 rounded">
                   {clusterIdentifier}
                 </span>
                 <Badge variant="review" size="sm">
                   {matchedCandidates.length + 1} Grievances in Cluster
                 </Badge>
               </div>
-              <p className="text-xs text-brand-slate-500 mt-0.5">
-                Ward: <strong className="text-brand-slate-700">{currentComplaint.locationArea}</strong> •
-                Category: <strong className="capitalize text-brand-slate-700">{currentComplaint.category.replace(/_/g, ' ')}</strong>
+              <p className="text-xs text-bridge-charcoal-500 mt-0.5">
+                Ward: <strong className="text-bridge-charcoal-700">{currentComplaint.locationArea}</strong> •
+                Category: <strong className="capitalize text-bridge-charcoal-700">{currentComplaint.category.replace(/_/g, ' ')}</strong>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-brand-slate-500">Evidence Integrity:</span>
-            <span className="font-semibold text-brand-slate-700">Non-destructive comparison</span>
+            <span className="text-bridge-charcoal-500">Evidence Integrity:</span>
+            <span className="font-semibold text-bridge-charcoal-700">Non-destructive comparison</span>
           </div>
         </div>
       </div>
@@ -119,17 +119,17 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
           return (
             <div
               key={candidate.id}
-              className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4"
+              className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4"
             >
               {/* Card Sub-Header: Risk Assessment & Signals */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-brand-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-bridge-almond-100">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={riskBadgeVariant} size="sm">
                     {matchMeta?.riskLevel || 'MEDIUM'} DUPLICATE OVERLAP
                   </Badge>
 
                   {similarityPct !== null && (
-                    <span className="text-xs font-semibold text-brand-slate-700 bg-brand-slate-100 px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 bg-bridge-almond-100 px-2.5 py-0.5 rounded-full">
                       {similarityPct}% Vocabulary Similarity
                     </span>
                   )}
@@ -150,21 +150,21 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                   )}
 
                   {!matchMeta?.imageMatch && currentComplaint.hasImage && candidate.hasImage && (
-                    <span className="text-xs font-semibold text-brand-teal-800 bg-brand-teal-50 border border-brand-teal-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <Camera className="w-3.5 h-3.5 text-brand-teal-600" />
+                    <span className="text-xs font-semibold text-bridge-gold-800 bg-bridge-gold-50 border border-bridge-gold-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5 text-bridge-gold-600" />
                       Both Have Independent Photos
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-brand-slate-500">
+                  <span className="text-xs font-mono text-bridge-charcoal-500">
                     Candidate: <strong>{candidate.id}</strong>
                   </span>
                   <button
                     type="button"
                     onClick={() => handleCopy(candidate.id, `cand-${candidate.id}`)}
-                    className="text-brand-slate-400 hover:text-brand-slate-700 p-1 rounded"
+                    className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded"
                     title="Copy Complaint ID"
                   >
                     {copiedId === `cand-${candidate.id}` ? (
@@ -179,13 +179,13 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
               {/* Side-by-Side Comprehensive Comparison Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 {/* 1. CURRENT COMPLAINT DOSSIER */}
-                <div className="bg-brand-slate-50/90 rounded-xl p-4 border border-brand-slate-200 space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-brand-slate-200/80">
+                <div className="bg-bridge-almond-50/70 rounded-xl p-4 border border-bridge-almond-200 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-bridge-almond-200">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-brand-teal-800 text-xs">
+                      <span className="font-bold text-bridge-gold-800 text-xs">
                         CURRENT COMPLAINT
                       </span>
-                      <span className="font-mono text-brand-slate-600">({currentComplaint.id})</span>
+                      <span className="font-mono text-bridge-charcoal-600">({currentComplaint.id})</span>
                     </div>
                     <Badge variant={currentComplaint.status === 'RESOLVED' ? 'verified' : 'review'} size="sm">
                       {currentComplaint.status}
@@ -193,36 +193,36 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                   </div>
 
                   {/* Metadata & Evidence Availability */}
-                  <div className="space-y-1.5 text-[11px] text-brand-slate-600">
+                  <div className="space-y-1.5 text-[11px] text-bridge-charcoal-600">
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Tracking Token:</span>
-                      <span className="font-mono text-brand-slate-800 font-medium">{currentComplaint.trackingToken}</span>
+                      <span className="text-bridge-charcoal-400">Tracking Token:</span>
+                      <span className="font-mono text-bridge-charcoal-800 font-medium">{currentComplaint.trackingToken}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Category:</span>
-                      <span className="capitalize text-brand-slate-800 font-medium">{currentComplaint.category.replace(/_/g, ' ')}</span>
+                      <span className="text-bridge-charcoal-400">Category:</span>
+                      <span className="capitalize text-bridge-charcoal-800 font-medium">{currentComplaint.category.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Observed Date:</span>
-                      <span className="text-brand-slate-800 font-medium">{currentComplaint.observedDate}</span>
+                      <span className="text-bridge-charcoal-400">Observed Date:</span>
+                      <span className="text-bridge-charcoal-800 font-medium">{currentComplaint.observedDate}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Location Area:</span>
-                      <span className="text-brand-slate-800 font-medium">{currentComplaint.locationArea}</span>
+                      <span className="text-bridge-charcoal-400">Location Area:</span>
+                      <span className="text-bridge-charcoal-800 font-medium">{currentComplaint.locationArea}</span>
                     </div>
                     {currentComplaint.addressText && (
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-brand-slate-400 shrink-0">Street Address:</span>
-                        <span className="text-brand-slate-800 text-right truncate">{currentComplaint.addressText}</span>
+                        <span className="text-bridge-charcoal-400 shrink-0">Street Address:</span>
+                        <span className="text-bridge-charcoal-800 text-right truncate">{currentComplaint.addressText}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Evidence Availability Indicator & Photo Preview */}
-                  <div className="pt-2 border-t border-brand-slate-200/80">
+                  <div className="pt-2 border-t border-bridge-almond-200">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-semibold text-brand-slate-700 flex items-center gap-1">
-                        <Camera className="w-3.5 h-3.5 text-brand-teal-600" />
+                      <span className="text-[11px] font-semibold text-bridge-charcoal-700 flex items-center gap-1">
+                        <Camera className="w-3.5 h-3.5 text-bridge-gold-600" />
                         Photographic Evidence:
                       </span>
                       {currentComplaint.hasImage ? (
@@ -231,27 +231,27 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                           Photo Attached
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-brand-slate-600 bg-brand-slate-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <ImageOff className="w-3 h-3 text-brand-slate-400" />
+                        <span className="text-[10px] font-semibold text-bridge-charcoal-600 bg-bridge-almond-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <ImageOff className="w-3 h-3 text-bridge-charcoal-400" />
                           No Photo Provided
                         </span>
                       )}
                     </div>
 
                     {currentComplaint.hasImage ? (
-                      <div className="rounded-lg overflow-hidden border border-brand-slate-200 bg-white">
+                      <div className="rounded-lg overflow-hidden border border-bridge-almond-200 bg-white">
                         <AuthenticatedEvidenceImage
                           complaintId={currentComplaint.id}
                           className="w-full h-40 object-cover"
                           alt={`Evidence for ${currentComplaint.id}`}
                         />
-                        <div className="p-2 text-[10px] font-mono text-brand-slate-500 bg-brand-slate-50 border-t border-brand-slate-100 flex justify-between">
+                        <div className="p-2 text-[10px] font-mono text-bridge-charcoal-500 bg-bridge-almond-50 border-t border-bridge-almond-100 flex justify-between">
                           <span>{currentComplaint.evidenceMetadata?.filename || 'Visual Evidence'}</span>
                           <span>{currentComplaint.evidenceMetadata?.sizeBytes ? `${Math.round(currentComplaint.evidenceMetadata.sizeBytes / 1024)} KB` : 'Image'}</span>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-white rounded-lg border border-dashed border-brand-slate-200 text-center text-brand-slate-400 text-[11px]">
+                      <div className="p-4 bg-white rounded-lg border border-dashed border-bridge-almond-200 text-center text-bridge-charcoal-400 text-[11px]">
                         Citizen reported without visual attachment.
                       </div>
                     )}
@@ -259,10 +259,10 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
 
                   {/* Description Box */}
                   <div>
-                    <span className="text-[11px] font-semibold text-brand-slate-700 block mb-1">
+                    <span className="text-[11px] font-semibold text-bridge-charcoal-700 block mb-1">
                       Submitted Statement:
                     </span>
-                    <p className="text-brand-slate-800 bg-white p-3 rounded-lg border border-brand-slate-200 leading-relaxed font-normal">
+                    <p className="text-bridge-charcoal-800 bg-white p-3 rounded-lg border border-bridge-almond-200 leading-relaxed font-normal">
                       {currentComplaint.description}
                     </p>
                   </div>
@@ -283,27 +283,27 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                   </div>
 
                   {/* Metadata & Evidence Availability */}
-                  <div className="space-y-1.5 text-[11px] text-brand-slate-600">
+                  <div className="space-y-1.5 text-[11px] text-bridge-charcoal-600">
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Tracking Token:</span>
-                      <span className="font-mono text-brand-slate-800 font-medium">{candidate.trackingToken}</span>
+                      <span className="text-bridge-charcoal-400">Tracking Token:</span>
+                      <span className="font-mono text-bridge-charcoal-800 font-medium">{candidate.trackingToken}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Category:</span>
-                      <span className="capitalize text-brand-slate-800 font-medium">{candidate.category.replace(/_/g, ' ')}</span>
+                      <span className="text-bridge-charcoal-400">Category:</span>
+                      <span className="capitalize text-bridge-charcoal-800 font-medium">{candidate.category.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Observed Date:</span>
-                      <span className="text-brand-slate-800 font-medium">{candidate.observedDate}</span>
+                      <span className="text-bridge-charcoal-400">Observed Date:</span>
+                      <span className="text-bridge-charcoal-800 font-medium">{candidate.observedDate}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-brand-slate-400">Location Area:</span>
-                      <span className="text-brand-slate-800 font-medium">{candidate.locationArea}</span>
+                      <span className="text-bridge-charcoal-400">Location Area:</span>
+                      <span className="text-bridge-charcoal-800 font-medium">{candidate.locationArea}</span>
                     </div>
                     {candidate.addressText && (
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-brand-slate-400 shrink-0">Street Address:</span>
-                        <span className="text-brand-slate-800 text-right truncate">{candidate.addressText}</span>
+                        <span className="text-bridge-charcoal-400 shrink-0">Street Address:</span>
+                        <span className="text-bridge-charcoal-800 text-right truncate">{candidate.addressText}</span>
                       </div>
                     )}
                   </div>
@@ -321,8 +321,8 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                           Photo Attached
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-brand-slate-600 bg-brand-slate-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <ImageOff className="w-3 h-3 text-brand-slate-400" />
+                        <span className="text-[10px] font-semibold text-bridge-charcoal-600 bg-bridge-almond-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <ImageOff className="w-3 h-3 text-bridge-charcoal-400" />
                           No Photo Provided
                         </span>
                       )}
@@ -335,13 +335,13 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                           className="w-full h-40 object-cover"
                           alt={`Evidence for ${candidate.id}`}
                         />
-                        <div className="p-2 text-[10px] font-mono text-brand-slate-500 bg-amber-50/60 border-t border-amber-100 flex justify-between">
+                        <div className="p-2 text-[10px] font-mono text-bridge-charcoal-500 bg-amber-50/60 border-t border-amber-100 flex justify-between">
                           <span>{candidate.evidenceMetadata?.filename || 'Visual Evidence'}</span>
                           <span>{candidate.evidenceMetadata?.sizeBytes ? `${Math.round(candidate.evidenceMetadata.sizeBytes / 1024)} KB` : 'Image'}</span>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-white rounded-lg border border-dashed border-amber-200 text-center text-brand-slate-400 text-[11px]">
+                      <div className="p-4 bg-white rounded-lg border border-dashed border-amber-200 text-center text-bridge-charcoal-400 text-[11px]">
                         Citizen reported without visual attachment.
                       </div>
                     )}
@@ -352,7 +352,7 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                     <span className="text-[11px] font-semibold text-amber-950 block mb-1">
                       Submitted Statement:
                     </span>
-                    <p className="text-brand-slate-800 bg-white p-3 rounded-lg border border-amber-200 leading-relaxed font-normal">
+                    <p className="text-bridge-charcoal-800 bg-white p-3 rounded-lg border border-amber-200 leading-relaxed font-normal">
                       {candidate.description}
                     </p>
                   </div>
@@ -361,9 +361,9 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
 
               {/* Shared Overlapping Vocabulary Phrases */}
               {matchingPhrases.length > 0 && (
-                <div className="bg-brand-slate-50 p-3 rounded-xl border border-brand-slate-200/70 text-xs space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-brand-slate-700">
-                    <Tag className="w-3.5 h-3.5 text-brand-teal-600" />
+                <div className="bg-bridge-almond-50/70 p-3 rounded-xl border border-bridge-almond-200 text-xs space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-bridge-charcoal-700">
+                    <Tag className="w-3.5 h-3.5 text-bridge-gold-600" />
                     <span>Key Overlapping Deterministic Phrases ({matchingPhrases.length}):</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -410,8 +410,8 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
               )}
 
               {/* Action Buttons for Officer Triage Decision */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-brand-slate-100">
-                <div className="text-[11px] text-brand-slate-500">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-bridge-almond-100">
+                <div className="text-[11px] text-bridge-charcoal-500">
                   Select an action to record your verification decision for this cluster match.
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -423,7 +423,7 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                       onClick={() => onMarkDistinct(candidate)}
                       className="text-xs"
                     >
-                      <Split className="w-3.5 h-3.5 mr-1 text-brand-slate-600" />
+                      <Split className="w-3.5 h-3.5 mr-1 text-bridge-charcoal-600" />
                       Mark Distinct Grievance
                     </Button>
                   )}
