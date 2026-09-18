@@ -149,7 +149,15 @@ export interface ComplaintRecord {
     };
   };
   assignedDepartment?: string;
+  assignedOfficerId?: string;
   reviewNotes?: string;
+  evidenceMetadata?: {
+    filename: string;
+    sizeBytes: number;
+    mimetype: string;
+    submittedAt: string;
+    note: string;
+  };
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -241,3 +249,117 @@ export async function apiGetDemoPool(): Promise<ComplaintRecord[]> {
   if (!res.ok) return [];
   return data.complaints || [];
 }
+
+// ----------------------------------------------------------------------------
+// MCC Officer Dashboard API (Step 4.4)
+// ----------------------------------------------------------------------------
+
+export interface OfficerComplaintDetail {
+  complaint: ComplaintRecord;
+  citizen?: {
+    id: string;
+    name: string;
+    email: string;
+    ward?: string;
+  } | null;
+  matchedCandidates: ComplaintRecord[];
+}
+
+export interface OfficerComplaintsFilter {
+  status?: string;
+  locationArea?: string;
+  category?: string;
+  duplicateRisk?: string;
+  q?: string;
+}
+
+export interface OfficerUpdateReviewPayload {
+  status?: string;
+  assignedDepartment?: string;
+  assignedOfficerId?: string;
+  reviewNotes?: string;
+}
+
+export async function apiGetOfficerComplaints(
+  filters?: OfficerComplaintsFilter
+): Promise<ComplaintRecord[]> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('You must be logged in as an MCC officer to access the review queue.');
+  }
+
+  const queryParams = new URLSearchParams();
+  if (filters?.status) queryParams.set('status', filters.status);
+  if (filters?.locationArea) queryParams.set('locationArea', filters.locationArea);
+  if (filters?.category) queryParams.set('category', filters.category);
+  if (filters?.duplicateRisk) queryParams.set('duplicateRisk', filters.duplicateRisk);
+  if (filters?.q) queryParams.set('q', filters.q);
+
+  const qs = queryParams.toString();
+  const url = `${API_BASE_URL}/api/officer/complaints${qs ? `?${qs}` : ''}`;
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve officer complaints queue.');
+  }
+
+  return data.complaints || [];
+}
+
+export async function apiGetOfficerComplaintById(
+  id: string
+): Promise<OfficerComplaintDetail> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('You must be logged in as an MCC officer.');
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve complaint details.');
+  }
+
+  return data;
+}
+
+export async function apiUpdateOfficerReview(
+  id: string,
+  payload: OfficerUpdateReviewPayload
+): Promise<{ complaint: ComplaintRecord }> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('You must be logged in as an MCC officer.');
+  }
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/review`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update complaint review.');
+  }
+
+  return data;
+}
+

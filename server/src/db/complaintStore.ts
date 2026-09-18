@@ -114,28 +114,54 @@ export class ComplaintStore {
     status?: string;
     locationArea?: string;
     category?: string;
+    duplicateRisk?: string;
+    q?: string;
   }): ComplaintRecord[] {
     const db = getDb();
     let query = 'SELECT * FROM complaints WHERE 1=1';
     const params: any[] = [];
 
-    if (filters?.status) {
+    if (filters?.status && filters.status !== 'ALL') {
       query += ' AND status = ?';
       params.push(filters.status);
     }
-    if (filters?.locationArea) {
+    if (filters?.locationArea && filters.locationArea !== 'ALL') {
       query += ' AND location_area = ?';
       params.push(filters.locationArea);
     }
-    if (filters?.category) {
+    if (filters?.category && filters.category !== 'ALL') {
       query += ' AND category = ?';
       params.push(filters.category);
+    }
+    if (filters?.duplicateRisk && filters.duplicateRisk !== 'ALL') {
+      query += " AND json_extract(verification_result, '$.duplicateRisk') = ?";
+      params.push(filters.duplicateRisk.toUpperCase());
+    }
+    if (filters?.q && filters.q.trim()) {
+      query += ' AND (id LIKE ? OR tracking_token LIKE ? OR description LIKE ?)';
+      const pattern = `%${filters.q.trim()}%`;
+      params.push(pattern, pattern, pattern);
     }
 
     query += ' ORDER BY created_at DESC';
 
     const stmt = db.prepare(query);
     const rows = stmt.all(...params) as any[];
+    return rows.map(mapRowToComplaint);
+  }
+
+  public findMatchesForComplaint(id: string): ComplaintRecord[] {
+    const target = this.findById(id);
+    if (!target || !target.verificationResult?.matches || target.verificationResult.matches.length === 0) {
+      return [];
+    }
+    const matchedIds = target.verificationResult.matches.map((m) => m.existingComplaintId);
+    if (matchedIds.length === 0) return [];
+
+    const db = getDb();
+    const placeholders = matchedIds.map(() => '?').join(',');
+    const stmt = db.prepare(`SELECT * FROM complaints WHERE id IN (${placeholders})`);
+    const rows = stmt.all(...matchedIds) as any[];
     return rows.map(mapRowToComplaint);
   }
 

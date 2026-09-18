@@ -7,6 +7,7 @@ import { TrustTransparency } from './components/landing/TrustTransparency';
 import { FinalCta } from './components/landing/FinalCta';
 import { ComplaintSubmissionPortal } from './components/submission/ComplaintSubmissionPortal';
 import { ComplaintTracker } from './components/tracking/ComplaintTracker';
+import { OfficerDashboard } from './components/officer/OfficerDashboard';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/auth/AuthModal';
 import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
@@ -66,8 +67,11 @@ export function App() {
     } catch {
       // Ignore storage errors
     }
-    // If user was attempting to submit, transition to submit
-    if (authReason && authReason.includes('submit')) {
+    // If officer logged in, direct immediately to officer review queue
+    if (user.role === 'OFFICER') {
+      setActiveTab('officer');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (authReason && authReason.includes('submit')) {
       setActiveTab('submit');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -81,7 +85,7 @@ export function App() {
     } catch {
       // Ignore storage errors
     }
-    if (activeTab === 'submit') {
+    if (activeTab === 'submit' || activeTab === 'officer') {
       setActiveTab('home');
     }
   };
@@ -117,6 +121,15 @@ export function App() {
       handleInitiateReport();
     } else if (tab === 'track') {
       handleOpenTracker();
+    } else if (tab === 'officer') {
+      if (currentUser?.role === 'OFFICER') {
+        setActiveTab('officer');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setAuthModalMode('officer');
+        setAuthReason('Please log in with authorized MCC Officer credentials.');
+        setAuthModalOpen(true);
+      }
     } else if (tab === 'dashboard') {
       setModalFeature('Public Transparency Map & Corporation Analytics');
     }
@@ -152,6 +165,8 @@ export function App() {
             onReportIssue={handleInitiateReport}
             onBackToHome={() => setActiveTab('home')}
           />
+        ) : activeTab === 'officer' && currentUser?.role === 'OFFICER' ? (
+          <OfficerDashboard currentOfficer={currentUser} />
         ) : (
           <>
             {/* 1. Hero Section */}

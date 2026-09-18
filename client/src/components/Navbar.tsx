@@ -11,12 +11,13 @@ import {
   LogOut,
   ChevronDown,
   UserCheck,
+  Building2,
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import type { CitizenUser } from '../types/auth';
 
-export type NavTab = 'home' | 'submit' | 'track' | 'dashboard';
+export type NavTab = 'home' | 'submit' | 'track' | 'dashboard' | 'officer';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -56,6 +57,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'submit', label: 'Report Issue', icon: <FileText className="w-4 h-4" /> },
     { id: 'track', label: 'Track Complaint', icon: <Search className="w-4 h-4" /> },
     { id: 'dashboard', label: 'Public Map', icon: <BarChart3 className="w-4 h-4" />, badge: 'Coming Soon' },
+    ...(currentUser?.role === 'OFFICER'
+      ? [
+          {
+            id: 'officer' as NavTab,
+            label: 'Officer Queue',
+            icon: <Building2 className="w-4 h-4 text-brand-teal-700" />,
+            badge: 'MCC',
+          },
+        ]
+      : []),
   ];
 
   const handleNavClick = (tab: NavTab) => {
@@ -168,6 +179,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     {/* Menu Actions */}
                     <div className="py-1">
+                      {currentUser.role === 'OFFICER' && (
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            onTabChange('officer');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs font-semibold text-brand-teal-800 bg-brand-teal-50/60 hover:bg-brand-teal-50 flex items-center gap-2 cursor-pointer border-b border-brand-slate-100"
+                        >
+                          <Building2 className="w-3.5 h-3.5 text-brand-teal-700" />
+                          <span>Officer Review Queue</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           setProfileDropdownOpen(false);
