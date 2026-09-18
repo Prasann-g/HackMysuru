@@ -150,16 +150,16 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
               filters.duplicateRisk ||
               filters.locationArea ||
               filters.category) && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleResetFilters}
-                className="text-xs text-brand-slate-500 hover:text-brand-slate-800"
-              >
-                Clear Filters
-              </Button>
-            )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="text-xs text-brand-slate-500 hover:text-brand-slate-800"
+                >
+                  Clear Filters
+                </Button>
+              )}
           </div>
         </div>
 
@@ -283,9 +283,8 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                   <tr
                     key={item.id}
                     onClick={() => onSelectComplaint(item.id)}
-                    className={`cursor-pointer transition-colors hover:bg-brand-teal-50/30 ${
-                      isSelected ? 'bg-brand-teal-50/60 border-l-4 border-l-brand-teal-600' : ''
-                    }`}
+                    className={`queue-row cursor-pointer ${isSelected ? 'bg-brand-teal-50/60 border-l-4 border-l-brand-teal-600' : ''
+                      }`}
                   >
                     {/* ID & Token */}
                     <td className="py-3 px-4">
