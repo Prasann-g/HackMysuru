@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import {
   Edit3,
   Calendar,
@@ -10,6 +9,7 @@ import {
   Copy,
   Check,
   AlertCircle,
+  AlertTriangle,
   ShieldCheck,
   Loader2,
   ExternalLink,
@@ -18,7 +18,11 @@ import type { ComplaintFormData } from './types';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Card, CardBody } from '../ui/Card';
-import { apiCreateComplaint, type ComplaintRecord } from '../../services/api';
+import {
+  apiCreateComplaint,
+  type ComplaintRecord,
+  type SafeExistingComplaint,
+} from '../../services/api';
 
 interface Step5Props {
   formData: ComplaintFormData;

@@ -100,6 +100,35 @@ export async function apiGetMe(): Promise<CitizenUser | null> {
 // Complaint Service API
 // ----------------------------------------------------------------------------
 
+export interface SafeExistingComplaint {
+  id: string;
+  trackingToken: string;
+  category: string;
+  status: string;
+  locationArea: string;
+  observedDate: string;
+  createdAt?: string;
+}
+
+export class DuplicateComplaintError extends Error {
+  code: string;
+  duplicateType: string;
+  existingComplaint?: SafeExistingComplaint;
+
+  constructor(
+    message: string,
+    code: string,
+    duplicateType: string,
+    existingComplaint?: SafeExistingComplaint
+  ) {
+    super(message);
+    this.name = 'DuplicateComplaintError';
+    this.code = code;
+    this.duplicateType = duplicateType;
+    this.existingComplaint = existingComplaint;
+  }
+}
+
 export interface CreateComplaintPayload {
   category: string;
   customCategory?: string;
@@ -108,6 +137,7 @@ export interface CreateComplaintPayload {
   locationArea: string;
   addressText?: string;
   hasImage?: boolean;
+  imageFile?: File | null;
   evidenceMetadata?: {
     filename: string;
     sizeBytes: number;
@@ -214,16 +244,46 @@ export async function apiCreateComplaint(
     throw new Error('You must be logged in as a citizen to submit a complaint.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/complaints`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  if (payload.imageFile) {
+    const formData = new FormData();
+    formData.append('category', payload.category);
+    if (payload.customCategory) formData.append('customCategory', payload.customCategory);
+    formData.append('description', payload.description);
+    formData.append('observedDate', payload.observedDate);
+    formData.append('locationArea', payload.locationArea);
+    if (payload.addressText) formData.append('addressText', payload.addressText);
+    formData.append('hasImage', 'true');
+    formData.append('image', payload.imageFile);
+
+    res = await fetch(`${API_BASE_URL}/api/complaints`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+  } else {
+    res = await fetch(`${API_BASE_URL}/api/complaints`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  }
 
   const data = await res.json();
+  if (res.status === 409) {
+    throw new DuplicateComplaintError(
+      data.error || 'A duplicate complaint has already been submitted in Mysuru.',
+      data.code || 'DUPLICATE_COMPLAINT',
+      data.duplicateType || 'UNKNOWN_DUPLICATE',
+      data.existingComplaint
+    );
+  }
+
   if (!res.ok) {
     throw new Error(data.error || 'Failed to register complaint. Please try again.');
   }

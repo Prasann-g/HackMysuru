@@ -11,6 +11,8 @@ import {
   verifyComplaint,
   validateDescription,
   validateObservedDate,
+  tokenizeAndNormalize,
+  calculateJaccardSimilarity,
 } from '../services/verificationEngine.js';
 import {
   validateImageMagicBytes,
@@ -117,9 +119,10 @@ complaintRouter.post(
     let evidenceMetadata = input.evidenceMetadata;
     let diskPath: string | undefined;
 
+    let magicValidation: ReturnType<typeof validateImageMagicBytes> | undefined;
     if (req.file) {
       // Content-based magic bytes validation (Security Rule 5)
-      const magicValidation = validateImageMagicBytes(req.file.buffer);
+      magicValidation = validateImageMagicBytes(req.file.buffer);
       if (!magicValidation.valid) {
         res.status(400).json({ error: magicValidation.error });
         return;
@@ -129,6 +132,63 @@ complaintRouter.post(
       imageSha256 = computeImageSha256(req.file.buffer);
       imagePhash = (await computeImageDHash(req.file.buffer)) || undefined;
 
+      // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
+      const exactMatches = complaintStore.findByImageSha256(imageSha256);
+      if (exactMatches.length > 0) {
+        const existing = exactMatches[0];
+        res.status(409).json({
+          error: 'This exact photograph has already been submitted for an existing complaint in Mysuru.',
+          code: 'EXACT_IMAGE_DUPLICATE',
+          duplicateType: 'IMAGE_EXACT_MATCH',
+          existingComplaint: {
+            id: existing.id,
+            trackingToken: existing.trackingToken,
+            category: existing.category,
+            status: existing.status,
+            locationArea: existing.locationArea,
+            observedDate: existing.observedDate,
+            createdAt: existing.createdAt,
+          },
+        });
+        return;
+      }
+    }
+
+    // Retrieve candidates for duplicate checking & officer decision support
+    const verificationCandidates = complaintStore.listCandidatesForVerification();
+
+    // Pre-submission High-Confidence Text Duplicate Check (Option A: Jaccard >= 0.90 in same category & area)
+    const inputTokens = tokenizeAndNormalize(input.description);
+    const textDuplicate = verificationCandidates.find((c) => {
+      if (c.status === 'RESOLVED' || c.status === 'CLOSED') return false;
+      if (c.category !== input.category) return false;
+      if (c.locationArea.trim().toLowerCase() !== input.locationArea.trim().toLowerCase()) return false;
+      const candidateTokens = tokenizeAndNormalize(c.description);
+      const jaccard = calculateJaccardSimilarity(inputTokens, candidateTokens);
+      return jaccard >= 0.90;
+    });
+
+    if (textDuplicate) {
+      const fullExisting = complaintStore.findById(textDuplicate.id);
+      res.status(409).json({
+        error: 'An identical or near-identical complaint has already been submitted and is active in this area.',
+        code: 'EXACT_TEXT_DUPLICATE',
+        duplicateType: 'TEXT_EXACT_MATCH',
+        existingComplaint: {
+          id: textDuplicate.id,
+          trackingToken: fullExisting?.trackingToken || textDuplicate.id,
+          category: textDuplicate.category,
+          status: textDuplicate.status,
+          locationArea: textDuplicate.locationArea,
+          observedDate: textDuplicate.observedDate,
+          createdAt: fullExisting?.createdAt,
+        },
+      });
+      return;
+    }
+
+    // Safe File Storage: Only write to disk AFTER all duplicate checks have passed
+    if (req.file && magicValidation) {
       const complaintsDir = path.join(CONFIG.UPLOAD_DIR, 'complaints');
       if (!fs.existsSync(complaintsDir)) {
         fs.mkdirSync(complaintsDir, { recursive: true });
@@ -154,9 +214,6 @@ complaintRouter.post(
         note: 'Uploaded via citizen complaint portal',
       };
     }
-
-    // Run Verification Engine against active open complaints + historical complaints with images
-    const verificationCandidates = complaintStore.listCandidatesForVerification();
 
     const verificationResult = verifyComplaint(
       {
