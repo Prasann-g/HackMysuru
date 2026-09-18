@@ -17,6 +17,9 @@ function mapRowToComplaint(row: any): ComplaintRecord {
     longitude: row.longitude !== null && row.longitude !== undefined ? Number(row.longitude) : undefined,
     hasImage: Boolean(row.has_image),
     evidenceMetadata: row.evidence_metadata ? JSON.parse(row.evidence_metadata) : undefined,
+    imagePath: row.image_path || undefined,
+    imageSha256: row.image_sha256 || undefined,
+    imagePhash: row.image_phash || undefined,
     status: row.status as ComplaintStatus,
     verificationResult: row.verification_result ? JSON.parse(row.verification_result) : undefined,
     assignedOfficerId: row.assigned_officer_id || undefined,
@@ -36,9 +39,10 @@ export class ComplaintStore {
         id, tracking_token, citizen_id, category, custom_category,
         description, observed_date, location_area, address_text,
         latitude, longitude, has_image, evidence_metadata,
+        image_path, image_sha256, image_phash,
         status, verification_result, assigned_officer_id, assigned_department,
         review_notes, is_demo, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -55,6 +59,9 @@ export class ComplaintStore {
       complaint.longitude !== undefined ? complaint.longitude : null,
       complaint.hasImage ? 1 : 0,
       complaint.evidenceMetadata ? JSON.stringify(complaint.evidenceMetadata) : null,
+      complaint.imagePath || null,
+      complaint.imageSha256 || null,
+      complaint.imagePhash || null,
       complaint.status,
       complaint.verificationResult ? JSON.stringify(complaint.verificationResult) : null,
       complaint.assignedOfficerId || null,
@@ -66,6 +73,18 @@ export class ComplaintStore {
     );
 
     return complaint;
+  }
+
+  public findByImageSha256(sha256: string, excludeId?: string): ComplaintRecord[] {
+    const db = getDb();
+    if (excludeId) {
+      const stmt = db.prepare('SELECT * FROM complaints WHERE image_sha256 = ? AND id != ?');
+      const rows = stmt.all(sha256, excludeId) as any[];
+      return rows.map(mapRowToComplaint);
+    }
+    const stmt = db.prepare('SELECT * FROM complaints WHERE image_sha256 = ?');
+    const rows = stmt.all(sha256) as any[];
+    return rows.map(mapRowToComplaint);
   }
 
   public findById(id: string): ComplaintRecord | undefined {
@@ -94,7 +113,7 @@ export class ComplaintStore {
   public listOpenCandidates(): ExistingComplaint[] {
     const db = getDb();
     const stmt = db.prepare(`
-      SELECT id, category, description, observed_date, location_area, status 
+      SELECT id, category, description, observed_date, location_area, status, image_sha256, image_phash 
       FROM complaints 
       WHERE status NOT IN ('RESOLVED', 'CLOSED')
       ORDER BY created_at DESC
@@ -107,6 +126,39 @@ export class ComplaintStore {
       observedDate: r.observed_date,
       locationArea: r.location_area,
       status: r.status,
+      imageSha256: r.image_sha256 || undefined,
+      imagePhash: r.image_phash || undefined,
+    }));
+  }
+
+  /**
+   * Retrieves reference candidates for full verification.
+   * Includes all active open complaints (for text duplication)
+   * PLUS historical (resolved/closed) complaints that contain image hashes
+   * (for image reuse detection across the entire municipal history).
+   * Capped at recent 1000 records for scalable performance.
+   */
+  public listCandidatesForVerification(limit = 1000): ExistingComplaint[] {
+    const db = getDb();
+    const stmt = db.prepare(`
+      SELECT id, category, description, observed_date, location_area, status, image_sha256, image_phash 
+      FROM complaints 
+      WHERE status NOT IN ('RESOLVED', 'CLOSED')
+         OR image_sha256 IS NOT NULL
+         OR image_phash IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT ?
+    `);
+    const rows = stmt.all(limit) as any[];
+    return rows.map((r) => ({
+      id: r.id,
+      category: r.category as IssueCategory,
+      description: r.description,
+      observedDate: r.observed_date,
+      locationArea: r.location_area,
+      status: r.status,
+      imageSha256: r.image_sha256 || undefined,
+      imagePhash: r.image_phash || undefined,
     }));
   }
 

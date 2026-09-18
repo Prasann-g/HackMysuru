@@ -138,6 +138,12 @@ export interface ComplaintRecord {
       jaccardSimilarity: number;
       matchingPhrases: string[];
       riskLevel: string;
+      imageMatch?: {
+        matchType: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY';
+        sha256Matched: boolean;
+        hammingDistance?: number;
+        explanation: string;
+      };
     }>;
     signals: string[];
     uncertainties: string[];
@@ -147,6 +153,7 @@ export interface ComplaintRecord {
       aligned: boolean;
       detectedKeywords: string[];
     };
+    imageComparisonSignal?: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY' | 'NO_IMAGE_MATCH' | 'IMAGE_COMPARISON_UNAVAILABLE';
   };
   assignedDepartment?: string;
   assignedOfficerId?: string;
@@ -161,6 +168,23 @@ export interface ComplaintRecord {
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export async function apiGetComplaintImageBlobUrl(complaintId: string): Promise<string | null> {
+  const token = getStoredToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/complaints/${complaintId}/image`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
 }
 
 export interface PublicTrackResult {

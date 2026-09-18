@@ -6,9 +6,11 @@ import {
   MapPin,
   Split,
   ShieldAlert,
+  Camera,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { AuthenticatedEvidenceImage } from '../common/AuthenticatedEvidenceImage';
 import type { ComplaintRecord } from '../../services/api';
 
 interface DuplicateClusterInspectorProps {
@@ -84,7 +86,7 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
             >
               {/* Match Header & Risk */}
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-brand-slate-100">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={riskBadgeVariant} size="sm">
                     {matchMeta?.riskLevel || 'MEDIUM'} RISK OVERLAP
                   </Badge>
@@ -93,13 +95,25 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                       {similarityPct}% Vocabulary Similarity
                     </span>
                   )}
+                  {matchMeta?.imageMatch?.matchType === 'EXACT_IMAGE_REUSE' && (
+                    <span className="text-xs font-semibold text-rose-800 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Camera className="w-3 h-3 text-rose-600" />
+                      Exact Image Reuse (SHA-256)
+                    </span>
+                  )}
+                  {matchMeta?.imageMatch?.matchType === 'LIKELY_VISUAL_SIMILARITY' && (
+                    <span className="text-xs font-semibold text-amber-900 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Camera className="w-3 h-3 text-amber-700" />
+                      Visual Gradient Match (dHash: {matchMeta.imageMatch.hammingDistance}/64)
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs font-mono text-brand-slate-500">
                   Target: {candidate.id} ({candidate.trackingToken})
                 </div>
               </div>
 
-              {/* Side by side comparison */}
+              {/* Side by side textual comparison */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 {/* Current Complaint */}
                 <div className="bg-brand-slate-50 rounded-lg p-3 border border-brand-slate-200/70 space-y-2">
@@ -157,6 +171,57 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                         "{phrase}"
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Photographic Evidence Comparison (when image match is detected) */}
+              {matchMeta?.imageMatch && (
+                <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-amber-700" />
+                      <span className="text-xs font-bold text-amber-950">
+                        Photographic Evidence Comparison
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono font-medium text-amber-800">
+                      {matchMeta.imageMatch.matchType === 'EXACT_IMAGE_REUSE'
+                        ? 'Identical SHA-256 Checksum Match'
+                        : `Perceptual dHash Distance: ${matchMeta.imageMatch.hammingDistance}/64`}
+                    </span>
+                  </div>
+
+                  {/* Side-by-side photo comparison */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-brand-slate-700 block mb-1">
+                        Current Submission Photo ({currentComplaint.id})
+                      </span>
+                      <AuthenticatedEvidenceImage
+                        complaintId={currentComplaint.id}
+                        className="w-full h-36 object-cover rounded-lg border border-brand-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-brand-slate-700 block mb-1">
+                        Existing Grievance Photo ({candidate.id})
+                      </span>
+                      <AuthenticatedEvidenceImage
+                        complaintId={candidate.id}
+                        className="w-full h-36 object-cover rounded-lg border border-brand-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Explainable detail & honest limitation notice (Rule 4 & 7) */}
+                  <div className="text-[11px] text-amber-950 bg-white/80 p-2.5 rounded-lg border border-amber-200/70 leading-relaxed space-y-1">
+                    <p className="font-medium text-amber-900">
+                      {matchMeta.imageMatch.explanation}
+                    </p>
+                    <p className="text-[10px] text-amber-800 italic">
+                      Detection note: Perceptual difference hashing compares 64-bit luminance gradients. It is an image heuristic, not a trained ML model. Automated visual similarity does not prove intentional citizen deception or physical site conditions. Physical verification by ward field staff remains mandatory.
+                    </p>
                   </div>
                 </div>
               )}

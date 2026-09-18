@@ -1,11 +1,22 @@
 import { Router } from 'express';
+import multer from 'multer';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { complaintStore } from '../db/complaintStore.js';
+import { evidenceUpload } from '../middleware/upload.js';
+import { CONFIG } from '../config.js';
 import {
   verifyComplaint,
   validateDescription,
   validateObservedDate,
 } from '../services/verificationEngine.js';
+import {
+  validateImageMagicBytes,
+  computeImageSha256,
+  computeImageDHash,
+} from '../utils/imageHash.js';
 import type {
   ComplaintRecord,
   CreateComplaintInput,
@@ -34,97 +45,186 @@ function getDefaultDepartment(category: IssueCategory): string {
   }
 }
 
-// 1. Create a Complaint (Citizen only)
-complaintRouter.post('/', requireAuth, requireRole(['CITIZEN']), (req, res) => {
-  const input = req.body as CreateComplaintInput;
-
-  // Validation 1: Description
-  const descValidation = validateDescription(input.description);
-  if (!descValidation.valid) {
-    res.status(400).json({ error: descValidation.error });
-    return;
-  }
-
-  // Validation 2: Observed Date
-  const dateValidation = validateObservedDate(input.observedDate);
-  if (!dateValidation.valid) {
-    res.status(400).json({ error: dateValidation.error });
-    return;
-  }
-
-  // Validation 3: Category
-  const validCategories: IssueCategory[] = [
-    'garbage_dumping',
-    'overflowing_bin',
-    'pothole',
-    'broken_streetlight',
-    'unsegregated_waste',
-    'construction_debris',
-    'other',
-  ];
-  if (!input.category || !validCategories.includes(input.category)) {
-    res.status(400).json({
-      error: `Invalid issue category. Must be one of: ${validCategories.join(', ')}.`,
+// 1. Create a Complaint (Citizen only - supports JSON and multipart/form-data with photo evidence)
+complaintRouter.post(
+  '/',
+  requireAuth,
+  requireRole(['CITIZEN']),
+  (req, res, next) => {
+    evidenceUpload.single('image')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            res.status(400).json({
+              error: `File size exceeds the allowed limit of ${Math.round(CONFIG.MAX_FILE_SIZE_BYTES / (1024 * 1024))}MB.`,
+            });
+            return;
+          }
+          res.status(400).json({ error: `Upload error: ${err.message}` });
+          return;
+        }
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      next();
     });
-    return;
-  }
+  },
+  async (req, res) => {
+    const input = req.body as CreateComplaintInput;
 
-  // Validation 4: Location Area
-  if (!input.locationArea || input.locationArea.trim().length === 0) {
-    res.status(400).json({ error: 'Location area or neighborhood is required.' });
-    return;
-  }
+    // Validation 1: Description
+    const descValidation = validateDescription(input.description);
+    if (!descValidation.valid) {
+      res.status(400).json({ error: descValidation.error });
+      return;
+    }
 
-  // Run Verification Engine against active open complaints
-  const openCandidates = complaintStore.listOpenCandidates();
-  const verificationResult = verifyComplaint(
-    {
+    // Validation 2: Observed Date
+    const dateValidation = validateObservedDate(input.observedDate);
+    if (!dateValidation.valid) {
+      res.status(400).json({ error: dateValidation.error });
+      return;
+    }
+
+    // Validation 3: Category
+    const validCategories: IssueCategory[] = [
+      'garbage_dumping',
+      'overflowing_bin',
+      'pothole',
+      'broken_streetlight',
+      'unsegregated_waste',
+      'construction_debris',
+      'other',
+    ];
+    if (!input.category || !validCategories.includes(input.category)) {
+      res.status(400).json({
+        error: `Invalid issue category. Must be one of: ${validCategories.join(', ')}.`,
+      });
+      return;
+    }
+
+    // Validation 4: Location Area
+    if (!input.locationArea || input.locationArea.trim().length === 0) {
+      res.status(400).json({ error: 'Location area or neighborhood is required.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    let hasImage = Boolean(input.hasImage);
+    let imagePath: string | undefined;
+    let imageSha256: string | undefined;
+    let imagePhash: string | undefined;
+    let evidenceMetadata = input.evidenceMetadata;
+    let diskPath: string | undefined;
+
+    if (req.file) {
+      // Content-based magic bytes validation (Security Rule 5)
+      const magicValidation = validateImageMagicBytes(req.file.buffer);
+      if (!magicValidation.valid) {
+        res.status(400).json({ error: magicValidation.error });
+        return;
+      }
+
+      hasImage = true;
+      imageSha256 = computeImageSha256(req.file.buffer);
+      imagePhash = (await computeImageDHash(req.file.buffer)) || undefined;
+
+      const complaintsDir = path.join(CONFIG.UPLOAD_DIR, 'complaints');
+      if (!fs.existsSync(complaintsDir)) {
+        fs.mkdirSync(complaintsDir, { recursive: true });
+      }
+
+      const ext =
+        path.extname(req.file.originalname) ||
+        (magicValidation.detectedMime === 'image/png'
+          ? '.png'
+          : magicValidation.detectedMime === 'image/webp'
+          ? '.webp'
+          : '.jpg');
+      const storedFilename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+      diskPath = path.join(complaintsDir, storedFilename);
+      fs.writeFileSync(diskPath, req.file.buffer);
+      imagePath = path.join('uploads', 'complaints', storedFilename).replace(/\\/g, '/');
+
+      evidenceMetadata = {
+        filename: req.file.originalname,
+        sizeBytes: req.file.size,
+        mimetype: magicValidation.detectedMime || req.file.mimetype,
+        submittedAt: now,
+        note: 'Uploaded via citizen complaint portal',
+      };
+    }
+
+    // Run Verification Engine against active open complaints + historical complaints with images
+    const verificationCandidates = complaintStore.listCandidatesForVerification();
+
+    const verificationResult = verifyComplaint(
+      {
+        category: input.category,
+        customCategory: input.customCategory,
+        description: input.description,
+        observedDate: input.observedDate,
+        locationArea: input.locationArea,
+        addressText: input.addressText,
+        hasImage,
+        imageSha256,
+        imagePhash,
+      },
+      verificationCandidates
+    );
+
+    const id = `MCC-2026-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const trackingToken = `TRK-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const newComplaint: ComplaintRecord = {
+      id,
+      trackingToken,
+      citizenId: req.user!.userId,
       category: input.category,
       customCategory: input.customCategory,
-      description: input.description,
+      description: input.description.trim(),
       observedDate: input.observedDate,
-      locationArea: input.locationArea,
-      addressText: input.addressText,
-      hasImage: Boolean(input.hasImage),
-    },
-    openCandidates
-  );
+      locationArea: input.locationArea.trim(),
+      addressText: input.addressText?.trim() || undefined,
+      latitude: input.latitude ? Number(input.latitude) : undefined,
+      longitude: input.longitude ? Number(input.longitude) : undefined,
+      hasImage,
+      evidenceMetadata,
+      imagePath,
+      imageSha256,
+      imagePhash,
+      status: 'SUBMITTED',
+      verificationResult,
+      assignedDepartment: getDefaultDepartment(input.category),
+      isDemo: false,
+      createdAt: now,
+      updatedAt: now,
+    };
 
-  const now = new Date().toISOString();
-  const id = `MCC-2026-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-  const trackingToken = `TRK-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    let saved: ComplaintRecord;
+    try {
+      saved = complaintStore.create(newComplaint);
+    } catch {
+      // Rollback: delete physical file from disk to prevent orphaned files
+      if (diskPath && fs.existsSync(diskPath)) {
+        try {
+          fs.unlinkSync(diskPath);
+        } catch {
+          // ignore cleanup error
+        }
+      }
+      res.status(500).json({ error: 'Failed to persist complaint in database.' });
+      return;
+    }
 
-  const newComplaint: ComplaintRecord = {
-    id,
-    trackingToken,
-    citizenId: req.user!.userId,
-    category: input.category,
-    customCategory: input.customCategory,
-    description: input.description.trim(),
-    observedDate: input.observedDate,
-    locationArea: input.locationArea.trim(),
-    addressText: input.addressText?.trim() || undefined,
-    latitude: input.latitude,
-    longitude: input.longitude,
-    hasImage: Boolean(input.hasImage),
-    evidenceMetadata: input.evidenceMetadata,
-    status: 'SUBMITTED',
-    verificationResult,
-    assignedDepartment: getDefaultDepartment(input.category),
-    isDemo: false,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const saved = complaintStore.create(newComplaint);
-
-  res.status(201).json({
-    message: 'Complaint registered successfully.',
-    complaint: saved,
-    evidenceNotice:
-      'Attached photo evidence is treated as citizen-submitted evidence only. Authenticity unverified.',
-  });
-});
+    res.status(201).json({
+      message: 'Complaint registered successfully.',
+      complaint: saved,
+      evidenceNotice:
+        'Attached photo evidence is treated as citizen-submitted evidence only. Authenticity unverified.',
+    });
+  }
+);
 
 // 2. View Citizen's Own Complaints (Citizen only)
 complaintRouter.get('/my', requireAuth, requireRole(['CITIZEN']), (req, res) => {
@@ -200,4 +300,57 @@ complaintRouter.get('/:id', requireAuth, (req, res) => {
   }
 
   res.status(200).json(complaint);
+});
+
+// 6. Safe Image Delivery Endpoint (Authorized Citizen or Officer/Admin)
+complaintRouter.get('/:id/image', requireAuth, (req, res) => {
+  const id = req.params.id as string;
+  const complaint = complaintStore.findById(id);
+  if (!complaint || !complaint.imagePath) {
+    res.status(404).json({ error: 'No image found for this complaint.' });
+    return;
+  }
+
+  // Authorization Gate: Citizens can only view images from their own complaints
+  if (req.user!.role === 'CITIZEN' && complaint.citizenId !== req.user!.userId) {
+    res.status(403).json({
+      error: 'Access denied: You are not authorized to view this complaint evidence photo.',
+    });
+    return;
+  }
+
+  // Prevent Path Traversal (Security Rule 5)
+  const uploadRoot = path.resolve(CONFIG.UPLOAD_DIR);
+  const absoluteDiskPath = path.resolve(process.cwd(), complaint.imagePath);
+
+  if (!absoluteDiskPath.startsWith(uploadRoot)) {
+    res.status(403).json({ error: 'Access denied: Invalid image path.' });
+    return;
+  }
+
+  if (!fs.existsSync(absoluteDiskPath)) {
+    res.status(404).json({ error: 'Evidence image file not found on disk.' });
+    return;
+  }
+
+  // Content type mapping
+  const ext = path.extname(absoluteDiskPath).toLowerCase();
+  const mimeType =
+    ext === '.png'
+      ? 'image/png'
+      : ext === '.webp'
+      ? 'image/webp'
+      : 'image/jpeg';
+
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+
+  const stream = fs.createReadStream(absoluteDiskPath);
+  stream.on('error', () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Error reading image file.' });
+    }
+  });
+  stream.pipe(res);
 });

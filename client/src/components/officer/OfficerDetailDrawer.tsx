@@ -21,6 +21,7 @@ import {
 import type { CitizenUser } from '../../types/auth';
 import { DuplicateClusterInspector } from './DuplicateClusterInspector';
 import { ReviewActionPanel } from './ReviewActionPanel';
+import { AuthenticatedEvidenceImage } from '../common/AuthenticatedEvidenceImage';
 
 interface OfficerDetailDrawerProps {
   complaintId: string | null;
@@ -281,7 +282,15 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 </div>
 
                 {complaint.hasImage ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    {/* Visual Photo Inspection */}
+                    <div className="w-full max-w-lg mx-auto bg-brand-slate-100 rounded-xl overflow-hidden border border-brand-slate-200">
+                      <AuthenticatedEvidenceImage
+                        complaintId={complaint.id}
+                        className="w-full h-56 sm:h-64 object-cover"
+                      />
+                    </div>
+
                     {/* Metadata Card */}
                     <div className="bg-brand-slate-50 rounded-lg p-3 border border-brand-slate-200 text-xs space-y-2">
                       <div className="font-semibold text-brand-slate-700">

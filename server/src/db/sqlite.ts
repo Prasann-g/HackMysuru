@@ -67,6 +67,9 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
       longitude REAL,
       has_image INTEGER NOT NULL DEFAULT 0,
       evidence_metadata TEXT,
+      image_path TEXT,
+      image_sha256 TEXT,
+      image_phash TEXT,
       status TEXT NOT NULL DEFAULT 'SUBMITTED' CHECK (status IN (
         'SUBMITTED', 'UNDER_REVIEW', 'NEEDS_CLARIFICATION',
         'FORWARDED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'
@@ -86,6 +89,21 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
     CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
     CREATE INDEX IF NOT EXISTS idx_complaints_area ON complaints(location_area);
   `);
+
+  // Safe migration for image evidence columns on existing databases
+  const imageCols = [
+    { name: 'image_path', type: 'TEXT' },
+    { name: 'image_sha256', type: 'TEXT' },
+    { name: 'image_phash', type: 'TEXT' },
+  ];
+  for (const col of imageCols) {
+    try {
+      db.exec(`ALTER TABLE complaints ADD COLUMN ${col.name} ${col.type};`);
+    } catch {
+      // Column already exists
+    }
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_complaints_image_sha256 ON complaints(image_sha256);');
 
   dbInstance = db;
   return dbInstance;

@@ -31,6 +31,9 @@ export interface ComplaintRecord {
   longitude?: number;
   hasImage: boolean;
   evidenceMetadata?: EvidenceMetadata;
+  imagePath?: string;
+  imageSha256?: string;
+  imagePhash?: string;
   status: ComplaintStatus;
   verificationResult?: VerificationResult;
   assignedOfficerId?: string;
@@ -52,6 +55,9 @@ export interface CreateComplaintInput {
   longitude?: number;
   hasImage?: boolean;
   evidenceMetadata?: EvidenceMetadata;
+  imagePath?: string;
+  imageSha256?: string;
+  imagePhash?: string;
 }
 
 export interface PublicTrackResult {

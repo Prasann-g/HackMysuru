@@ -14,6 +14,19 @@ export type VerificationOutcome =
   | 'INCOMPLETE_EVIDENCE'
   | 'REQUIRES_HUMAN_REVIEW';
 
+export type ImageComparisonSignal =
+  | 'EXACT_IMAGE_REUSE'
+  | 'LIKELY_VISUAL_SIMILARITY'
+  | 'NO_IMAGE_MATCH'
+  | 'IMAGE_COMPARISON_UNAVAILABLE';
+
+export interface ImageMatchDetail {
+  matchType: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY';
+  sha256Matched: boolean;
+  hammingDistance?: number;
+  explanation: string;
+}
+
 export interface DuplicateMatch {
   existingComplaintId: string;
   category: IssueCategory;
@@ -22,6 +35,7 @@ export interface DuplicateMatch {
   matchingPhrases: string[];
   sharedTokens: string[];
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  imageMatch?: ImageMatchDetail;
 }
 
 export interface VerificationResult {
@@ -37,6 +51,7 @@ export interface VerificationResult {
     detectedKeywords: string[];
     competingCategoryKeywords?: { category: IssueCategory; keywords: string[] };
   };
+  imageComparisonSignal?: ImageComparisonSignal;
   validationErrors?: string[];
   processedAt: string;
 }
@@ -50,6 +65,8 @@ export interface ComplaintInput {
   locationArea?: string;
   addressText?: string;
   hasImage?: boolean;
+  imageSha256?: string;
+  imagePhash?: string;
 }
 
 export interface ExistingComplaint {
@@ -59,4 +76,6 @@ export interface ExistingComplaint {
   observedDate: string;
   locationArea?: string;
   status: string;
+  imageSha256?: string;
+  imagePhash?: string;
 }

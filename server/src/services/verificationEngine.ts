@@ -4,7 +4,9 @@ import type {
   ComplaintInput,
   ExistingComplaint,
   DuplicateMatch,
+  ImageComparisonSignal,
 } from '../types/verification.js';
+import { calculateHammingDistance, DHASH_THRESHOLDS } from '../utils/imageHash.js';
 
 // Common English stop words to filter during tokenization
 const STOP_WORDS = new Set([
@@ -289,11 +291,14 @@ export function verifyComplaint(
     signals.push(`Category alignment confirmed: detected keywords [${alignment.detectedKeywords.join(', ')}].`);
   }
 
-  // Duplicate Matching against Candidate Pool
-  const matches: DuplicateMatch[] = [];
+  // 1. Text Duplicate Matching against Candidate Pool
+  const matchesMap = new Map<string, DuplicateMatch>();
   let highestSimilarity = 0;
 
   for (const existing of existingComplaints) {
+    // Self-match prevention: Never match a complaint against itself
+    if (input.id && existing.id === input.id) continue;
+
     const existingTokens = tokenizeAndNormalize(existing.description);
     const jaccard = calculateJaccardSimilarity(tokens, existingTokens);
     const bigramOverlap = calculateNgramOverlap(tokens, existingTokens, 2);
@@ -302,7 +307,7 @@ export function verifyComplaint(
       highestSimilarity = jaccard;
     }
 
-    // Capture matches with notable similarity (>= 0.35)
+    // Capture matches with notable text similarity (>= 0.35)
     if (jaccard >= 0.35 || bigramOverlap.count >= 2) {
       let risk: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
       if (jaccard >= 0.70 || (jaccard >= 0.55 && bigramOverlap.count >= 3)) {
@@ -311,7 +316,7 @@ export function verifyComplaint(
         risk = 'MEDIUM';
       }
 
-      matches.push({
+      matchesMap.set(existing.id, {
         existingComplaintId: existing.id,
         category: existing.category,
         jaccardSimilarity: jaccard,
@@ -323,10 +328,147 @@ export function verifyComplaint(
     }
   }
 
-  // Sort matches by similarity descending
-  matches.sort((a, b) => b.jaccardSimilarity - a.jaccardSimilarity);
+  // 2. Image Evidence Comparison & Duplication Detection (Explainable Signals)
+  let imageComparisonSignal: ImageComparisonSignal = 'IMAGE_COMPARISON_UNAVAILABLE';
+  const hasInputImage = Boolean(input.hasImage && (input.imageSha256 || input.imagePhash));
 
-  // Determine overall duplicate risk
+  if (!hasInputImage) {
+    imageComparisonSignal = 'IMAGE_COMPARISON_UNAVAILABLE';
+    signals.push('IMAGE_COMPARISON_UNAVAILABLE: No photographic evidence attached with this complaint.');
+  } else {
+    // Check if any reference candidate has image hashes
+    const candidatesWithImages = existingComplaints.filter(
+      (c) => (!input.id || c.id !== input.id) && (c.imageSha256 || c.imagePhash)
+    );
+
+    if (candidatesWithImages.length === 0) {
+      imageComparisonSignal = 'IMAGE_COMPARISON_UNAVAILABLE';
+      signals.push(
+        'IMAGE_COMPARISON_UNAVAILABLE: No reference candidate images available in current database for comparison.'
+      );
+    } else {
+      let exactMatchesFound = 0;
+      let perceptualMatchesFound = 0;
+
+      // Phase 2A: Check Exact SHA-256 Checksum Equality (EXACT_IMAGE_REUSE)
+      if (input.imageSha256) {
+        for (const candidate of candidatesWithImages) {
+          if (candidate.imageSha256 && candidate.imageSha256 === input.imageSha256) {
+            exactMatchesFound++;
+            imageComparisonSignal = 'EXACT_IMAGE_REUSE';
+
+            // Independent perceptual distance calculation if both pHashes are present
+            const calculatedDist =
+              input.imagePhash && candidate.imagePhash
+                ? calculateHammingDistance(input.imagePhash, candidate.imagePhash)
+                : null;
+
+            signals.push(
+              `EXACT_IMAGE_REUSE: Attached image checksum matches complaint #${candidate.id} (SHA-256: ${input.imageSha256.slice(0, 10)}...). Identical image file reuse across submissions.`
+            );
+
+            // Populate or attach to match entry
+            const existingMatch = matchesMap.get(candidate.id);
+            if (existingMatch) {
+              existingMatch.imageMatch = {
+                matchType: 'EXACT_IMAGE_REUSE',
+                sha256Matched: true,
+                hammingDistance: calculatedDist !== null ? calculatedDist : undefined,
+                explanation: `Identical cryptographic image hash (SHA-256) matches complaint #${candidate.id}. Separate submissions share exact same image file.`,
+              };
+            } else {
+              matchesMap.set(candidate.id, {
+                existingComplaintId: candidate.id,
+                category: candidate.category,
+                jaccardSimilarity: 0,
+                ngramOverlapCount: 0,
+                matchingPhrases: [],
+                sharedTokens: [],
+                riskLevel: 'LOW', // Independent: does not elevate text risk level
+                imageMatch: {
+                  matchType: 'EXACT_IMAGE_REUSE',
+                  sha256Matched: true,
+                  hammingDistance: calculatedDist !== null ? calculatedDist : undefined,
+                  explanation: `Identical cryptographic image hash (SHA-256) matches complaint #${candidate.id}. Separate submissions share exact same image file.`,
+                },
+              });
+            }
+          }
+        }
+      }
+
+      // Phase 2B: Check Perceptual dHash Similarity (LIKELY_VISUAL_SIMILARITY)
+      // Only runs if SHA-256 did not match that specific candidate
+      if (input.imagePhash) {
+        for (const candidate of candidatesWithImages) {
+          // Skip if already matched via exact SHA-256
+          if (candidate.imageSha256 && input.imageSha256 && candidate.imageSha256 === input.imageSha256) {
+            continue;
+          }
+
+          if (candidate.imagePhash) {
+            const dist = calculateHammingDistance(input.imagePhash, candidate.imagePhash);
+            if (dist !== null && dist <= DHASH_THRESHOLDS.MODERATE_SIMILARITY_MAX_DISTANCE) {
+              perceptualMatchesFound++;
+              if (imageComparisonSignal !== 'EXACT_IMAGE_REUSE') {
+                imageComparisonSignal = 'LIKELY_VISUAL_SIMILARITY';
+              }
+
+              signals.push(
+                `LIKELY_VISUAL_SIMILARITY: Perceptual difference hash shows close visual gradient resemblance (Hamming distance ${dist}/64) with complaint #${candidate.id}. Possible resized or recompressed image.`
+              );
+
+              const existingMatch = matchesMap.get(candidate.id);
+              if (existingMatch) {
+                existingMatch.imageMatch = {
+                  matchType: 'LIKELY_VISUAL_SIMILARITY',
+                  sha256Matched: false,
+                  hammingDistance: dist,
+                  explanation: `Perceptual difference hash (dHash) distance ${dist}/64 indicates high visual resemblance to complaint #${candidate.id}.`,
+                };
+              } else {
+                matchesMap.set(candidate.id, {
+                  existingComplaintId: candidate.id,
+                  category: candidate.category,
+                  jaccardSimilarity: 0,
+                  ngramOverlapCount: 0,
+                  matchingPhrases: [],
+                  sharedTokens: [],
+                  riskLevel: 'LOW',
+                  imageMatch: {
+                    matchType: 'LIKELY_VISUAL_SIMILARITY',
+                    sha256Matched: false,
+                    hammingDistance: dist,
+                    explanation: `Perceptual difference hash (dHash) distance ${dist}/64 indicates high visual resemblance to complaint #${candidate.id}.`,
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // If candidates with images exist, but zero exact or perceptual matches were found
+      if (exactMatchesFound === 0 && perceptualMatchesFound === 0) {
+        imageComparisonSignal = 'NO_IMAGE_MATCH';
+        signals.push(
+          'NO_IMAGE_MATCH: Submitted image does not match any existing reference images in the candidate pool.'
+        );
+      }
+    }
+  }
+
+  // Convert map to array and sort by jaccard similarity descending
+  const matches = Array.from(matchesMap.values());
+  matches.sort((a, b) => {
+    if (b.jaccardSimilarity !== a.jaccardSimilarity) {
+      return b.jaccardSimilarity - a.jaccardSimilarity;
+    }
+    return (b.imageMatch ? 1 : 0) - (a.imageMatch ? 1 : 0);
+  });
+
+  // Determine overall duplicate risk (PRESERVES DETERMINISTIC TEXT RISK LOGIC)
+  // Per Rule 1: Image similarity does NOT automatically elevate duplicateRisk to HIGH or MEDIUM.
   let overallDuplicateRisk: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
   if (matches.some((m) => m.riskLevel === 'HIGH')) {
     overallDuplicateRisk = 'HIGH';
@@ -351,12 +493,21 @@ export function verifyComplaint(
     uncertainties.push(
       'Photo evidence attached by citizen: treated as submitted visual evidence only. Automated stamp OCR and tamper-proof verification are NOT implemented in this foundation.'
     );
+    uncertainties.push(
+      'Image duplication matching is an explainable decision-support signal; visual similarity does not prove intentional fraud or claim illegitimacy.'
+    );
   } else {
     uncertainties.push('No photographic evidence was attached with this complaint.');
   }
 
-  // System Limitations disclosure
-  limitations.push('Similarity computation is based on Jaccard token overlap and bi-gram phrase intersection.');
+  // System Limitations disclosure (Strict compliance with Rule 4 & 8)
+  limitations.push('Text similarity computation is based on Jaccard token overlap and bi-gram phrase intersection.');
+  limitations.push(
+    'Perceptual difference hashing (dHash) measures 64-bit luminance gradient differences across a 9x8 grid. It is an image-processing heuristic, NOT a trained machine-learning model.'
+  );
+  limitations.push(
+    'Image comparison is resilient to standard recompression and scaling, but cannot reliably detect heavy cropping, 90-degree rotations, perspective distortion, or major edits. On-site human verification is required.'
+  );
   limitations.push(
     `Comparison candidate pool evaluated against ${existingComplaints.length} existing reference complaints.`
   );
@@ -374,6 +525,10 @@ export function verifyComplaint(
   } else if (overallDuplicateRisk === 'MEDIUM') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = `Review similarities with ${matches[0].existingComplaintId} before dispatching field team.`;
+  } else if (imageComparisonSignal === 'EXACT_IMAGE_REUSE' || imageComparisonSignal === 'LIKELY_VISUAL_SIMILARITY') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    const matchedImageCandidate = matches.find((m) => m.imageMatch)?.existingComplaintId || 'existing grievance';
+    recommendedAction = `Officer visual review recommended: Image reuse signal detected (${imageComparisonSignal.replace(/_/g, ' ')}) matching complaint #${matchedImageCandidate}. Inspect evidence photos before field dispatch.`;
   }
 
   return {
@@ -385,6 +540,7 @@ export function verifyComplaint(
     limitations,
     recommendedAction,
     categoryAlignment: alignment,
+    imageComparisonSignal,
     processedAt: new Date().toISOString(),
   };
 }
