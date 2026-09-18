@@ -162,7 +162,12 @@ complaintRouter.post(
     const textDuplicate = verificationCandidates.find((c) => {
       if (c.status === 'RESOLVED' || c.status === 'CLOSED') return false;
       if (c.category !== input.category) return false;
-      if (c.locationArea.trim().toLowerCase() !== input.locationArea.trim().toLowerCase()) return false;
+      if (
+        !c.locationArea ||
+        c.locationArea.trim().toLowerCase() !== input.locationArea.trim().toLowerCase()
+      ) {
+        return false;
+      }
       const candidateTokens = tokenizeAndNormalize(c.description);
       const jaccard = calculateJaccardSimilarity(inputTokens, candidateTokens);
       return jaccard >= 0.90;

@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   Edit3,
   Calendar,
@@ -50,7 +51,14 @@ export const Step5Review: React.FC<Step5Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [submittedComplaint, setSubmittedComplaint] = useState<ComplaintRecord | null>(null);
+  const [duplicateConflict, setDuplicateConflict] = useState<{
+    message: string;
+    code: string;
+    duplicateType: string;
+    existingComplaint?: SafeExistingComplaint;
+  } | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
+  const [copiedExistingToken, setCopiedExistingToken] = useState(false);
 
   const categoryName = formData.category
     ? CATEGORY_LABELS[formData.category] || formData.category
@@ -64,9 +72,18 @@ export const Step5Review: React.FC<Step5Props> = ({
     }
   };
 
+  const handleCopyExistingToken = () => {
+    if (duplicateConflict?.existingComplaint?.trackingToken) {
+      navigator.clipboard.writeText(duplicateConflict.existingComplaint.trackingToken);
+      setCopiedExistingToken(true);
+      setTimeout(() => setCopiedExistingToken(false), 2000);
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmissionError(null);
+    setDuplicateConflict(null);
 
     try {
       const response = await apiCreateComplaint({
@@ -77,6 +94,7 @@ export const Step5Review: React.FC<Step5Props> = ({
         locationArea: formData.locationSearch || 'Mysuru (General)',
         addressText: formData.addressText || undefined,
         hasImage: !!formData.imageFile,
+        imageFile: formData.imageFile || undefined,
         evidenceMetadata: formData.imageFile
           ? {
               filename: formData.imageFile.name,
@@ -91,11 +109,165 @@ export const Step5Review: React.FC<Step5Props> = ({
       setSubmittedComplaint(response.complaint);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setSubmissionError(err.message || 'Failed to submit complaint. Please try again.');
+      if (
+        err.name === 'DuplicateComplaintError' ||
+        err.code === 'EXACT_IMAGE_DUPLICATE' ||
+        err.code === 'EXACT_TEXT_DUPLICATE'
+      ) {
+        setDuplicateConflict({
+          message: err.message,
+          code: err.code || 'DUPLICATE_COMPLAINT',
+          duplicateType: err.duplicateType || 'UNKNOWN_DUPLICATE',
+          existingComplaint: err.existingComplaint,
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setSubmissionError(err.message || 'Failed to submit complaint. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // DUPLICATE CONFLICT SCREEN (HTTP 409)
+  if (duplicateConflict) {
+    const existing = duplicateConflict.existingComplaint;
+    const isImageDuplicate = duplicateConflict.code === 'EXACT_IMAGE_DUPLICATE';
+
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        {/* Warning Banner */}
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-2">
+          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 mx-auto">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-amber-950">
+            Duplicate Complaint Submission Rejected
+          </h2>
+          <p className="text-xs sm:text-sm text-amber-800 max-w-lg mx-auto">
+            {duplicateConflict.message}
+          </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 text-xs rounded-full font-medium mt-1">
+            <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
+            Status: 409 Conflict — Pre-submission Rejection
+          </div>
+        </div>
+
+        {/* Existing Complaint Reference Card */}
+        {existing && (
+          <Card className="border-amber-200 bg-amber-50/30">
+            <CardBody className="p-5 space-y-4">
+              <div className="border-b border-amber-100 pb-3">
+                <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider block">
+                  Reference to Existing Complaint in Mysore Registry
+                </span>
+                <p className="text-xs text-brand-slate-600 mt-0.5">
+                  An active grievance was already registered with the exact same evidence. Citizen identity and personal details are strictly protected.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
+                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                    Public Tracking Token
+                  </span>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="font-mono text-sm sm:text-base font-bold text-brand-slate-900">
+                      {existing.trackingToken}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyExistingToken}
+                      icon={copiedExistingToken ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    >
+                      {copiedExistingToken ? 'Copied' : 'Copy'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
+                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                    Current Status & Category
+                  </span>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <Badge variant="duplicate" size="sm">
+                      {existing.status}
+                    </Badge>
+                    <span className="text-xs font-semibold text-brand-slate-800">
+                      {CATEGORY_LABELS[existing.category] || existing.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
+                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                    Observed Area
+                  </span>
+                  <span className="text-xs font-semibold text-brand-slate-800 mt-1 block">
+                    {existing.locationArea || 'Mysuru'}
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
+                  <span className="text-[11px] font-medium text-brand-slate-500 uppercase tracking-wider block">
+                    Registration Date
+                  </span>
+                  <span className="text-xs font-semibold text-brand-slate-800 mt-1 block">
+                    {existing.observedDate}
+                  </span>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Explainability & Privacy Notice */}
+        <div className="p-4 bg-brand-slate-50 border border-brand-slate-200 rounded-xl space-y-1.5 text-xs text-brand-slate-600">
+          <div className="flex items-center gap-2 font-semibold text-brand-slate-800">
+            <ShieldCheck className="w-4 h-4 text-brand-teal-700" />
+            Civic Trust Anti-Duplication Integrity Guarantee
+          </div>
+          <p>
+            {isImageDuplicate
+              ? 'Exact cryptographic match (SHA-256) detected identical image data already filed in the municipal database. No duplicate database record or redundant field inspection order was created.'
+              : 'High-confidence text similarity detected an identical active complaint in this municipal ward. No duplicate record was created.'}
+          </p>
+          <p className="text-[11px] text-brand-slate-500">
+            To prevent municipal queue clogging and facilitate rapid resolution, you can track the existing grievance directly using its tracking token.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDuplicateConflict(null);
+              onEditStep(isImageDuplicate ? 4 : 1);
+            }}
+          >
+            {isImageDuplicate ? 'Attach a Different Photo' : 'Edit Complaint Details'}
+          </Button>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {existing && onNavigateToTrack && (
+              <Button
+                variant="primary"
+                onClick={() => onNavigateToTrack(existing.trackingToken)}
+                icon={<ExternalLink className="w-4 h-4" />}
+              >
+                Track Existing Complaint
+              </Button>
+            )}
+            <Button variant="ghost" onClick={onReset}>
+              Start New Complaint
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // SUCCESS RECEIPT SCREEN
   if (submittedComplaint) {
@@ -201,7 +373,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                 <div className="pt-2">
                   <span className="text-[11px] font-semibold text-brand-slate-600">Signals Detected:</span>
                   <ul className="mt-1 space-y-1 list-disc list-inside text-xs text-brand-slate-700">
-                    {vr.signals.map((sig, idx) => (
+                    {vr.signals.map((sig: string, idx: number) => (
                       <li key={idx}>{sig}</li>
                     ))}
                   </ul>

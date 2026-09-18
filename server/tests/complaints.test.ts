@@ -199,7 +199,7 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       body: JSON.stringify({
         category: 'pothole',
         description:
-          'Deep road crater on Saraswathipuram Main Road near Kuvempunagar fire station causing traffic slowdown and two-wheeler skidding hazard.',
+          'Deep road crater on Saraswathipuram Main Road near Kuvempunagar fire station causing traffic slowdown and significant disruption.',
         observedDate: '2026-09-18',
         locationArea: 'Kuvempunagar',
       }),

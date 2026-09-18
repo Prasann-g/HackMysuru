@@ -31,7 +31,8 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
 
   beforeAll(async () => {
     // Generate real JPEG test buffers
-    // Image A: Vertical gradient
+    // Image A: Vertical gradient with unique run ID
+    const runId = Date.now();
     imageBufA = await sharp({
       create: {
         width: 100,
@@ -43,7 +44,7 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
       .composite([
         {
           input: Buffer.from(
-            '<svg width="100" height="100"><rect x="0" y="0" width="50" height="100" fill="white"/><rect x="50" y="0" width="50" height="100" fill="black"/></svg>'
+            `<svg width="100" height="100"><rect x="0" y="0" width="50" height="100" fill="white"/><rect x="50" y="0" width="50" height="100" fill="black"/><text x="10" y="50" fill="red">${runId}</text></svg>`
           ),
           top: 0,
           left: 0,
@@ -219,34 +220,22 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
       headers: { Authorization: `Bearer ${citizenTokenB}` },
       body: formB,
     });
-    expect(resB.status).toBe(201);
+    expect(resB.status).toBe(409);
     const dataB = await resB.json();
-    const complaintB = dataB.complaint;
 
-    // Verify exact image reuse signal
-    expect(complaintB.verificationResult.imageComparisonSignal).toBe('EXACT_IMAGE_REUSE');
-    expect(
-      complaintB.verificationResult.signals.some((s: string) =>
-        s.includes('EXACT_IMAGE_REUSE') && s.includes(complaintAId)
-      )
-    ).toBe(true);
+    // Verify exact image duplicate rejection payload
+    expect(dataB.error).toContain('This exact photograph has already been submitted');
+    expect(dataB.code).toBe('EXACT_IMAGE_DUPLICATE');
+    expect(dataB.duplicateType).toBe('IMAGE_EXACT_MATCH');
+    expect(dataB.existingComplaint).toBeDefined();
+    expect(dataB.existingComplaint.id).toBe(complaintAId);
+    expect(dataB.existingComplaint.trackingToken).toBeDefined();
+    expect(dataB.existingComplaint.status).toBe('SUBMITTED');
+    expect(dataB.existingComplaint.locationArea).toBe('Jayalakshmipuram');
 
-    // Verify duplicate match record
-    const match = complaintB.verificationResult.matches.find(
-      (m: any) => m.existingComplaintId === complaintAId
-    );
-    expect(match).toBeDefined();
-    expect(match.imageMatch).toBeDefined();
-    expect(match.imageMatch.matchType).toBe('EXACT_IMAGE_REUSE');
-    expect(match.imageMatch.sha256Matched).toBe(true);
-
-    // Rule 1: Image similarity does NOT elevate text duplicate risk
-    // Match itself has LOW text risk, and overall duplicateRisk remains LOW
-    expect(match.riskLevel).toBe('LOW');
-    expect(complaintB.verificationResult.duplicateRisk).toBe('LOW');
-
-    // Rule 1: Officer review is recommended
-    expect(complaintB.verificationResult.outcome).toBe('REQUIRES_HUMAN_REVIEW');
+    // Rule 12: Zero Citizen PII leakage in duplicate rejection response
+    expect(dataB.existingComplaint.citizenId).toBeUndefined();
+    expect(dataB.existingComplaint.reviewNotes).toBeUndefined();
   });
 
   it('detects LIKELY_VISUAL_SIMILARITY for recompressed and resized images', async () => {
@@ -409,13 +398,24 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
   });
 
   it('enforces safe image delivery with RBAC and path traversal defense', async () => {
-    // 1. Submit a complaint by Citizen A
+    // 1. Submit a complaint by Citizen A with a distinct image
+    const imageBufDelivery = await sharp({
+      create: {
+        width: 70,
+        height: 70,
+        channels: 3,
+        background: { r: 50, g: 150, b: 50 },
+      },
+    })
+      .jpeg()
+      .toBuffer();
+
     const form = new FormData();
     form.append('category', 'broken_streetlight');
     form.append('description', 'Flickering street lamp on 5th main road.');
     form.append('observedDate', '2026-03-10');
     form.append('locationArea', 'Gokulam');
-    form.append('image', new Blob([imageBufA], { type: 'image/jpeg' }), 'lamp.jpg');
+    form.append('image', new Blob([imageBufDelivery], { type: 'image/jpeg' }), 'lamp.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
@@ -423,6 +423,7 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
       body: form,
     });
     const data = await res.json();
+    expect(res.status).toBe(201);
     const complaintId = data.complaint.id;
 
     // 2. Citizen A can access their own image
@@ -432,7 +433,7 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     expect(getOwnImg.status).toBe(200);
     expect(getOwnImg.headers.get('content-type')).toBe('image/jpeg');
     const imgBytes = await getOwnImg.arrayBuffer();
-    expect(imgBytes.byteLength).toBe(imageBufA.byteLength);
+    expect(imgBytes.byteLength).toBe(imageBufDelivery.byteLength);
 
     // 3. Citizen B is rejected with 403 Forbidden
     const getOtherImg = await fetch(`${baseUrl}/api/complaints/${complaintId}/image`, {
@@ -523,12 +524,18 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     };
 
     try {
+      const rollbackBuf = await sharp({
+        create: { width: 40, height: 40, channels: 3, background: { r: 99, g: 11, b: 222 } },
+      })
+        .jpeg()
+        .toBuffer();
+
       const form = new FormData();
       form.append('category', 'garbage_dumping');
       form.append('description', 'Test rollback cleanup on database error.');
       form.append('observedDate', '2026-03-10');
       form.append('locationArea', 'Vontikoppal');
-      form.append('image', new Blob([imageBufA], { type: 'image/jpeg' }), 'rollback.jpg');
+      form.append('image', new Blob([rollbackBuf], { type: 'image/jpeg' }), 'rollback.jpg');
 
       const res = await fetch(`${baseUrl}/api/complaints`, {
         method: 'POST',
