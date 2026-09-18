@@ -17,3 +17,11 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+
+# Databases & local state
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data
+*/data

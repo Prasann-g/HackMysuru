@@ -1,77 +1,131 @@
 import bcrypt from 'bcryptjs';
-import type { UserRecord } from '../types/auth.js';
+import type { UserRecord, UserRole } from '../types/auth.js';
+import { getDb } from './sqlite.js';
 
-class UserStore {
-  private usersByEmail = new Map<string, UserRecord>();
-  private usersById = new Map<string, UserRecord>();
+function mapRowToUser(row: any): UserRecord {
+  return {
+    id: row.id,
+    email: row.email,
+    passwordHash: row.password_hash,
+    name: row.name,
+    role: row.role as UserRole,
+    ward: row.ward || undefined,
+    department: row.department || undefined,
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at,
+    lastLoginAt: row.last_login_at || undefined,
+  };
+}
 
+export class UserStore {
   constructor() {
     this.seedDefaultUsers();
   }
 
   public seedDefaultUsers(): void {
+    const db = getDb();
+    const insertStmt = db.prepare(`
+      INSERT OR IGNORE INTO users (
+        id, email, password_hash, name, role, ward, department, is_active, created_at, last_login_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `);
+
     // 1. Pre-seeded Officer: Ward 48 Junior Engineer
-    const officer1Email = 'officer.ward48@mcc.gov.in'.toLowerCase();
-    if (!this.usersByEmail.has(officer1Email)) {
-      const officer1: UserRecord = {
-        id: 'USR-OFFICER-48',
-        email: officer1Email,
-        passwordHash: bcrypt.hashSync('Officer@Mysuru48', 10),
-        name: 'Ward 48 Junior Engineer',
-        role: 'OFFICER',
-        ward: 'Ward 48 - Kuvempunagar',
-        department: 'MCC Engineering Division',
-        isActive: true,
-        createdAt: '2026-09-01T00:00:00.000Z',
-      };
-      this.save(officer1);
-    }
+    const officer1Hash = bcrypt.hashSync('Officer@Mysuru48', 10);
+    insertStmt.run(
+      'USR-OFFICER-48',
+      'officer.ward48@mcc.gov.in'.toLowerCase(),
+      officer1Hash,
+      'Ward 48 Junior Engineer',
+      'OFFICER',
+      'Ward 48 - Kuvempunagar',
+      'MCC Engineering Division',
+      '2026-09-01T00:00:00.000Z',
+      '2026-09-01T00:00:00.000Z'
+    );
 
     // 2. Pre-seeded Officer: Health & Sanitation Inspector
-    const officer2Email = 'officer.sanitation@mcc.gov.in'.toLowerCase();
-    if (!this.usersByEmail.has(officer2Email)) {
-      const officer2: UserRecord = {
-        id: 'USR-OFFICER-SAN',
-        email: officer2Email,
-        passwordHash: bcrypt.hashSync('CleanMysuru2026', 10),
-        name: 'Health & Sanitation Inspector',
-        role: 'OFFICER',
-        ward: 'Ward 48 - Kuvempunagar',
-        department: 'MCC Health & Sanitation Department',
-        isActive: true,
-        createdAt: '2026-09-01T00:00:00.000Z',
-      };
-      this.save(officer2);
-    }
+    const officer2Hash = bcrypt.hashSync('CleanMysuru2026', 10);
+    insertStmt.run(
+      'USR-OFFICER-SAN',
+      'officer.sanitation@mcc.gov.in'.toLowerCase(),
+      officer2Hash,
+      'Health & Sanitation Inspector',
+      'OFFICER',
+      'Ward 48 - Kuvempunagar',
+      'MCC Health & Sanitation Department',
+      '2026-09-01T00:00:00.000Z',
+      '2026-09-01T00:00:00.000Z'
+    );
   }
 
   public findByEmail(email: string): UserRecord | undefined {
-    return this.usersByEmail.get(email.trim().toLowerCase());
+    const db = getDb();
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const row = stmt.get(email.trim().toLowerCase()) as any;
+    return row ? mapRowToUser(row) : undefined;
   }
 
   public findById(id: string): UserRecord | undefined {
-    return this.usersById.get(id);
+    const db = getDb();
+    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+    const row = stmt.get(id) as any;
+    return row ? mapRowToUser(row) : undefined;
   }
 
   public save(user: UserRecord): UserRecord {
-    this.usersByEmail.set(user.email.toLowerCase(), user);
-    this.usersById.set(user.id, user);
+    const db = getDb();
+    const stmt = db.prepare(`
+      INSERT INTO users (
+        id, email, password_hash, name, role, ward, department, is_active, created_at, last_login_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        email = excluded.email,
+        password_hash = excluded.password_hash,
+        name = excluded.name,
+        role = excluded.role,
+        ward = excluded.ward,
+        department = excluded.department,
+        is_active = excluded.is_active,
+        last_login_at = excluded.last_login_at
+    `);
+
+    stmt.run(
+      user.id,
+      user.email.toLowerCase(),
+      user.passwordHash,
+      user.name,
+      user.role,
+      user.ward || null,
+      user.department || null,
+      user.isActive ? 1 : 0,
+      user.createdAt,
+      user.lastLoginAt || null
+    );
+
     return user;
   }
 
   public listAll(): UserRecord[] {
-    return Array.from(this.usersById.values());
+    const db = getDb();
+    const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+    const rows = stmt.all() as any[];
+    return rows.map(mapRowToUser);
   }
 
   public clearNonDefault(): void {
-    this.usersByEmail.clear();
-    this.usersById.clear();
-    this.seedDefaultUsers();
+    const db = getDb();
+    // Delete non-demo complaints first to guarantee referential integrity, then non-seeded users
+    db.exec(`
+      DELETE FROM complaints WHERE is_demo = 0;
+      DELETE FROM users 
+      WHERE id NOT IN ('USR-OFFICER-48', 'USR-OFFICER-SAN', 'USR-CITIZEN-DEMO');
+    `);
   }
 
   public resetAll(): void {
-    this.usersByEmail.clear();
-    this.usersById.clear();
+    const db = getDb();
+    db.exec('DELETE FROM users');
   }
 }
 

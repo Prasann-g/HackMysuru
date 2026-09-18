@@ -6,6 +6,14 @@ import { evidenceUpload } from './middleware/upload.js';
 import { verifyComplaint } from './services/verificationEngine.js';
 import type { ComplaintInput, ExistingComplaint } from './types/verification.js';
 import { authRouter } from './routes/authRoutes.js';
+import { complaintRouter } from './routes/complaintRoutes.js';
+import { officerRouter } from './routes/officerRoutes.js';
+import { initDatabase } from './db/sqlite.js';
+import { seedDemoData } from './db/seedDemoData.js';
+
+// Initialize SQLite database and seed demonstration data
+initDatabase();
+seedDemoData();
 
 export const app = express();
 
@@ -19,8 +27,10 @@ app.use(
 );
 app.use(express.json());
 
-// Auth routes
+// Routes
 app.use('/api/auth', authRouter);
+app.use('/api/complaints', complaintRouter);
+app.use('/api/officer', officerRouter);
 
 // 1. Health-check endpoint
 app.get('/api/health', (_req, res) => {
