@@ -42,6 +42,30 @@ export interface ComplaintRecord {
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
+  primaryComplaintId?: string;
+  duplicateClusterId?: string;
+  resolutionAction?: string;
+  resolvedByOfficerId?: string;
+  resolvedAt?: string;
+}
+
+export type ResolutionActionType =
+  | 'MARK_RELATED'
+  | 'MERGE_DUPLICATES'
+  | 'UNLINK'
+  | 'MARK_DISTINCT';
+
+export interface ComplaintResolutionAuditRecord {
+  id: string;
+  clusterId: string;
+  primaryComplaintId: string;
+  secondaryComplaintIds: string[];
+  actionType: ResolutionActionType;
+  officerId: string;
+  officerName: string;
+  decisionNotes: string;
+  previousStates: Record<string, any>;
+  createdAt: string;
 }
 
 export interface CreateComplaintInput {
@@ -84,4 +108,36 @@ export interface OfficerReviewInput {
   assignedDepartment?: string;
   assignedOfficerId?: string;
   reviewNotes?: string;
+}
+
+export interface PublicComplaintSummary {
+  id: string;
+  category: IssueCategory;
+  customCategory?: string;
+  locationArea: string;
+  status: ComplaintStatus;
+  observedDate: string;
+  createdAt: string;
+  verificationOutcome?: string;
+  duplicateRisk?: string;
+  hasCoordinates: boolean;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface PublicAnalyticsData {
+  totalComplaints: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byArea: Record<string, number>;
+  byVerificationOutcome: Record<string, number>;
+  byDuplicateRisk: Record<string, number>;
+  coordinatesCoverage: {
+    totalWithCoordinates: number;
+    totalWithoutCoordinates: number;
+  };
+  resolutionRatePercent: number;
+  verifiedRatePercent: number;
+  recentComplaints: PublicComplaintSummary[];
+  generatedAt: string;
 }

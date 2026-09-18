@@ -11,20 +11,27 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
   let baseUrl: string;
   let citizenToken: string;
 
-  // Minimal valid JPEG header bytes
-  const sampleJpeg = Buffer.from([
-    0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
-    0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43,
-    0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09,
-    0xff, 0xd9,
+  const runNonce = Date.now();
+  // Minimal valid JPEG header bytes with unique runNonce payload
+  const sampleJpeg = Buffer.concat([
+    Buffer.from([
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
+      0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43,
+      0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09,
+      0xff, 0xd9,
+    ]),
+    Buffer.from(`-jpeg-${runNonce}`),
   ]);
 
-  // Minimal valid PNG header bytes
-  const samplePng = Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
-    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
-    0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+  // Minimal valid PNG header bytes with unique runNonce payload
+  const samplePng = Buffer.concat([
+    Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+      0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+      0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+    ]),
+    Buffer.from(`-png-${runNonce}`),
   ]);
 
   beforeAll(async () => {
@@ -71,7 +78,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     formData.append('category', 'pothole');
     formData.append(
       'description',
-      'Severe hazardous road crater causing traffic disruption in Saraswathipuram.'
+      `Severe hazardous road crater causing traffic disruption in Saraswathipuram ${runNonce}.`
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Saraswathipuram');
@@ -104,7 +111,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     expect(fileBytes.equals(sampleJpeg)).toBe(true);
 
     // Verify database persistence directly from store
-    const stored = complaintStore.findById(data.complaint.id);
+    const stored = await complaintStore.findById(data.complaint.id);
     expect(stored).toBeDefined();
     expect(stored!.hasImage).toBe(true);
     expect(stored!.imageSha256).toBe(expectedSha256);
@@ -123,7 +130,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     formData.append('category', 'garbage_dumping');
     formData.append(
       'description',
-      'Illegal municipal solid waste accumulation near community park.'
+      `Illegal municipal solid waste accumulation near community park ${runNonce}.`
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Kuvempunagar');
@@ -147,7 +154,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     expect(data.complaint.imageSha256).toBe(expectedSha256);
 
     // Verify lookup by SHA-256
-    const matches = complaintStore.findByImageSha256(expectedSha256);
+    const matches = await complaintStore.findByImageSha256(expectedSha256);
     expect(matches.length).toBeGreaterThanOrEqual(1);
     expect(matches.some((m) => m.id === data.complaint.id)).toBe(true);
   });
@@ -162,7 +169,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
       },
       body: JSON.stringify({
         category: 'broken_streetlight',
-        description: 'Dark roadway due to non-functioning sodium vapor lamp on 5th main.',
+        description: `Completely unique dark alleyway without street lights near old post office ${runNonce}.`,
         observedDate: '2026-09-18',
         locationArea: 'Jayalakshmipuram',
       }),
@@ -174,7 +181,7 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     expect(data.complaint.imageSha256).toBeUndefined();
     expect(data.complaint.imagePath).toBeUndefined();
 
-    const stored = complaintStore.findById(data.complaint.id);
+    const stored = await complaintStore.findById(data.complaint.id);
     expect(stored!.hasImage).toBe(false);
     expect(stored!.imageSha256).toBeUndefined();
     expect(stored!.imagePath).toBeUndefined();

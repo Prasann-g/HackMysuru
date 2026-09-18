@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -28,7 +28,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     const payload = verifyToken(token);
     
     // Verify user is still active in the system
-    const user = userStore.findById(payload.userId);
+    const user = await userStore.findById(payload.userId);
     if (!user || !user.isActive) {
       res.status(401).json({
         error: 'User account is no longer active or valid.',

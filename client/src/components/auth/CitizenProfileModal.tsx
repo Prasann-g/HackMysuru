@@ -172,7 +172,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                   Assigned Ward / Locality:
                 </span>
                 <span className="font-semibold text-brand-slate-900">
-                  {user.ward || 'Mysuru (General)'}
+                  {user.ward || 'Not specified'}
                 </span>
               </div>
               <div className="flex items-center justify-between">

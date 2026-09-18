@@ -195,6 +195,13 @@ export interface ComplaintRecord {
     submittedAt: string;
     note: string;
   };
+  imageSha256?: string;
+  imagePhash?: string;
+  latitude?: number;
+  longitude?: number;
+  duplicateClusterId?: string;
+  primaryComplaintId?: string;
+  resolutionAction?: string;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -446,4 +453,51 @@ export async function apiUpdateOfficerReview(
 
   return data;
 }
+
+// ----------------------------------------------------------------------------
+// Public Transparency & Analytics API
+// ----------------------------------------------------------------------------
+
+export interface PublicComplaintSummary {
+  id: string;
+  category: string;
+  customCategory?: string;
+  locationArea: string;
+  status: string;
+  observedDate: string;
+  createdAt: string;
+  verificationOutcome?: string;
+  duplicateRisk?: string;
+  hasCoordinates: boolean;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface PublicAnalyticsResponse {
+  totalComplaints: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byArea: Record<string, number>;
+  byVerificationOutcome: Record<string, number>;
+  byDuplicateRisk: Record<string, number>;
+  coordinatesCoverage: {
+    totalWithCoordinates: number;
+    totalWithoutCoordinates: number;
+  };
+  resolutionRatePercent: number;
+  verifiedRatePercent: number;
+  recentComplaints: PublicComplaintSummary[];
+  generatedAt: string;
+  disclaimer: string;
+}
+
+export async function apiGetPublicAnalytics(): Promise<PublicAnalyticsResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/complaints/public-analytics`);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve public municipal analytics.');
+  }
+  return data;
+}
+
 

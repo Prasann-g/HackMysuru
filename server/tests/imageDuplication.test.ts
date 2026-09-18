@@ -302,10 +302,10 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
       createdAt: '2026-01-15T00:00:00Z',
       updatedAt: '2026-01-20T00:00:00Z',
     };
-    complaintStore.create(closedComplaint);
+    await complaintStore.create(closedComplaint);
 
     // Verify candidate retrieval includes historical records with images
-    const verificationCandidates = complaintStore.listCandidatesForVerification();
+    const verificationCandidates = await complaintStore.listCandidatesForVerification();
     const foundHistorical = verificationCandidates.find((c) => c.id === closedComplaint.id);
     expect(foundHistorical).toBeDefined();
 
@@ -407,12 +407,21 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
         background: { r: 50, g: 150, b: 50 },
       },
     })
+      .composite([
+        {
+          input: Buffer.from(
+            `<svg width="70" height="70"><text x="5" y="35" fill="white">${Date.now()}</text></svg>`
+          ),
+          top: 0,
+          left: 0,
+        },
+      ])
       .jpeg()
       .toBuffer();
 
     const form = new FormData();
     form.append('category', 'broken_streetlight');
-    form.append('description', 'Flickering street lamp on 5th main road.');
+    form.append('description', `Flickering street lamp on 5th main road delivery test ${Date.now()}.`);
     form.append('observedDate', '2026-03-10');
     form.append('locationArea', 'Gokulam');
     form.append('image', new Blob([imageBufDelivery], { type: 'image/jpeg' }), 'lamp.jpg');
@@ -519,7 +528,7 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     const originalCreate = complaintStore.create.bind(complaintStore);
 
     // Mock create to simulate database error
-    complaintStore.create = () => {
+    complaintStore.create = async () => {
       throw new Error('Simulated SQLite Disk Failure');
     };
 

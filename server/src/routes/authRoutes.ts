@@ -53,13 +53,13 @@ authRouter.post('/login', async (req, res) => {
 });
 
 // 4. Current User Session Check
-authRouter.get('/me', requireAuth, (req, res) => {
+authRouter.get('/me', requireAuth, async (req, res) => {
   if (!req.user) {
     res.status(401).json({ error: 'Not authenticated.' });
     return;
   }
 
-  const user = userStore.findById(req.user.userId);
+  const user = await userStore.findById(req.user.userId);
   if (!user) {
     res.status(404).json({ error: 'User account not found.' });
     return;

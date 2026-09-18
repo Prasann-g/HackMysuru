@@ -57,7 +57,7 @@ export async function registerCitizen(input: CitizenRegisterInput): Promise<Auth
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
-  const existing = userStore.findByEmail(normalizedEmail);
+  const existing = await userStore.findByEmail(normalizedEmail);
   if (existing) {
     throw new Error('An account with this email address already exists.');
   }
@@ -79,7 +79,7 @@ export async function registerCitizen(input: CitizenRegisterInput): Promise<Auth
     lastLoginAt: now,
   };
 
-  userStore.save(user);
+  await userStore.save(user);
 
   const tokenPayload: AuthTokenPayload = {
     userId: user.id,
@@ -123,7 +123,7 @@ export async function registerOfficer(input: OfficerRegisterInput): Promise<Auth
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
-  const existing = userStore.findByEmail(normalizedEmail);
+  const existing = await userStore.findByEmail(normalizedEmail);
   if (existing) {
     throw new Error('An account with this official email already exists.');
   }
@@ -145,7 +145,7 @@ export async function registerOfficer(input: OfficerRegisterInput): Promise<Auth
     lastLoginAt: now,
   };
 
-  userStore.save(user);
+  await userStore.save(user);
 
   const tokenPayload: AuthTokenPayload = {
     userId: user.id,
@@ -168,7 +168,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
-  const user = userStore.findByEmail(normalizedEmail);
+  const user = await userStore.findByEmail(normalizedEmail);
 
   if (!user) {
     // Constant-time mitigation: generic error message
@@ -186,7 +186,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
 
   // Update last login timestamp
   user.lastLoginAt = new Date().toISOString();
-  userStore.save(user);
+  await userStore.save(user);
 
   const tokenPayload: AuthTokenPayload = {
     userId: user.id,

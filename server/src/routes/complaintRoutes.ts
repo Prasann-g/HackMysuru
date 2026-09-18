@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { complaintStore } from '../db/complaintStore.js';
+import { getSupabaseClient } from '../db/supabase.js';
 import { evidenceUpload } from '../middleware/upload.js';
 import { CONFIG } from '../config.js';
 import {
@@ -133,7 +134,7 @@ complaintRouter.post(
       imagePhash = (await computeImageDHash(req.file.buffer)) || undefined;
 
       // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
-      const exactMatches = complaintStore.findByImageSha256(imageSha256);
+      const exactMatches = await complaintStore.findByImageSha256(imageSha256);
       if (exactMatches.length > 0) {
         const existing = exactMatches[0];
         res.status(409).json({
@@ -155,7 +156,7 @@ complaintRouter.post(
     }
 
     // Retrieve candidates for duplicate checking & officer decision support
-    const verificationCandidates = complaintStore.listCandidatesForVerification();
+    const verificationCandidates = await complaintStore.listCandidatesForVerification();
 
     // Pre-submission High-Confidence Text Duplicate Check (Option A: Jaccard >= 0.90 in same category & area)
     const inputTokens = tokenizeAndNormalize(input.description);
@@ -174,7 +175,7 @@ complaintRouter.post(
     });
 
     if (textDuplicate) {
-      const fullExisting = complaintStore.findById(textDuplicate.id);
+      const fullExisting = await complaintStore.findById(textDuplicate.id);
       res.status(409).json({
         error: 'An identical or near-identical complaint has already been submitted and is active in this area.',
         code: 'EXACT_TEXT_DUPLICATE',
@@ -265,7 +266,23 @@ complaintRouter.post(
 
     let saved: ComplaintRecord;
     try {
-      saved = complaintStore.create(newComplaint);
+      saved = await complaintStore.create(newComplaint);
+
+      // In Supabase mode, also sync image to Supabase Storage
+      if (req.file && diskPath && CONFIG.DATA_STORE === 'supabase') {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          const storedFilename = path.basename(diskPath);
+          const ext = path.extname(storedFilename).toLowerCase();
+          const contentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          await supabase.storage
+            .from(CONFIG.SUPABASE_STORAGE_BUCKET)
+            .upload(`evidence/${id}/${storedFilename}`, req.file.buffer, {
+              contentType,
+              upsert: true,
+            });
+        }
+      }
     } catch {
       // Rollback: delete physical file from disk to prevent orphaned files
       if (diskPath && fs.existsSync(diskPath)) {
@@ -289,20 +306,20 @@ complaintRouter.post(
 );
 
 // 2. View Citizen's Own Complaints (Citizen only)
-complaintRouter.get('/my', requireAuth, requireRole(['CITIZEN']), (req, res) => {
-  const complaints = complaintStore.findByCitizenId(req.user!.userId);
+complaintRouter.get('/my', requireAuth, requireRole(['CITIZEN']), async (req, res) => {
+  const complaints = await complaintStore.findByCitizenId(req.user!.userId);
   res.status(200).json({ complaints });
 });
 
 // 3. Public Tracking by Token (Zero Citizen PII)
-complaintRouter.get('/track/:token', (req, res) => {
+complaintRouter.get('/track/:token', async (req, res) => {
   const token = req.params.token as string;
   if (!token) {
     res.status(400).json({ error: 'Tracking token is required.' });
     return;
   }
 
-  const complaint = complaintStore.findByTrackingToken(token);
+  const complaint = await complaintStore.findByTrackingToken(token);
   if (!complaint) {
     res.status(404).json({
       error: 'Complaint not found with the provided tracking token. Please check your token.',
@@ -335,8 +352,8 @@ complaintRouter.get('/track/:token', (req, res) => {
 });
 
 // 4. Public Synthetic Demo Candidates Pool
-complaintRouter.get('/demo-pool', (_req, res) => {
-  const demoRecords = complaintStore.listDemoComplaints();
+complaintRouter.get('/demo-pool', async (_req, res) => {
+  const demoRecords = await complaintStore.listDemoComplaints();
   res.status(200).json({
     disclaimer: SYNTHETIC_DISCLAIMER,
     count: demoRecords.length,
@@ -344,10 +361,27 @@ complaintRouter.get('/demo-pool', (_req, res) => {
   });
 });
 
+// 4b. Public Aggregated Transparency & Analytics (Unauthenticated)
+complaintRouter.get('/public-analytics', async (_req, res) => {
+  try {
+    const analytics = await complaintStore.getPublicAnalytics();
+    res.status(200).json({
+      ...analytics,
+      disclaimer:
+        'Public transparency data aggregated strictly from authentic complaint records in Mysuru. Citizen personal information is strictly protected under CivicTrust Security Rule 12.',
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      error: 'Failed to compute public municipal analytics.',
+      details: err.message,
+    });
+  }
+});
+
 // 5. View Single Complaint (Authorized Citizen or Officer)
-complaintRouter.get('/:id', requireAuth, (req, res) => {
+complaintRouter.get('/:id', requireAuth, async (req, res) => {
   const id = req.params.id as string;
-  const complaint = complaintStore.findById(id);
+  const complaint = await complaintStore.findById(id);
   if (!complaint) {
     res.status(404).json({ error: 'Complaint not found.' });
     return;
@@ -365,9 +399,9 @@ complaintRouter.get('/:id', requireAuth, (req, res) => {
 });
 
 // 6. Safe Image Delivery Endpoint (Authorized Citizen or Officer/Admin)
-complaintRouter.get('/:id/image', requireAuth, (req, res) => {
+complaintRouter.get('/:id/image', requireAuth, async (req, res) => {
   const id = req.params.id as string;
-  const complaint = complaintStore.findById(id);
+  const complaint = await complaintStore.findById(id);
   if (!complaint || !complaint.imagePath) {
     res.status(404).json({ error: 'No image found for this complaint.' });
     return;
@@ -383,7 +417,32 @@ complaintRouter.get('/:id/image', requireAuth, (req, res) => {
 
   // Prevent Path Traversal (Security Rule 5)
   const uploadRoot = path.resolve(CONFIG.UPLOAD_DIR);
-  const absoluteDiskPath = path.resolve(process.cwd(), complaint.imagePath);
+  let absoluteDiskPath = path.resolve(process.cwd(), complaint.imagePath);
+  if (!fs.existsSync(absoluteDiskPath)) {
+    absoluteDiskPath = path.resolve(process.cwd(), 'server', complaint.imagePath);
+  }
+
+  // Fallback to Supabase Storage if file is not on local disk
+  if (!fs.existsSync(absoluteDiskPath) && CONFIG.DATA_STORE === 'supabase') {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const fileName = path.basename(complaint.imagePath);
+      const { data: fileData, error: storageErr } = await supabase.storage
+        .from(CONFIG.SUPABASE_STORAGE_BUCKET)
+        .download(`evidence/${complaint.id}/${fileName}`);
+      if (!storageErr && fileData) {
+        const arrayBuffer = await fileData.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const ext = path.extname(fileName).toLowerCase();
+        const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        res.send(buffer);
+        return;
+      }
+    }
+  }
 
   if (!absoluteDiskPath.startsWith(uploadRoot)) {
     res.status(403).json({ error: 'Access denied: Invalid image path.' });

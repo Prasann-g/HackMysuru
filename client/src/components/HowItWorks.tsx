@@ -1,26 +1,7 @@
 import React from 'react';
-import { UserCheck, FilePlus, CheckSquare, Activity } from 'lucide-react';
+import { UserCheck, CheckSquare } from 'lucide-react';
 import { Card, CardBody } from './ui/Card';
 import { Badge } from './ui/Badge';
-
-const UserReportIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 9a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3z" />
-    <path d="M4 22v-3a4 4 0 0 1 4-4h4" />
-    <path d="M14 6a5 5 0 0 1 7.2 4.4v.61C21.2 11.66 22 13 22 13l-1.54-.51a5 5 0 0 1-6.46-6.49z" />
-    <line x1="17.5" y1="4" x2="17.5" y2="8" />
-    <line x1="17.5" y1="10" x2="17.51" y2="10" />
-  </svg>
-);
 
 const UserReportWarningIcon = ({ className }: { className?: string }) => (
   <svg

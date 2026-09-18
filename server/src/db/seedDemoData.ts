@@ -276,3 +276,15 @@ export function seedDemoData(db: DatabaseSync = getDb()): void {
     );
   }
 }
+
+export function clearSyntheticDemoComplaints(db: DatabaseSync = getDb()): number {
+  const result = db.prepare('DELETE FROM complaints WHERE is_demo = 1').run();
+  return Number(result.changes);
+}
+
+// Standalone execution for explicit development seeding
+if (process.argv[1] && (process.argv[1].endsWith('seedDemoData.ts') || process.argv[1].endsWith('seedDemoData.js'))) {
+  const db = getDb();
+  seedDemoData(db);
+  console.log('[CivicTrust] Explicit development seeding complete: Synthetic demo records inserted.');
+}

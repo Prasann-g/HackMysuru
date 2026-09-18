@@ -10,8 +10,18 @@ import {
   HelpCircle,
   ShieldCheck,
   Loader2,
+  Copy,
+  Check,
+  ImageOff,
+  Layers,
+  Hash,
+  Maximize2,
+  Building2,
+  Clock,
+  Compass,
 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import {
   apiGetOfficerComplaintById,
   apiUpdateOfficerReview,
@@ -41,11 +51,11 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [notePreFill, setNotePreFill] = useState<string>('');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!complaintId) {
-      return;
-    }
+    if (!complaintId) return;
 
     let isMounted = true;
     apiGetOfficerComplaintById(complaintId)
@@ -67,7 +77,30 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
     };
   }, [complaintId]);
 
+  const handleRetry = () => {
+    if (!complaintId) return;
+    setIsLoading(true);
+    setErrorMsg(null);
+    apiGetOfficerComplaintById(complaintId)
+      .then((data) => {
+        setDetail(data);
+        setIsLoading(false);
+      })
+      .catch((err: any) => {
+        setErrorMsg(err.message || 'Failed to load complaint details.');
+        setIsLoading(false);
+      });
+  };
+
   if (!complaintId) return null;
+
+  const handleCopy = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text).catch(() => {
+      // ignore clipboard error
+    });
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const handleUpdateReview = async (payload: {
     status?: string;
@@ -118,6 +151,25 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
     }
   };
 
+  const getStatusDescription = (status: string) => {
+    switch (status) {
+      case 'SUBMITTED':
+        return 'Grievance received in intake ledger. Awaiting triage & field assignment.';
+      case 'UNDER_REVIEW':
+        return 'Officer is evaluating evidence, cross-referencing duplicates, and inspecting ward records.';
+      case 'FORWARDED':
+        return 'Grievance forwarded to specialized division or utility authority for action.';
+      case 'IN_PROGRESS':
+        return 'Active field work order dispatched to maintenance crews on site.';
+      case 'RESOLVED':
+        return 'Remediation completed and verified by municipal authority.';
+      case 'CLOSED':
+        return 'Case closed, archived, or consolidated into master grievance.';
+      default:
+        return 'Status update logged.';
+    }
+  };
+
   const getDuplicateRiskBadgeVariant = (risk?: string) => {
     switch (risk) {
       case 'HIGH':
@@ -131,34 +183,57 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-brand-slate-900/40 backdrop-blur-xs flex justify-end">
+    <div data-test-id="complaint-drawer" className="fixed inset-0 z-50 overflow-hidden bg-brand-slate-900/50 backdrop-blur-xs flex justify-end animate-fadeIn">
       <div className="relative w-full max-w-3xl bg-brand-slate-50 h-full flex flex-col shadow-civic-lg border-l border-brand-slate-200 overflow-y-auto">
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 bg-white border-b border-brand-slate-200 px-6 py-4 flex items-center justify-between shadow-civic-sm">
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono font-bold text-brand-slate-900 text-base">
                 {complaint?.id || complaintId}
               </span>
+              <button
+                type="button"
+                onClick={() => handleCopy(complaint?.id || complaintId, 'header-id')}
+                className="text-brand-slate-400 hover:text-brand-slate-700 p-0.5 rounded"
+                title="Copy ID"
+              >
+                {copiedField === 'header-id' ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
+
               {complaint?.trackingToken && (
-                <span className="text-xs font-mono text-brand-slate-500 bg-brand-slate-100 px-2 py-0.5 rounded">
-                  {complaint.trackingToken}
+                <span className="text-xs font-mono text-brand-slate-600 bg-brand-slate-100 border border-brand-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
+                  <span>TRK: {complaint.trackingToken}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(complaint.trackingToken, 'header-trk')}
+                    className="text-brand-slate-400 hover:text-brand-slate-700"
+                    title="Copy Token"
+                  >
+                    {copiedField === 'header-trk' ? (
+                      <Check className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                  </button>
                 </span>
               )}
+
               {complaint?.isDemo && (
                 <span className="text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
                   Synthetic Demo Record
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-brand-slate-500">
-                Category: <strong className="capitalize text-brand-slate-700">{complaint?.category}</strong>
-              </span>
+
+            <div className="flex items-center gap-2 text-xs text-brand-slate-500">
+              <span>Category: <strong className="capitalize text-brand-slate-800">{complaint?.category.replace(/_/g, ' ')}</strong></span>
               <span className="text-brand-slate-300">•</span>
-              <span className="text-xs text-brand-slate-500">
-                Area: <strong className="text-brand-slate-700">{complaint?.locationArea}</strong>
-              </span>
+              <span>Ward: <strong className="text-brand-slate-800">{complaint?.locationArea}</strong></span>
             </div>
           </div>
 
@@ -169,6 +244,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               </Badge>
             )}
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 text-brand-slate-400 hover:text-brand-slate-700 hover:bg-brand-slate-100 rounded-lg transition"
               aria-label="Close drawer"
@@ -181,178 +257,346 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
         {/* Content Body */}
         <div className="p-6 space-y-6 flex-1">
           {isLoading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center">
-              <Loader2 className="w-8 h-8 text-brand-teal-600 animate-spin mb-3" />
-              <p className="text-sm text-brand-slate-600 font-medium">
-                Loading complaint dossier and verification signals...
+            <div className="py-24 flex flex-col items-center justify-center text-center space-y-3">
+              <Loader2 className="w-8 h-8 text-brand-teal-600 animate-spin" />
+              <p className="text-sm text-brand-slate-700 font-medium">
+                Retrieving complaint dossier, evidence, and verification ledger...
               </p>
+              <span className="text-xs text-brand-slate-400 font-mono">
+                Query ID: {complaintId}
+              </span>
             </div>
           ) : errorMsg || !complaint ? (
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-sm">
-              <div className="flex items-center gap-2 font-semibold mb-1">
-                <AlertTriangle className="w-4 h-4" />
-                Error Retrieving Complaint
+            <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                Error Retrieving Complaint Dossier
               </div>
-              <p className="text-xs">{errorMsg || 'Complaint record could not be found.'}</p>
+              <p className="text-xs leading-relaxed text-rose-700">
+                {errorMsg || 'Complaint record could not be found or is unavailable.'}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="text-xs"
+              >
+                Retry Request
+              </Button>
             </div>
           ) : (
             <>
-              {/* SECTION 1: Citizen Contact & Overview (Confidential) */}
+              {/* STATUS & CONSOLIDATION SUMMARY HERO */}
+              <div className="bg-white border border-brand-slate-200 rounded-xl p-4 shadow-civic-sm space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-brand-teal-700 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-brand-slate-600">
+                      Lifecycle Stage:
+                    </span>
+                    <span className="font-bold text-xs text-brand-slate-900">
+                      {complaint.status}
+                    </span>
+                  </div>
+                  {complaint.duplicateClusterId && (
+                    <span className="text-[11px] font-mono font-semibold bg-brand-slate-100 text-brand-slate-700 px-2 py-0.5 rounded border border-brand-slate-200">
+                      Cluster: {complaint.duplicateClusterId}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-brand-slate-600 leading-relaxed bg-brand-slate-50 p-2.5 rounded-lg border border-brand-slate-200/70">
+                  {getStatusDescription(complaint.status)}
+                </p>
+
+                {/* Primary Complaint Link if Consolidated */}
+                {complaint.primaryComplaintId && (
+                  <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between text-xs text-teal-950">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-brand-teal-700 shrink-0" />
+                      <span>
+                        Consolidated into Primary Ticket:{' '}
+                        <strong className="font-mono text-brand-teal-900">#{complaint.primaryComplaintId}</strong>
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-brand-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">
+                      Merged Secondary
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 1: CITIZEN STATEMENT & METADATA OVERVIEW */}
               <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-brand-teal-700" />
                     <h3 className="text-sm font-semibold text-brand-slate-800">
-                      Citizen Grievance Overview
+                      Citizen Dossier & Grievance Particulars
                     </h3>
                   </div>
-                  <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                    Confidential Officer Dossier
+                  <span className="text-[11px] font-semibold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    Confidential Municipal Record
                   </span>
                 </div>
 
-                {/* Citizen details grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-brand-slate-50 p-3 rounded-lg border border-brand-slate-200/70">
+                {/* Citizen Contact Grid */}
+                <div data-test-id="citizen-info" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-brand-slate-50 p-3 rounded-lg border border-brand-slate-200/70">
                   <div>
-                    <span className="text-brand-slate-500 block">Citizen Name</span>
+                    <span className="text-brand-slate-400 block text-[11px]">Citizen Name</span>
                     <span className="font-semibold text-brand-slate-800">
-                      {detail?.citizen?.name || 'Verified Citizen'}
+                      {detail?.citizen?.name || 'Registered Citizen'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-brand-slate-500 block">Contact Email</span>
-                    <span className="font-mono text-brand-slate-800">
+                    <span className="text-brand-slate-400 block text-[11px]">Contact Email</span>
+                    <span className="font-mono text-brand-slate-800 truncate block">
                       {detail?.citizen?.email || 'Confidential'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-brand-slate-500 block">Registered Ward</span>
+                    <span className="text-brand-slate-400 block text-[11px]">Registered Ward</span>
                     <span className="font-medium text-brand-slate-800">
                       {detail?.citizen?.ward || complaint.locationArea}
                     </span>
                   </div>
                 </div>
 
-                {/* Metadata & Description */}
-                <div className="space-y-2 text-xs">
-                  <div className="flex flex-wrap items-center gap-4 text-brand-slate-600">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-brand-teal-600" />
-                      <span>Reported: {new Date(complaint.createdAt).toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-brand-slate-400" />
-                      <span>Observed Date: {complaint.observedDate}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-brand-teal-600" />
-                      <span>{complaint.locationArea} {complaint.addressText ? `(${complaint.addressText})` : ''}</span>
-                    </div>
+                {/* Structured Metadata Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-brand-slate-50 p-3 rounded-lg border border-brand-slate-200/70 text-brand-slate-700">
+                  <div>
+                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-brand-teal-600" />
+                      Observed Date
+                    </span>
+                    <span className="font-medium text-brand-slate-800">{complaint.observedDate}</span>
                   </div>
 
-                  <div className="mt-3">
-                    <span className="text-xs font-semibold text-brand-slate-700 block mb-1">
-                      Submitted Grievance Description:
+                  <div>
+                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-brand-teal-600" />
+                      Reported At
                     </span>
-                    <div className="p-3 bg-brand-slate-50 rounded-lg border border-brand-slate-200/80 text-brand-slate-800 text-xs leading-relaxed whitespace-pre-wrap font-normal">
-                      {complaint.description}
-                    </div>
+                    <span className="font-medium text-brand-slate-800 text-[11px]">
+                      {new Date(complaint.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
+                      <Building2 className="w-3 h-3 text-brand-teal-600" />
+                      Department
+                    </span>
+                    <span className="font-medium text-brand-slate-800 truncate block">
+                      {complaint.assignedDepartment || 'Routing Pending'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-brand-slate-400 block text-[11px] flex items-center gap-1">
+                      <Compass className="w-3 h-3 text-brand-teal-600" />
+                      Coordinates
+                    </span>
+                    <span className="font-mono text-brand-slate-800 text-[11px]">
+                      {complaint.latitude && complaint.longitude
+                        ? `${complaint.latitude.toFixed(4)}, ${complaint.longitude.toFixed(4)}`
+                        : 'Area Only'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Geographic Address */}
+                <div className="text-xs flex items-start gap-2 text-brand-slate-600 bg-brand-slate-50 p-2.5 rounded-lg border border-brand-slate-200/60">
+                  <MapPin className="w-4 h-4 text-brand-teal-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-brand-slate-800">
+                      {complaint.locationArea}
+                    </span>
+                    {complaint.addressText && (
+                      <span className="text-brand-slate-600"> — {complaint.addressText}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Submitted Description Statement */}
+                <div>
+                  <span className="text-xs font-semibold text-brand-slate-700 block mb-1">
+                    Submitted Grievance Description:
+                  </span>
+                  <div className="p-3 bg-brand-slate-50 rounded-lg border border-brand-slate-200 text-brand-slate-800 text-xs leading-relaxed whitespace-pre-wrap font-normal">
+                    {complaint.description}
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 2: Photographic Evidence & Camera Stamp (Strict Rule 7 Compliance) */}
+              {/* SECTION 2: STRUCTURED EVIDENCE REVIEW & FORENSICS (Rule 7 Compliance) */}
               <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
                   <div className="flex items-center gap-2">
                     <Camera className="w-4 h-4 text-brand-teal-700" />
                     <h3 className="text-sm font-semibold text-brand-slate-800">
-                      Photographic Evidence Inspection
+                      Evidence Dossier & Forensics
                     </h3>
                   </div>
                   {complaint.hasImage ? (
-                    <Badge variant="verified" size="sm">
-                      Evidence Photo Attached
+                    <Badge variant="info" size="sm">
+                      Visual Evidence Attached
                     </Badge>
                   ) : (
                     <Badge variant="neutral" size="sm">
-                      No Photo Submitted
+                      No Photo Evidence
                     </Badge>
                   )}
                 </div>
 
                 {complaint.hasImage ? (
                   <div className="space-y-4">
-                    {/* Visual Photo Inspection */}
-                    <div className="w-full max-w-lg mx-auto bg-brand-slate-100 rounded-xl overflow-hidden border border-brand-slate-200">
+                    {/* Visual Evidence Preview with Expand Button */}
+                    <div className="relative group bg-brand-slate-100 rounded-xl overflow-hidden border border-brand-slate-200">
                       <AuthenticatedEvidenceImage
                         complaintId={complaint.id}
-                        className="w-full h-56 sm:h-64 object-cover"
+                        className="w-full h-64 sm:h-72 object-cover"
+                        alt={`Visual evidence for ${complaint.id}`}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setIsImageModalOpen(true)}
+                        className="absolute bottom-3 right-3 bg-brand-slate-900/80 hover:bg-brand-slate-900 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur-xs transition shadow-civic-sm cursor-pointer"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span>Enlarge Evidence</span>
+                      </button>
                     </div>
 
-                    {/* Metadata Card */}
-                    <div className="bg-brand-slate-50 rounded-lg p-3 border border-brand-slate-200 text-xs space-y-2">
-                      <div className="font-semibold text-brand-slate-700">
-                        Uploaded Evidence Metadata
+                    {/* Cryptographic & File Metadata Inspection Card */}
+                    <div className="bg-brand-slate-50 rounded-xl p-4 border border-brand-slate-200 text-xs space-y-3">
+                      <div className="font-semibold text-brand-slate-800 flex items-center justify-between">
+                        <span>Photographic File & Cryptographic Signatures:</span>
+                        <span className="text-[11px] font-mono text-brand-slate-500">
+                          Secure Multipart Ingestion
+                        </span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
                         <div>
-                          <span className="text-brand-slate-500 block">Filename:</span>
-                          <span className="font-mono text-brand-slate-800 truncate block">
-                            {complaint.evidenceMetadata?.filename || 'evidence_photo.jpg'}
+                          <span className="text-brand-slate-400 block">Filename:</span>
+                          <span className="font-mono text-brand-slate-800 truncate block font-medium">
+                            {complaint.evidenceMetadata?.filename || 'Attachment'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-500 block">File Size:</span>
-                          <span className="font-mono text-brand-slate-800">
+                          <span className="text-brand-slate-400 block">File Size:</span>
+                          <span className="font-mono text-brand-slate-800 font-medium">
                             {complaint.evidenceMetadata?.sizeBytes
                               ? `${Math.round(complaint.evidenceMetadata.sizeBytes / 1024)} KB`
-                              : '185 KB'}
+                              : 'Recorded'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-500 block">Format:</span>
-                          <span className="font-mono text-brand-slate-800">
-                            {complaint.evidenceMetadata?.mimetype || 'image/jpeg'}
+                          <span className="text-brand-slate-400 block">MIME Type:</span>
+                          <span className="font-mono text-brand-slate-800 font-medium">
+                            {complaint.evidenceMetadata?.mimetype || 'Image'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-brand-slate-500 block">Camera Stamp:</span>
-                          <span className="text-emerald-700 font-medium">
-                            GPS Stamp Detected
+                          <span className="text-brand-slate-400 block">Stamp Analysis:</span>
+                          <span className="text-brand-slate-700 font-medium flex items-center gap-1">
+                            <HelpCircle className="w-3 h-3 text-amber-600" />
+                            Requires Officer Visual Review
                           </span>
                         </div>
                       </div>
+
+                      {/* Cryptographic SHA-256 and Perceptual Hashes */}
+                      <div className="pt-2 border-t border-brand-slate-200/80 space-y-1.5">
+                        {complaint.imageSha256 && (
+                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-brand-slate-200 font-mono text-[11px]">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Hash className="w-3.5 h-3.5 text-brand-teal-600 shrink-0" />
+                              <span className="text-brand-slate-400 shrink-0">SHA-256:</span>
+                              <span className="text-brand-slate-800 truncate">{complaint.imageSha256}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(complaint.imageSha256!, 'sha256')}
+                              className="text-brand-slate-400 hover:text-brand-slate-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                              title="Copy SHA-256 Hash"
+                            >
+                              {copiedField === 'sha256' ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {complaint.imagePhash && (
+                          <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-brand-slate-200 font-mono text-[11px]">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Camera className="w-3.5 h-3.5 text-brand-teal-600 shrink-0" />
+                              <span className="text-brand-slate-400 shrink-0">dHash (64-bit gradient):</span>
+                              <span className="text-brand-slate-800 truncate">{complaint.imagePhash}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(complaint.imagePhash!, 'phash')}
+                              className="text-brand-slate-400 hover:text-brand-slate-700 px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                              title="Copy Perceptual Hash"
+                            >
+                              {copiedField === 'phash' ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Rule 7 Mandatory Honesty Banner */}
-                    <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg p-3 text-xs text-amber-900 leading-relaxed">
+                    {/* Rule 7 Mandatory Integrity Notice */}
+                    <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-950 leading-relaxed">
                       <div className="flex items-start gap-2.5">
                         <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                         <div>
-                          <strong className="font-semibold block text-amber-950">
-                            Evidence Evaluation Notice (Rule 7 Protocol)
+                          <strong className="font-bold block text-amber-950">
+                            Evidence Authenticity Protocol (Rule 7 Standard)
                           </strong>
-                          The submitted photograph and visible GPS coordinate stamps are recorded as
-                          citizen-provided evidence. In compliance with municipal integrity
-                          standards, digital metadata and camera watermarks are not certified as
-                          tamper-proof until confirmed via physical inspection by field ward
-                          personnel.
+                          The attached photograph and GPS camera overlay are recorded as citizen-submitted evidence.
+                          In strict adherence to Mysore municipal standards, digital camera watermarks and EXIF data
+                          are not certified as tamper-proof until verified through physical site inspection by Ward
+                          Field Staff.
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-brand-slate-500 italic">
-                    Citizen did not attach photographic evidence for this submission. On-site
-                    verification by ward field staff is advised before dispatching heavy machinery.
-                  </p>
+                  /* Clean Structured Empty State */
+                  <div className="bg-brand-slate-50 border border-dashed border-brand-slate-300 rounded-xl p-6 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-brand-slate-100 border border-brand-slate-200 flex items-center justify-center mx-auto text-brand-slate-400">
+                      <ImageOff className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-brand-slate-800 text-xs">
+                        No Photographic Evidence Attached
+                      </h4>
+                      <p className="text-xs text-brand-slate-500 max-w-md mx-auto leading-relaxed">
+                        This grievance was lodged as a textual statement without image files.
+                        Prior to issuing contractor work orders, on-site physical survey by ward engineering staff is advised.
+                      </p>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-brand-slate-200 text-[11px] text-brand-slate-600">
+                      <MapPin className="w-3.5 h-3.5 text-brand-teal-600" />
+                      <span>Physical site verification required for ward dispatch</span>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* SECTION 3: Explainable AI Verification Ledger (Rule 8 Compliance) */}
-              {verification && (
+              {/* SECTION 3: EXPLAINABLE AI VERIFICATION LEDGER (Rule 8 Compliance) */}
+              {verification ? (
                 <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-brand-slate-100">
                     <div className="flex items-center gap-2">
@@ -371,34 +615,34 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                     </div>
                   </div>
 
-                  {/* Signals & Category Alignment */}
+                  {/* Signals & Uncertainties Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    {/* Verified Signals */}
-                    <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-lg p-3 space-y-2">
-                      <span className="font-semibold text-emerald-900 block flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        Corroborating Signals
+                    {/* Corroborating Signals */}
+                    <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3.5 space-y-2">
+                      <span className="font-bold text-emerald-950 block flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        Corroborating Signals ({verification.signals?.length || 0})
                       </span>
-                      <ul className="space-y-1 text-[11px] text-emerald-800">
+                      <ul className="space-y-1.5 text-[11px] text-emerald-900">
                         {verification.signals?.map((sig, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <span className="text-emerald-500 font-bold">•</span>
+                          <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                            <span className="text-emerald-600 font-bold shrink-0">•</span>
                             <span>{sig}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    {/* Uncertainties & Limitations */}
-                    <div className="bg-amber-50/50 border border-amber-200/60 rounded-lg p-3 space-y-2">
-                      <span className="font-semibold text-amber-900 block flex items-center gap-1.5">
-                        <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
-                        Limitations & Uncertainties
+                    {/* Limitations & Uncertainties */}
+                    <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 space-y-2">
+                      <span className="font-bold text-amber-950 block flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-amber-600" />
+                        Limitations & Uncertainties ({verification.limitations?.length || 0})
                       </span>
-                      <ul className="space-y-1 text-[11px] text-amber-800">
+                      <ul className="space-y-1.5 text-[11px] text-amber-900">
                         {verification.limitations?.map((lim, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <span className="text-amber-500 font-bold">•</span>
+                          <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                            <span className="text-amber-600 font-bold shrink-0">•</span>
                             <span>{lim}</span>
                           </li>
                         ))}
@@ -406,17 +650,22 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                     </div>
                   </div>
 
-                  {/* Recommended Next Action */}
-                  <div className="p-3 bg-brand-teal-50/70 border border-brand-teal-200/80 rounded-lg text-xs text-brand-teal-900">
-                    <strong className="font-semibold text-brand-teal-950 block mb-0.5">
-                      Recommended Next Protocol:
+                  {/* Recommended Next Protocol */}
+                  <div className="p-3.5 bg-brand-teal-50/80 border border-brand-teal-200 rounded-xl text-xs text-brand-teal-950">
+                    <strong className="font-bold text-brand-teal-950 block mb-0.5">
+                      Recommended Officer Protocol:
                     </strong>
-                    {verification.recommendedAction}
+                    <span className="leading-relaxed">{verification.recommendedAction}</span>
                   </div>
+                </div>
+              ) : (
+                /* Verification Pending / Empty State */
+                <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm text-center text-xs text-brand-slate-500">
+                  Verification signals are being computed for this intake submission.
                 </div>
               )}
 
-              {/* SECTION 4: Duplicate Cluster Inspector */}
+              {/* SECTION 4: DUPLICATE CLUSTER INSPECTOR */}
               <div className="bg-white border border-brand-slate-200 rounded-xl p-5 shadow-civic-sm">
                 <DuplicateClusterInspector
                   currentComplaint={complaint}
@@ -426,7 +675,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 />
               </div>
 
-              {/* SECTION 5: Review Actions & Lifecycle Commit */}
+              {/* SECTION 5: REVIEW ACTIONS & LIFECYCLE COMMIT */}
               <ReviewActionPanel
                 complaint={complaint}
                 onUpdate={handleUpdateReview}
@@ -438,6 +687,55 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
           )}
         </div>
       </div>
+
+      {/* Enlarged Photo Modal */}
+      {isImageModalOpen && complaint && (
+        <div className="fixed inset-0 z-60 bg-brand-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-civic-lg border border-brand-slate-200 flex flex-col max-h-[90vh]">
+            <div className="bg-brand-slate-50 px-5 py-3 border-b border-brand-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-brand-teal-700" />
+                <span className="font-bold text-xs text-brand-slate-900">
+                  Evidence Inspection: #{complaint.id}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(false)}
+                className="text-brand-slate-400 hover:text-brand-slate-700 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-brand-slate-900 flex items-center justify-center overflow-auto max-h-[70vh]">
+              <AuthenticatedEvidenceImage
+                complaintId={complaint.id}
+                className="max-h-[65vh] w-auto object-contain rounded-lg shadow-civic-md"
+                alt={`Enlarged evidence for ${complaint.id}`}
+                dataTestId="enlarged-image"
+              />
+            </div>
+
+            <div className="p-4 bg-white border-t border-brand-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="font-mono text-[11px] text-brand-slate-500">
+                {complaint.evidenceMetadata?.filename || 'Attachment'} •{' '}
+                {complaint.evidenceMetadata?.sizeBytes
+                  ? `${Math.round(complaint.evidenceMetadata.sizeBytes / 1024)} KB`
+                  : 'Image file'}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsImageModalOpen(false)}
+              >
+                Close Fullscreen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

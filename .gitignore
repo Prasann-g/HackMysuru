@@ -25,3 +25,12 @@ Thumbs.db
 *.db-shm
 data
 */data
+
+# Firebase credentials and service accounts
+*serviceAccount*.json
+*service-account*.json
+*firebase*.json
+firebase-credentials.json
+*.key
+*.pem
+

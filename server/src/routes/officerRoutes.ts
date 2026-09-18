@@ -10,7 +10,7 @@ export const officerRouter = Router();
 officerRouter.use(requireAuth, requireRole(['OFFICER', 'ADMIN']));
 
 // 1. Officer Review Queue with Filtering and Search
-officerRouter.get('/complaints', (req, res) => {
+officerRouter.get('/complaints', async (req, res) => {
   const { status, locationArea, category, duplicateRisk, q } = req.query as {
     status?: string;
     locationArea?: string;
@@ -19,57 +19,60 @@ officerRouter.get('/complaints', (req, res) => {
     q?: string;
   };
 
-  const complaints = complaintStore.listForOfficer({
-    status,
-    locationArea,
-    category,
-    duplicateRisk,
-    q,
-  });
+  try {
+    const complaints = await complaintStore.listForOfficer({
+      status,
+      locationArea,
+      category,
+      duplicateRisk,
+      q,
+    });
 
-  res.status(200).json({
-    count: complaints.length,
-    complaints,
-  });
+    res.status(200).json({
+      count: complaints.length,
+      complaints,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve complaints queue.', details: err.message });
+  }
 });
 
 // 2. View Single Complaint with Duplicate Matches and Citizen Contact (Officer only)
-officerRouter.get('/complaints/:id', (req, res) => {
+officerRouter.get('/complaints/:id', async (req, res) => {
   const { id } = req.params;
-  const complaint = complaintStore.findById(id);
-  if (!complaint) {
-    res.status(404).json({ error: 'Complaint not found.' });
-    return;
+
+  try {
+    const complaint = await complaintStore.findById(id);
+    if (!complaint) {
+      res.status(404).json({ error: 'Complaint not found.' });
+      return;
+    }
+
+    const matchedCandidates = await complaintStore.findMatchesForComplaint(id);
+    const citizen = await userStore.findById(complaint.citizenId);
+
+    res.status(200).json({
+      complaint,
+      matchedCandidates,
+      citizen: citizen
+        ? {
+            id: citizen.id,
+            name: citizen.name,
+            email: citizen.email,
+            ward: citizen.ward,
+          }
+        : undefined,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to retrieve complaint details.', details: err.message });
   }
-
-  const matchedCandidates = complaintStore.findMatchesForComplaint(id);
-  const citizen = userStore.findById(complaint.citizenId);
-
-  res.status(200).json({
-    complaint,
-    matchedCandidates,
-    citizen: citizen
-      ? {
-          id: citizen.id,
-          name: citizen.name,
-          email: citizen.email,
-          ward: citizen.ward,
-        }
-      : undefined,
-  });
 });
 
-// 2. Officer Review / Action on Complaint
-officerRouter.patch('/complaints/:id/review', (req, res) => {
+// 3. Officer Review / Action on Complaint
+officerRouter.patch('/complaints/:id/review', async (req, res) => {
   const { id } = req.params;
   const { status, assignedDepartment, assignedOfficerId, reviewNotes } =
     req.body as OfficerReviewInput;
-
-  const existing = complaintStore.findById(id);
-  if (!existing) {
-    res.status(404).json({ error: 'Complaint not found.' });
-    return;
-  }
 
   const validStatuses: ComplaintStatus[] = [
     'SUBMITTED',
@@ -88,15 +91,25 @@ officerRouter.patch('/complaints/:id/review', (req, res) => {
     return;
   }
 
-  const updated = complaintStore.update(id, {
-    status: status || existing.status,
-    assignedDepartment: assignedDepartment !== undefined ? assignedDepartment : existing.assignedDepartment,
-    assignedOfficerId: assignedOfficerId !== undefined ? assignedOfficerId : (existing.assignedOfficerId || req.user!.userId),
-    reviewNotes: reviewNotes !== undefined ? reviewNotes : existing.reviewNotes,
-  });
+  try {
+    const existing = await complaintStore.findById(id);
+    if (!existing) {
+      res.status(404).json({ error: 'Complaint not found.' });
+      return;
+    }
 
-  res.status(200).json({
-    message: 'Complaint review updated successfully.',
-    complaint: updated,
-  });
+    const updated = await complaintStore.update(id, {
+      status: status || existing.status,
+      assignedDepartment: assignedDepartment !== undefined ? assignedDepartment : existing.assignedDepartment,
+      assignedOfficerId: assignedOfficerId !== undefined ? assignedOfficerId : (existing.assignedOfficerId || req.user!.userId),
+      reviewNotes: reviewNotes !== undefined ? reviewNotes : existing.reviewNotes,
+    });
+
+    res.status(200).json({
+      message: 'Complaint review updated successfully.',
+      complaint: updated,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update complaint review.', details: err.message });
+  }
 });

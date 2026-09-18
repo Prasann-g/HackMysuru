@@ -7,6 +7,7 @@ interface AuthenticatedEvidenceImageProps {
   alt?: string;
   className?: string;
   aspectRatio?: string;
+  dataTestId?: string;
 }
 
 export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProps> = ({
@@ -14,6 +15,7 @@ export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProp
   alt = 'Citizen evidence photo',
   className = 'w-full h-48 object-cover rounded-lg',
   aspectRatio,
+  dataTestId = 'evidence-image',
 }) => {
   const [imageState, setImageState] = useState<{
     id: string;
@@ -95,6 +97,7 @@ export const AuthenticatedEvidenceImage: React.FC<AuthenticatedEvidenceImageProp
         alt={alt}
         className={className}
         style={aspectRatio ? { aspectRatio } : undefined}
+        data-test-id={dataTestId}
       />
       <div className="absolute top-2 left-2 bg-brand-slate-900/70 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1 opacity-90">
         <Camera className="w-3 h-3" />

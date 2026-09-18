@@ -1,6 +1,9 @@
 import bcrypt from 'bcryptjs';
 import type { UserRecord, UserRole } from '../types/auth.js';
 import { getDb } from './sqlite.js';
+import { CONFIG } from '../config.js';
+import { AUTHENTIC_USER_IDS, type IUserStore } from './interfaces.js';
+import { SupabaseUserStore } from './supabaseUserStore.js';
 
 function mapRowToUser(row: any): UserRecord {
   return {
@@ -17,7 +20,7 @@ function mapRowToUser(row: any): UserRecord {
   };
 }
 
-export class UserStore {
+export class SqliteUserStore implements IUserStore {
   constructor() {
     this.seedDefaultUsers();
   }
@@ -59,21 +62,29 @@ export class UserStore {
     );
   }
 
-  public findByEmail(email: string): UserRecord | undefined {
+  public findByEmailSync(email: string): UserRecord | undefined {
     const db = getDb();
     const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
     const row = stmt.get(email.trim().toLowerCase()) as any;
     return row ? mapRowToUser(row) : undefined;
   }
 
-  public findById(id: string): UserRecord | undefined {
+  public async findByEmail(email: string): Promise<UserRecord | undefined> {
+    return this.findByEmailSync(email);
+  }
+
+  public findByIdSync(id: string): UserRecord | undefined {
     const db = getDb();
     const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
     const row = stmt.get(id) as any;
     return row ? mapRowToUser(row) : undefined;
   }
 
-  public save(user: UserRecord): UserRecord {
+  public async findById(id: string): Promise<UserRecord | undefined> {
+    return this.findByIdSync(id);
+  }
+
+  public saveSync(user: UserRecord): UserRecord {
     const db = getDb();
     const stmt = db.prepare(`
       INSERT INTO users (
@@ -106,27 +117,87 @@ export class UserStore {
     return user;
   }
 
-  public listAll(): UserRecord[] {
+  public async save(user: UserRecord): Promise<UserRecord> {
+    return this.saveSync(user);
+  }
+
+  public listAllSync(): UserRecord[] {
     const db = getDb();
     const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
     const rows = stmt.all() as any[];
     return rows.map(mapRowToUser);
   }
 
-  public clearNonDefault(): void {
-    const db = getDb();
-    // Delete non-demo complaints first to guarantee referential integrity, then non-seeded users
-    db.exec(`
-      DELETE FROM complaints WHERE is_demo = 0;
-      DELETE FROM users 
-      WHERE id NOT IN ('USR-OFFICER-48', 'USR-OFFICER-SAN', 'USR-CITIZEN-DEMO');
-    `);
+  public async listAll(): Promise<UserRecord[]> {
+    return this.listAllSync();
   }
 
-  public resetAll(): void {
+  public clearNonDefaultSync(): void {
+    const db = getDb();
+    const placeholders = AUTHENTIC_USER_IDS.map(() => '?').join(',');
+    db.prepare(`
+      DELETE FROM users 
+      WHERE id NOT IN (${placeholders});
+    `).run(...AUTHENTIC_USER_IDS);
+  }
+
+  public async clearNonDefault(): Promise<void> {
+    this.clearNonDefaultSync();
+  }
+
+  public resetAllSync(): void {
     const db = getDb();
     db.exec('DELETE FROM users');
   }
+
+  public async resetAll(): Promise<void> {
+    this.resetAllSync();
+  }
 }
 
-export const userStore = new UserStore();
+export class DualUserStore implements IUserStore {
+  public readonly sqlite: SqliteUserStore;
+  public readonly supabase: SupabaseUserStore;
+
+  constructor(sqlite?: SqliteUserStore, supabase?: SupabaseUserStore) {
+    this.sqlite = sqlite || new SqliteUserStore();
+    this.supabase = supabase || new SupabaseUserStore();
+  }
+
+  public get active(): IUserStore {
+    return CONFIG.DATA_STORE === 'supabase' ? this.supabase : this.sqlite;
+  }
+
+  public async findByEmail(email: string): Promise<UserRecord | undefined> {
+    return this.active.findByEmail(email);
+  }
+
+  public async findById(id: string): Promise<UserRecord | undefined> {
+    return this.active.findById(id);
+  }
+
+  public async save(user: UserRecord): Promise<UserRecord> {
+    return this.active.save(user);
+  }
+
+  public async listAll(): Promise<UserRecord[]> {
+    return this.active.listAll();
+  }
+
+  public async clearNonDefault(): Promise<void> {
+    return this.active.clearNonDefault();
+  }
+
+  public async resetAll(): Promise<void> {
+    return this.active.resetAll();
+  }
+
+  public seedDefaultUsers(): void {
+    this.sqlite.seedDefaultUsers();
+  }
+}
+
+export const sqliteUserStore = new SqliteUserStore();
+export const supabaseUserStore = new SupabaseUserStore();
+export const userStore = new DualUserStore(sqliteUserStore, supabaseUserStore);
+export { SqliteUserStore as UserStore };

@@ -36,11 +36,12 @@ const LOCALITY_OPTIONS = [
 
 const CATEGORY_OPTIONS = [
   { value: '', label: 'All Categories' },
+  { value: 'garbage_dumping', label: 'Garbage Dumping' },
+  { value: 'overflowing_bin', label: 'Overflowing Bin' },
   { value: 'pothole', label: 'Roads & Potholes' },
-  { value: 'waste', label: 'Waste & Sanitation' },
-  { value: 'streetlight', label: 'Street Lighting' },
-  { value: 'drainage', label: 'Drainage & Sewage' },
-  { value: 'water', label: 'Water Supply' },
+  { value: 'broken_streetlight', label: 'Broken Streetlight' },
+  { value: 'unsegregated_waste', label: 'Unsegregated Waste' },
+  { value: 'construction_debris', label: 'Construction Debris' },
   { value: 'other', label: 'Other Grievances' },
 ];
 
@@ -282,6 +283,8 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                 return (
                   <tr
                     key={item.id}
+                    data-test-id="complaint-row"
+                    data-complaint-id={item.id}
                     onClick={() => onSelectComplaint(item.id)}
                     className={`queue-row cursor-pointer ${isSelected ? 'bg-brand-teal-50/60 border-l-4 border-l-brand-teal-600' : ''
                       }`}

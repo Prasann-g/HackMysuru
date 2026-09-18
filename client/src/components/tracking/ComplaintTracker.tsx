@@ -14,7 +14,6 @@ import {
   FileText,
   HelpCircle,
   RotateCcw,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -26,24 +25,6 @@ interface ComplaintTrackerProps {
   onReportIssue?: () => void;
   onBackToHome?: () => void;
 }
-
-const DEMO_TOKENS = [
-  {
-    token: 'TRK-DEMO-0001',
-    label: 'Kuvempunagar (Under Review)',
-    desc: 'Overflowing waste container',
-  },
-  {
-    token: 'TRK-DEMO-0002',
-    label: 'Gokulam 3rd Stage (In Progress)',
-    desc: 'Pothole on main road',
-  },
-  {
-    token: 'TRK-DEMO-0005',
-    label: 'Jayalakshmipuram (Resolved)',
-    desc: 'Open drainage overflow',
-  },
-];
 
 const CATEGORY_LABELS: Record<string, string> = {
   garbage_dumping: 'Garbage dumping',
@@ -226,7 +207,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   type="text"
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
-                  placeholder="e.g. TRK-DEMO-0001 or TRK-ABCD-1234"
+                  placeholder="e.g. TRK-XXXX-XXXX"
                   className="w-full px-4 py-3 pl-11 text-sm sm:text-base font-mono rounded-xl border border-brand-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-teal-600 focus:border-transparent uppercase tracking-wider bg-white placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-brand-slate-400"
                   aria-label="Complaint Tracking Token"
                 />
@@ -257,32 +238,6 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Quick Demo Chips */}
-            <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-brand-slate-500 font-medium flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-brand-teal-600" />
-                Try demo tokens:
-              </span>
-              {DEMO_TOKENS.map((demo) => (
-                <button
-                  key={demo.token}
-                  type="button"
-                  onClick={() => {
-                    setTokenInput(demo.token);
-                    fetchTrackingData(demo.token);
-                  }}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-mono transition-colors cursor-pointer ${
-                    activeToken === demo.token
-                      ? 'bg-brand-teal-100 border-brand-teal-400 text-brand-teal-950 font-bold'
-                      : 'bg-brand-slate-50 border-brand-slate-200 text-brand-slate-700 hover:bg-brand-teal-50 hover:border-brand-teal-200 hover:text-brand-teal-900'
-                  }`}
-                  title={`${demo.desc} (${demo.label})`}
-                >
-                  {demo.token}
-                </button>
-              ))}
-            </div>
           </form>
         </CardBody>
       </Card>
@@ -308,7 +263,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
             <h4 className="text-sm font-bold">Unable to Locate Complaint</h4>
             <p className="text-xs text-rose-700 leading-relaxed">{error}</p>
             <p className="text-[11px] text-rose-600 pt-1">
-              Tip: Check your submission confirmation receipt or try one of the demo tokens above to preview how tracking works.
+              Tip: Check your submission confirmation receipt for the exact tracking token provided upon filing.
             </p>
           </div>
         </div>

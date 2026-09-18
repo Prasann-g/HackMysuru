@@ -91,7 +91,7 @@ export const Step5Review: React.FC<Step5Props> = ({
         customCategory: formData.customCategory || undefined,
         description: formData.description,
         observedDate: formData.observedDate,
-        locationArea: formData.locationSearch || 'Mysuru (General)',
+        locationArea: formData.locationSearch.trim(),
         addressText: formData.addressText || undefined,
         hasImage: !!formData.imageFile,
         imageFile: formData.imageFile || undefined,
@@ -319,7 +319,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                 Assigned Department
               </span>
               <p className="text-sm font-bold text-brand-slate-900 pt-1">
-                {submittedComplaint.assignedDepartment || 'MCC Engineering Division'}
+                {submittedComplaint.assignedDepartment || 'Department Routing in Progress'}
               </p>
               <div className="pt-2 flex items-center gap-2">
                 <span className="text-[11px] text-brand-slate-500">Lifecycle Status:</span>

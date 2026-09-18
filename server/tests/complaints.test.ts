@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
 import { app } from '../src/index.js';
-import { seedDemoData } from '../src/db/seedDemoData.js';
+import { seedDemoData, clearSyntheticDemoComplaints } from '../src/db/seedDemoData.js';
 import { complaintStore } from '../src/db/complaintStore.js';
+import { CONFIG } from '../src/config.js';
 
 describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (Step 4.3B)', () => {
   let server: Server;
@@ -17,6 +18,11 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   let officerToken: string;
 
   beforeAll(async () => {
+    // Explicitly seed demo records isolated to this test suite
+    if (CONFIG.DATA_STORE === 'sqlite') {
+      seedDemoData();
+    }
+
     await new Promise<void>((resolve) => {
       server = app.listen(0, () => {
         const addr = server.address();
@@ -27,13 +33,14 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       });
     });
 
+    const runNonce = Date.now();
     // 1. Register Citizen A
     const resA = await fetch(`${baseUrl}/api/auth/register/citizen`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: 'Suresh Gowda',
-        email: 'suresh.gowda@example.com',
+        name: 'Suresh Gowda Test',
+        email: `suresh.test.${runNonce}@example.com`,
         password: 'password123',
         ward: 'Kuvempunagar',
       }),
@@ -47,8 +54,8 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: 'Pooja Hegde',
-        email: 'pooja.hegde@example.com',
+        name: 'Pooja Hegde Test',
+        email: `pooja.test.${runNonce}@example.com`,
         password: 'password123',
         ward: 'Gokulam',
       }),
@@ -71,6 +78,8 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   });
 
   afterAll(async () => {
+    clearSyntheticDemoComplaints();
+    await complaintStore.clearNonDemo();
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
@@ -82,9 +91,15 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
     expect(res.status).toBe(200);
 
     const data = await res.json();
-    expect(data.count).toBeGreaterThanOrEqual(5);
     expect(data.disclaimer).toContain('Synthetic demonstration record');
 
+    if (CONFIG.DATA_STORE === 'supabase') {
+      // In Supabase cloud store, synthetic complaints are strictly zero (Rule 11)
+      expect(data.count).toBe(0);
+      return;
+    }
+
+    expect(data.count).toBeGreaterThanOrEqual(5);
     const demo1 = data.complaints.find((c: any) => c.id === 'DEMO-2026-0001');
     expect(demo1).toBeDefined();
     expect(demo1.isDemo).toBe(true);
@@ -209,9 +224,15 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
     const data = await res.json();
     const vr = data.complaint.verificationResult;
     expect(vr).toBeDefined();
-    expect(vr.duplicateRisk).toBe('HIGH');
-    expect(vr.outcome).toBe('POSSIBLE_DUPLICATE');
-    expect(vr.matches.some((m: any) => m.existingComplaintId === 'DEMO-2026-0001')).toBe(true);
+    if (CONFIG.DATA_STORE === 'supabase') {
+      expect(['HIGH', 'MEDIUM']).toContain(vr.duplicateRisk);
+      expect(['POSSIBLE_DUPLICATE', 'REQUIRES_HUMAN_REVIEW']).toContain(vr.outcome);
+      expect(vr.matches.length).toBeGreaterThanOrEqual(1);
+    } else {
+      expect(vr.duplicateRisk).toBe('HIGH');
+      expect(vr.outcome).toBe('POSSIBLE_DUPLICATE');
+      expect(vr.matches.some((m: any) => m.existingComplaintId === 'DEMO-2026-0001')).toBe(true);
+    }
   });
 
   // 5. Citizen Ownership Isolation
@@ -358,9 +379,13 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   });
 
   // 8. Overwrite & Persistence Safety
-  it('preserves existing modified demo complaints when seedDemoData is invoked again', () => {
+  it('preserves existing modified demo complaints when seedDemoData is invoked again', async () => {
+    if (CONFIG.DATA_STORE === 'supabase') {
+      return; // seedDemoData is specific to SQLite development seeding
+    }
+
     // Modify demo complaint 1
-    complaintStore.update('DEMO-2026-0001', {
+    await complaintStore.update('DEMO-2026-0001', {
       reviewNotes: 'Officer custom test note.',
     });
 
@@ -368,7 +393,7 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
     seedDemoData();
 
     // Ensure custom note was not overwritten
-    const current = complaintStore.findById('DEMO-2026-0001');
+    const current = await complaintStore.findById('DEMO-2026-0001');
     expect(current?.reviewNotes).toBe('Officer custom test note.');
   });
 });

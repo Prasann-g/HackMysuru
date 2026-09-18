@@ -152,10 +152,11 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
       {/* Lifecycle Status & Department Routing */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-brand-slate-700 mb-1">
-            Grievance Status Stage
+          <label htmlFor="review-status" className="block text-xs font-semibold text-brand-slate-700 mb-1">
+            Review Status
           </label>
           <select
+            id="review-status"
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             disabled={isUpdating}
@@ -191,7 +192,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
       {/* Internal Review Notes */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-xs font-semibold text-brand-slate-700">
+          <label htmlFor="reviewNotes" className="block text-xs font-semibold text-brand-slate-700">
             Internal Verification & Review Notes
           </label>
           <span className="text-[11px] text-brand-slate-500 italic">
@@ -199,6 +200,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
           </span>
         </div>
         <textarea
+          id="reviewNotes"
           rows={3}
           value={reviewNotes}
           onChange={(e) => setReviewNotes(e.target.value)}
@@ -243,7 +245,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
           ) : (
             <>
               <Save className="w-3.5 h-3.5 mr-1.5" />
-              Commit Review Decision
+              Save Review Decision
             </>
           )}
         </Button>

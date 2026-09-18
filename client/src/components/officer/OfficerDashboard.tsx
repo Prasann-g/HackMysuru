@@ -83,6 +83,7 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
+      <h2 className="sr-only">Officer Dashboard</h2>
       {/* Officer Profile & Jurisdiction Header */}
       <div className="bg-white border border-brand-slate-200 rounded-2xl p-6 shadow-civic-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

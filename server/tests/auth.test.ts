@@ -26,9 +26,9 @@ describe('Civic Trust Authentication & Role Architecture (Step 4.3A)', () => {
     });
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset test user state while keeping pre-seeded officer accounts intact
-    userStore.clearNonDefault();
+    await userStore.clearNonDefault();
   });
 
   // 1. Citizen Registration
@@ -55,7 +55,7 @@ describe('Civic Trust Authentication & Role Architecture (Step 4.3A)', () => {
     expect((data.user as any).passwordHash).toBeUndefined();
 
     // Verify stored password in store is actually hashed
-    const stored = userStore.findByEmail('ravi.kumar@example.com');
+    const stored = await userStore.findByEmail('ravi.kumar@example.com');
     expect(stored).toBeDefined();
     expect(stored?.passwordHash).not.toBe('securePassword123');
     expect(stored?.passwordHash.startsWith('$2')).toBe(true);
@@ -78,7 +78,7 @@ describe('Civic Trust Authentication & Role Architecture (Step 4.3A)', () => {
     const data = await res.json();
     expect(data.user.role).toBe('CITIZEN');
 
-    const stored = userStore.findByEmail('attacker@example.com');
+    const stored = await userStore.findByEmail('attacker@example.com');
     expect(stored?.role).toBe('CITIZEN');
   });
 

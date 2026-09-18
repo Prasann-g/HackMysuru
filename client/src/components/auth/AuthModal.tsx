@@ -60,12 +60,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFillDemoOfficer = () => {
-    setEmail('officer.ward48@mcc.gov.in');
-    setPassword('Officer@Mysuru48');
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -237,21 +231,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {mode === 'officer' && (
-            <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-2">
+            <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-lg text-xs text-amber-900 space-y-1">
               <div className="flex items-center gap-1.5 font-semibold text-amber-950">
                 <Briefcase className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                <span>Officer Access Credentials</span>
+                <span>Municipal Officer Portal</span>
               </div>
               <p className="text-[11px] text-amber-800 leading-normal">
-                Officer accounts are pre-provisioned for MCC ward engineers and sanitation officers.
+                Please enter your official municipal credentials issued by the Mysuru City Corporation administration.
               </p>
-              <button
-                type="button"
-                onClick={handleFillDemoOfficer}
-                className="w-full text-left py-1 px-2 bg-amber-100/70 hover:bg-amber-100 rounded text-[11px] font-medium text-amber-900 border border-amber-300/60 cursor-pointer transition-colors"
-              >
-                Use Demo Officer: <span className="font-mono font-semibold">officer.ward48@mcc.gov.in</span>
-              </button>
             </div>
           )}
 

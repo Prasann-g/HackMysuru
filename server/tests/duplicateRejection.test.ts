@@ -18,10 +18,16 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
   let imageBufOriginal: Buffer;
   let imageBufRecompressed: Buffer;
   let imageBufDistinct: Buffer;
+  let nonce: number;
 
   beforeAll(async () => {
+    nonce = Date.now();
+
+    // Clean any prior ephemeral test complaints while strictly preserving authentic records
+    await complaintStore.clearNonDemo();
+
     // Generate test images using sharp
-    // 1. Original Image (geometric white/black split with blue background)
+    // 1. Original Image (geometric white/black split with blue background + unique nonce circle)
     imageBufOriginal = await sharp({
       create: {
         width: 80,
@@ -33,7 +39,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
       .composite([
         {
           input: Buffer.from(
-            '<svg width="80" height="80"><rect x="0" y="0" width="40" height="80" fill="white"/><rect x="40" y="0" width="40" height="80" fill="black"/></svg>'
+            `<svg width="80" height="80"><rect x="0" y="0" width="40" height="80" fill="white"/><rect x="40" y="0" width="40" height="80" fill="black"/><circle cx="${(nonce % 30) + 15}" cy="40" r="12" fill="yellow"/></svg>`
           ),
           top: 0,
           left: 0,
@@ -45,7 +51,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     // 2. Recompressed Image (identical visual scene, lower quality -> different SHA-256, dHash <= 5)
     imageBufRecompressed = await sharp(imageBufOriginal).jpeg({ quality: 25 }).toBuffer();
 
-    // 3. Distinct Image (distinct red scene)
+    // 3. Distinct Image (distinct red scene with dynamic cyan rectangle)
     imageBufDistinct = await sharp({
       create: {
         width: 80,
@@ -54,6 +60,15 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
         background: { r: 230, g: 30, b: 30 },
       },
     })
+      .composite([
+        {
+          input: Buffer.from(
+            `<svg width="80" height="80"><rect x="${(nonce % 30) + 5}" y="${((nonce >> 3) % 30) + 5}" width="25" height="25" fill="cyan"/></svg>`
+          ),
+          top: 0,
+          left: 0,
+        },
+      ])
       .jpeg()
       .toBuffer();
 
@@ -67,8 +82,6 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
         resolve();
       });
     });
-
-    const nonce = Date.now();
 
     // Register Citizen A
     const resA = await fetch(`${baseUrl}/api/auth/register/citizen`, {
@@ -115,6 +128,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
   });
 
   afterAll(async () => {
+    await complaintStore.clearNonDemo();
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
     });
@@ -126,7 +140,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
   it('allows Citizen A to submit original complaint with photo evidence (HTTP 201 Created)', async () => {
     const form = new FormData();
     form.append('category', 'pothole');
-    form.append('description', 'Dangerous road depression on Kuvempunagar Double Road near junction.');
+    form.append('description', `Dangerous road depression on Kuvempunagar Double Road near junction ${nonce}.`);
     form.append('observedDate', '2026-03-15');
     form.append('locationArea', 'Kuvempunagar');
     form.append('image', new Blob([imageBufOriginal], { type: 'image/jpeg' }), 'evidence.jpg');
@@ -152,7 +166,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     // 1. Snapshot counts before Citizen B attempts submission
     const complaintsDir = path.join(CONFIG.UPLOAD_DIR, 'complaints');
     const initialFiles = fs.existsSync(complaintsDir) ? fs.readdirSync(complaintsDir) : [];
-    const initialCandidates = complaintStore.listCandidatesForVerification();
+    const initialCandidates = await complaintStore.listCandidatesForVerification();
 
     const officerQueueBefore = await fetch(`${baseUrl}/api/officer/complaints`, {
       headers: { Authorization: `Bearer ${officerToken}` },
@@ -163,7 +177,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     // 2. Citizen B attempts to submit the exact same image with different description
     const form = new FormData();
     form.append('category', 'garbage_dumping');
-    form.append('description', 'Unattended trash accumulating on the sidewalk near market.');
+    form.append('description', `Unattended trash accumulating on the sidewalk near market ${nonce}.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Vontikoppal');
     form.append('image', new Blob([imageBufOriginal], { type: 'image/jpeg' }), 'reused.jpg');
@@ -198,7 +212,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     expect(data.existingComplaint.imagePath).toBeUndefined();
 
     // 6. Zero Database Records: count remains unchanged
-    const finalCandidates = complaintStore.listCandidatesForVerification();
+    const finalCandidates = await complaintStore.listCandidatesForVerification();
     expect(finalCandidates.length).toBe(initialCandidates.length);
 
     // 7. Zero Orphaned Files: disk file count remains unchanged
@@ -216,7 +230,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
   it('accepts distinct photograph with HTTP 201 Created', async () => {
     const form = new FormData();
     form.append('category', 'broken_streetlight');
-    form.append('description', 'Completely separate dark street pole in Saraswathipuram.');
+    form.append('description', `Extinguished overhead luminaire on 8th cross avenue ${nonce}.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Saraswathipuram');
     form.append('image', new Blob([imageBufDistinct], { type: 'image/jpeg' }), 'distinct.jpg');
@@ -238,7 +252,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     // Recompressed image has different SHA-256 from original, but close dHash
     const form = new FormData();
     form.append('category', 'pothole');
-    form.append('description', 'Another report of road depression with recompressed photograph.');
+    form.append('description', `Unique roadway depression inspection record ${nonce} with isolated phrasing.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Kuvempunagar');
     form.append('image', new Blob([imageBufRecompressed], { type: 'image/jpeg' }), 'recompressed.jpg');
@@ -266,7 +280,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
 
   it('rejects identical text complaint in the same category and area (HTTP 409 Conflict)', async () => {
     // 1. Citizen A submits a unique text complaint
-    const uniqueText = 'Broken drinking water main pipeline flooding 1st Cross in Gokulam 3rd Stage.';
+    const uniqueText = `Fallen eucalyptus branch obstructing pedestrian footbridge in Gokulam Park ${nonce}.`;
     const resA = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
@@ -294,7 +308,7 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
       },
       body: JSON.stringify({
         category: 'other',
-        description: 'Broken drinking water main pipeline flooding 1st Cross in Gokulam 3rd Stage near road.',
+        description: `Fallen eucalyptus branch obstructing pedestrian footbridge in Gokulam Park near path ${nonce}.`,
         observedDate: '2026-03-17',
         locationArea: 'Gokulam',
       }),

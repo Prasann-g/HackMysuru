@@ -57,7 +57,7 @@ describe('MCC Officer Verification & Review Dashboard (Step 4.4)', () => {
       },
       body: JSON.stringify({
         category: 'pothole',
-        description: 'Dangerous road crater in Kuvempunagar near Saraswathipuram fire station.',
+        description: `Dangerous road crater in Kuvempunagar near Saraswathipuram fire station ${Date.now()}.`,
         observedDate: '2026-09-18',
         locationArea: 'Kuvempunagar',
         addressText: 'Near Fire Station Signal, Saraswathipuram',

@@ -11,9 +11,13 @@ import { officerRouter } from './routes/officerRoutes.js';
 import { initDatabase } from './db/sqlite.js';
 import { seedDemoData } from './db/seedDemoData.js';
 
-// Initialize SQLite database and seed demonstration data
+// Initialize SQLite database
 initDatabase();
-seedDemoData();
+
+// Only seed synthetic demo data if explicitly commanded via environment variable
+if (process.env.SEED_DEMO_DATA === 'true') {
+  seedDemoData();
+}
 
 export const app = express();
 

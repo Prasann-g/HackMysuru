@@ -23,7 +23,7 @@ interface NavbarProps {
   activeTab: NavTab;
   currentUser: CitizenUser | null;
   onTabChange: (tab: NavTab) => void;
-  onOpenAuth: (mode: 'login' | 'signup') => void;
+  onOpenAuth: (mode: 'login' | 'signup' | 'officer') => void;
   onLogout: () => void;
   onOpenMyComplaints: () => void;
   onOpenProfile: () => void;
@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { id: 'submit', label: 'Report Issue', icon: <FileText className="w-4 h-4" /> },
     { id: 'track', label: 'Track Complaint', icon: <Search className="w-4 h-4" /> },
-    { id: 'dashboard', label: 'Public Map', icon: <BarChart3 className="w-4 h-4" />, badge: 'Coming Soon' },
+    { id: 'dashboard', label: 'Public Map & Analytics', icon: <BarChart3 className="w-4 h-4" /> },
     ...(currentUser?.role === 'OFFICER'
       ? [
           {
@@ -246,6 +246,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onOpenAuth('signup')}
                 >
                   Create Account
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onOpenAuth('officer')}
+                >
+                  MCC Officer
                 </Button>
               </div>
             )}

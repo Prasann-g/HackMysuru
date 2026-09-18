@@ -11,7 +11,7 @@ import { OfficerDashboard } from './components/officer/OfficerDashboard';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/auth/AuthModal';
 import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
-import { PlaceholderModal } from './components/PlaceholderModal';
+import { PublicMapAnalytics } from './components/public/PublicMapAnalytics';
 import type { CitizenUser, AuthMode } from './types/auth';
 import { apiGetMe, clearStoredToken } from './services/api';
 
@@ -56,9 +56,6 @@ export function App() {
 
   // Citizen Profile / My Complaints Modal State
   const [citizenModalView, setCitizenModalView] = useState<'profile' | 'complaints' | null>(null);
-
-  // Placeholder Modal for unimplemented features (e.g. Public Map)
-  const [modalFeature, setModalFeature] = useState<string | null>(null);
 
   const handleLoginSuccess = (user: CitizenUser) => {
     setCurrentUser(user);
@@ -131,7 +128,8 @@ export function App() {
         setAuthModalOpen(true);
       }
     } else if (tab === 'dashboard') {
-      setModalFeature('Public Transparency Map & Corporation Analytics');
+      setActiveTab('dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -167,6 +165,11 @@ export function App() {
           />
         ) : activeTab === 'officer' && currentUser?.role === 'OFFICER' ? (
           <OfficerDashboard currentOfficer={currentUser} />
+        ) : activeTab === 'dashboard' ? (
+          <PublicMapAnalytics
+            onNavigateToReport={handleInitiateReport}
+            onNavigateToTrack={handleOpenTracker}
+          />
         ) : (
           <>
             {/* 1. Hero Section */}
@@ -220,13 +223,6 @@ export function App() {
         onClose={() => setCitizenModalView(null)}
         onNavigateToSubmit={handleInitiateReport}
         onNavigateToTrack={handleOpenTracker}
-      />
-
-      {/* Placeholder Modal for Public Map */}
-      <PlaceholderModal
-        isOpen={modalFeature !== null}
-        featureName={modalFeature || ''}
-        onClose={() => setModalFeature(null)}
       />
     </div>
   );
