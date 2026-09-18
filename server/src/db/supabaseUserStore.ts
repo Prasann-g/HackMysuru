@@ -101,6 +101,7 @@ export class SupabaseUserStore implements IUserStore {
     const { error } = await client
       .from('users')
       .delete()
+      .neq('email', 'gallikattip@gmail.com')
       .not('id', 'in', `(${AUTHENTIC_USER_IDS.map((id) => `"${id}"`).join(',')})`);
 
     if (error) {
