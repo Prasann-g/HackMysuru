@@ -1,8 +1,23 @@
-import React, { useEffect } from 'react';
-import { X, User, MapPin, Mail, Calendar, ShieldCheck, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  X,
+  User,
+  MapPin,
+  Mail,
+  Calendar,
+  ShieldCheck,
+  FileText,
+  Loader2,
+  AlertCircle,
+  Copy,
+  Check,
+  ExternalLink,
+  RefreshCw,
+} from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import type { CitizenUser } from '../../types/auth';
+import { apiGetMyComplaints, type ComplaintRecord } from '../../services/api';
 
 interface CitizenProfileModalProps {
   isOpen: boolean;
@@ -10,7 +25,18 @@ interface CitizenProfileModalProps {
   user: CitizenUser | null;
   onClose: () => void;
   onNavigateToSubmit: () => void;
+  onNavigateToTrack?: (token: string) => void;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  garbage_dumping: 'Garbage dumping',
+  overflowing_bin: 'Overflowing bin',
+  pothole: 'Pothole',
+  broken_streetlight: 'Broken streetlight',
+  unsegregated_waste: 'Unsegregated waste',
+  construction_debris: 'Construction debris',
+  other: 'Other issue',
+};
 
 export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
   isOpen,
@@ -18,7 +44,45 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
   user,
   onClose,
   onNavigateToSubmit,
+  onNavigateToTrack,
 }) => {
+  const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [refreshIndex, setRefreshIndex] = useState(0);
+
+  useEffect(() => {
+    let ignore = false;
+    if (isOpen && view === 'complaints' && user?.role === 'CITIZEN') {
+      apiGetMyComplaints()
+        .then((data) => {
+          if (!ignore) {
+            setComplaints(data);
+          }
+        })
+        .catch((err: any) => {
+          if (!ignore) {
+            setError(err.message || 'Failed to load your complaints.');
+          }
+        })
+        .finally(() => {
+          if (!ignore) {
+            setLoading(false);
+          }
+        });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, view, user, refreshIndex]);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setError(null);
+    setRefreshIndex((k) => k + 1);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -29,6 +93,12 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleCopy = (token: string) => {
+    navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
   if (!isOpen || !user || !view) return null;
 
   return (
@@ -38,7 +108,11 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
       aria-modal="true"
       aria-labelledby="citizen-modal-title"
     >
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-civic-lg border border-brand-slate-200">
+      <div
+        className={`bg-white rounded-2xl w-full p-6 sm:p-7 shadow-civic-lg border border-brand-slate-200 transition-all ${
+          view === 'complaints' ? 'max-w-2xl' : 'max-w-lg'
+        }`}
+      >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-teal-50 border border-brand-teal-200 flex items-center justify-center text-brand-teal-700">
@@ -57,7 +131,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                   ? user.role === 'OFFICER'
                     ? 'Officer Profile'
                     : 'Citizen Profile'
-                  : 'My Complaints'}
+                  : 'My Registered Complaints'}
               </h2>
             </div>
           </div>
@@ -106,7 +180,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                   <Calendar className="w-3.5 h-3.5 text-brand-slate-400" />
                   Account Status:
                 </span>
-                <span className="text-brand-slate-700 font-medium text-emerald-700">
+                <span className="font-medium text-emerald-700">
                   Active & Verified
                 </span>
               </div>
@@ -123,38 +197,175 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
           </div>
         ) : (
           <div className="mt-5 space-y-4">
-            <div className="text-center py-8 px-4 bg-brand-slate-50 rounded-xl border border-dashed border-brand-slate-300">
-              <FileText className="w-10 h-10 text-brand-slate-400 mx-auto mb-2" />
-              <h3 className="text-sm font-bold text-brand-slate-800">
-                No active complaints submitted in this session
-              </h3>
-              <p className="text-xs text-brand-slate-500 max-w-xs mx-auto mt-1">
-                When you submit a civic complaint, its tracking token and resolution status will be displayed here.
-              </p>
-              <div className="mt-4">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    onClose();
-                    onNavigateToSubmit();
-                  }}
-                >
-                  Report a Civic Issue Now
-                </Button>
+            {/* Loading State */}
+            {loading && (
+              <div className="py-12 text-center space-y-2">
+                <Loader2 className="w-6 h-6 text-brand-teal-600 animate-spin mx-auto" />
+                <p className="text-xs text-brand-slate-600">Retrieving your registered complaints...</p>
               </div>
-            </div>
+            )}
 
-            <p className="text-[11px] text-brand-slate-500 italic text-center">
-              Notice: Persistent database history will be synchronized when backend database integration is completed.
-            </p>
+            {/* Error State */}
+            {error && !loading && (
+              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-900 text-xs">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-1">
+                  <p className="font-bold">Error loading complaints</p>
+                  <p className="text-rose-700">{error}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    icon={<RefreshCw className="w-3 h-3" />}
+                    className="mt-2"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && complaints.length === 0 && (
+              <div className="text-center py-8 px-4 bg-brand-slate-50 rounded-xl border border-dashed border-brand-slate-300">
+                <FileText className="w-10 h-10 text-brand-slate-400 mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-brand-slate-800">
+                  No complaints submitted yet
+                </h3>
+                <p className="text-xs text-brand-slate-500 max-w-xs mx-auto mt-1">
+                  When you submit a civic complaint, its tracking token and resolution status will appear here.
+                </p>
+                <div className="mt-4">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      onNavigateToSubmit();
+                    }}
+                  >
+                    Report a Civic Issue Now
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Complaints List */}
+            {!loading && !error && complaints.length > 0 && (
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {complaints.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-4 rounded-xl border border-brand-slate-200 bg-brand-slate-50/50 hover:bg-white hover:border-brand-teal-300 transition-all space-y-2.5"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs sm:text-sm font-bold text-brand-slate-900 bg-white px-2 py-0.5 rounded border border-brand-slate-200">
+                          {c.trackingToken}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(c.trackingToken)}
+                          className="text-brand-slate-400 hover:text-brand-slate-700 cursor-pointer"
+                          title="Copy tracking token"
+                        >
+                          {copiedToken === c.trackingToken ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {c.verificationResult?.duplicateRisk && (
+                          <Badge
+                            variant={
+                              c.verificationResult.duplicateRisk === 'HIGH'
+                                ? 'duplicate'
+                                : c.verificationResult.duplicateRisk === 'MEDIUM'
+                                  ? 'review'
+                                  : 'verified'
+                            }
+                            size="sm"
+                          >
+                            {c.verificationResult.duplicateRisk} RISK
+                          </Badge>
+                        )}
+                        <Badge
+                          variant={
+                            c.status === 'RESOLVED' || c.status === 'CLOSED'
+                              ? 'verified'
+                              : c.status === 'IN_PROGRESS'
+                                ? 'info'
+                                : 'review'
+                          }
+                          size="sm"
+                        >
+                          {c.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-brand-slate-900">
+                        {CATEGORY_LABELS[c.category] || c.category}
+                      </h4>
+                      <p className="text-xs text-brand-slate-600 line-clamp-2 mt-0.5 leading-relaxed">
+                        {c.description}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-1 border-t border-brand-slate-100 text-[11px] text-brand-slate-500 gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-brand-slate-400" />
+                          {c.locationArea}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-brand-slate-400" />
+                          {c.observedDate}
+                        </span>
+                      </div>
+
+                      {onNavigateToTrack && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onNavigateToTrack(c.trackingToken);
+                          }}
+                          className="text-brand-teal-700 hover:text-brand-teal-900 font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Track Progress</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="mt-6 flex justify-end">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
+        <div className="mt-6 flex justify-between items-center">
+          {view === 'complaints' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              Refresh
+            </Button>
+          )}
+          <div className="ml-auto">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
       </div>
     </div>

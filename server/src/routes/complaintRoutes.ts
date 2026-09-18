@@ -161,6 +161,7 @@ complaintRouter.get('/track/:token', (req, res) => {
     assignedDepartment: complaint.assignedDepartment,
     verificationOutcome: complaint.verificationResult?.outcome,
     duplicateRisk: complaint.verificationResult?.duplicateRisk,
+    signals: complaint.verificationResult?.signals || [],
     isDemo: complaint.isDemo,
     createdAt: complaint.createdAt,
     updatedAt: complaint.updatedAt,

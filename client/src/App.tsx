@@ -6,6 +6,7 @@ import { HowItWorks } from './components/HowItWorks';
 import { TrustTransparency } from './components/landing/TrustTransparency';
 import { FinalCta } from './components/landing/FinalCta';
 import { ComplaintSubmissionPortal } from './components/submission/ComplaintSubmissionPortal';
+import { ComplaintTracker } from './components/tracking/ComplaintTracker';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/auth/AuthModal';
 import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
@@ -15,6 +16,7 @@ import { apiGetMe, clearStoredToken } from './services/api';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
+  const [trackingToken, setTrackingToken] = useState<string>('');
   const [currentUser, setCurrentUser] = useState<CitizenUser | null>(() => {
     try {
       const stored = sessionStorage.getItem('civictrust_citizen_user');
@@ -96,15 +98,14 @@ export function App() {
     }
   };
 
-  // Protected Action: Track a Complaint
-  const handleInitiateTrack = () => {
-    if (currentUser) {
-      setCitizenModalView('complaints');
-    } else {
-      setAuthModalMode('login');
-      setAuthReason('Please log in or create a citizen account to track your submitted complaints.');
-      setAuthModalOpen(true);
+  // Public Action: Track a Complaint
+  const handleOpenTracker = (token?: string) => {
+    if (token) {
+      setTrackingToken(token);
     }
+    setActiveTab('track');
+    setCitizenModalView(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Top Nav Tab Switcher with Auth Gate
@@ -115,7 +116,7 @@ export function App() {
     } else if (tab === 'submit') {
       handleInitiateReport();
     } else if (tab === 'track') {
-      handleInitiateTrack();
+      handleOpenTracker();
     } else if (tab === 'dashboard') {
       setModalFeature('Public Transparency Map & Corporation Analytics');
     }
@@ -141,13 +142,22 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1">
         {activeTab === 'submit' && currentUser ? (
-          <ComplaintSubmissionPortal onBackToHome={() => setActiveTab('home')} />
+          <ComplaintSubmissionPortal
+            onBackToHome={() => setActiveTab('home')}
+            onNavigateToTrack={handleOpenTracker}
+          />
+        ) : activeTab === 'track' ? (
+          <ComplaintTracker
+            initialToken={trackingToken}
+            onReportIssue={handleInitiateReport}
+            onBackToHome={() => setActiveTab('home')}
+          />
         ) : (
           <>
             {/* 1. Hero Section */}
             <Hero
               onReportIssueClick={handleInitiateReport}
-              onTrackComplaintClick={handleInitiateTrack}
+              onTrackComplaintClick={() => handleOpenTracker()}
             />
 
             {/* 2. Why Civic Trust */}
@@ -168,7 +178,7 @@ export function App() {
                 setAuthModalOpen(true);
               }}
               onNavigateToSubmit={handleInitiateReport}
-              onNavigateToTrack={handleInitiateTrack}
+              onNavigateToTrack={() => handleOpenTracker()}
             />
           </>
         )}
@@ -194,6 +204,7 @@ export function App() {
         user={currentUser}
         onClose={() => setCitizenModalView(null)}
         onNavigateToSubmit={handleInitiateReport}
+        onNavigateToTrack={handleOpenTracker}
       />
 
       {/* Placeholder Modal for Public Map */}

@@ -12,6 +12,7 @@ import { Card, CardBody } from '../ui/Card';
 
 interface ComplaintSubmissionPortalProps {
   onBackToHome: () => void;
+  onNavigateToTrack?: (token: string) => void;
 }
 
 const STEP_LABELS = [
@@ -35,6 +36,7 @@ const INITIAL_FORM_DATA: ComplaintFormData = {
 
 export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps> = ({
   onBackToHome,
+  onNavigateToTrack,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<ComplaintFormData>(INITIAL_FORM_DATA);
@@ -258,6 +260,7 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onReset={handleReset}
+              onNavigateToTrack={onNavigateToTrack}
             />
           )}
 

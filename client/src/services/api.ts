@@ -95,3 +95,149 @@ export async function apiGetMe(): Promise<CitizenUser | null> {
     return null;
   }
 }
+
+// ----------------------------------------------------------------------------
+// Complaint Service API
+// ----------------------------------------------------------------------------
+
+export interface CreateComplaintPayload {
+  category: string;
+  customCategory?: string;
+  description: string;
+  observedDate: string;
+  locationArea: string;
+  addressText?: string;
+  hasImage?: boolean;
+  evidenceMetadata?: {
+    filename: string;
+    sizeBytes: number;
+    mimetype: string;
+    submittedAt: string;
+    note: string;
+  };
+}
+
+export interface ComplaintRecord {
+  id: string;
+  trackingToken: string;
+  citizenId: string;
+  category: string;
+  customCategory?: string;
+  description: string;
+  observedDate: string;
+  locationArea: string;
+  addressText?: string;
+  hasImage: boolean;
+  status: string;
+  verificationResult?: {
+    outcome: string;
+    duplicateRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+    matches: Array<{
+      existingComplaintId: string;
+      category: string;
+      jaccardSimilarity: number;
+      matchingPhrases: string[];
+      riskLevel: string;
+    }>;
+    signals: string[];
+    uncertainties: string[];
+    limitations: string[];
+    recommendedAction: string;
+    categoryAlignment: {
+      aligned: boolean;
+      detectedKeywords: string[];
+    };
+  };
+  assignedDepartment?: string;
+  reviewNotes?: string;
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicTrackResult {
+  id: string;
+  trackingToken: string;
+  category: string;
+  customCategory?: string;
+  description: string;
+  locationArea: string;
+  observedDate: string;
+  status: string;
+  assignedDepartment?: string;
+  verificationOutcome?: string;
+  duplicateRisk?: string;
+  signals?: string[];
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+  disclaimer: string;
+}
+
+export async function apiCreateComplaint(
+  payload: CreateComplaintPayload
+): Promise<{ complaint: ComplaintRecord; evidenceNotice: string }> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('You must be logged in as a citizen to submit a complaint.');
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/complaints`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to register complaint. Please try again.');
+  }
+
+  return data;
+}
+
+export async function apiGetMyComplaints(): Promise<ComplaintRecord[]> {
+  const token = getStoredToken();
+  if (!token) return [];
+
+  const res = await fetch(`${API_BASE_URL}/api/complaints/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve your complaints.');
+  }
+
+  return data.complaints || [];
+}
+
+export async function apiTrackComplaint(
+  trackingToken: string
+): Promise<PublicTrackResult> {
+  const cleanToken = trackingToken.trim();
+  const res = await fetch(
+    `${API_BASE_URL}/api/complaints/track/${encodeURIComponent(cleanToken)}`
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.error || 'Complaint not found with the provided tracking token.'
+    );
+  }
+
+  return data;
+}
+
+export async function apiGetDemoPool(): Promise<ComplaintRecord[]> {
+  const res = await fetch(`${API_BASE_URL}/api/complaints/demo-pool`);
+  const data = await res.json();
+  if (!res.ok) return [];
+  return data.complaints || [];
+}

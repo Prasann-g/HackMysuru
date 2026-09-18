@@ -66,6 +66,7 @@ export interface PublicTrackResult {
   assignedDepartment?: string;
   verificationOutcome?: string;
   duplicateRisk?: string;
+  signals?: string[];
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
