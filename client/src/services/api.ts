@@ -136,6 +136,8 @@ export interface CreateComplaintPayload {
   observedDate: string;
   locationArea: string;
   addressText?: string;
+  latitude?: number;
+  longitude?: number;
   hasImage?: boolean;
   imageFile?: File | null;
   evidenceMetadata?: {
@@ -260,6 +262,12 @@ export async function apiCreateComplaint(
     formData.append('observedDate', payload.observedDate);
     formData.append('locationArea', payload.locationArea);
     if (payload.addressText) formData.append('addressText', payload.addressText);
+    if (payload.latitude !== undefined && payload.latitude !== null) {
+      formData.append('latitude', String(payload.latitude));
+    }
+    if (payload.longitude !== undefined && payload.longitude !== null) {
+      formData.append('longitude', String(payload.longitude));
+    }
     formData.append('hasImage', 'true');
     formData.append('image', payload.imageFile);
 

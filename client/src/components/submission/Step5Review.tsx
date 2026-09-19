@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Edit3,
   Calendar,
   MapPin,
   Tag,
   Image as ImageIcon,
-  Send,
   CheckCircle2,
   Copy,
   Check,
   AlertCircle,
   AlertTriangle,
   ShieldCheck,
-  Loader2,
   ExternalLink,
+  Navigation,
 } from 'lucide-react';
 import type { ComplaintFormData } from './types';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Card, CardBody } from '../ui/Card';
 import {
-  apiCreateComplaint,
   type ComplaintRecord,
   type SafeExistingComplaint,
 } from '../../services/api';
@@ -32,16 +30,28 @@ interface Step5Props {
   onNavigateToTrack?: (token: string) => void;
   onSuccess?: (complaint: ComplaintRecord) => void;
   onDone?: () => void;
+  onDeclarationChange?: (val: boolean) => void;
+  isSubmitting?: boolean;
+  submissionError?: string | null;
+  submittedComplaint?: ComplaintRecord | null;
+  duplicateConflict?: {
+    message: string;
+    code: string;
+    duplicateType: string;
+    existingComplaint?: SafeExistingComplaint;
+  } | null;
+  declarationError?: string | null;
+  onClearDuplicateConflict?: () => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  garbage_dumping: 'Garbage dumping',
-  overflowing_bin: 'Overflowing bin',
-  pothole: 'Pothole',
-  broken_streetlight: 'Broken streetlight',
-  unsegregated_waste: 'Unsegregated waste',
-  construction_debris: 'Construction debris',
-  other: 'Other issue',
+  pothole: 'Pothole & Road Damage',
+  garbage_dumping: 'Garbage Dumping',
+  broken_streetlight: 'Broken Streetlight',
+  overflowing_bin: 'Overflowing Public Bin',
+  construction_debris: 'Construction Debris',
+  unsegregated_waste: 'Unsegregated Waste Pile',
+  other: 'Other Civic Grievance',
 };
 
 export const Step5Review: React.FC<Step5Props> = ({
@@ -49,20 +59,21 @@ export const Step5Review: React.FC<Step5Props> = ({
   onEditStep,
   onReset,
   onNavigateToTrack,
-  onSuccess,
   onDone,
+  onDeclarationChange,
+  submissionError = null,
+  submittedComplaint = null,
+  duplicateConflict = null,
+  declarationError = null,
+  onClearDuplicateConflict,
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [submittedComplaint, setSubmittedComplaint] = useState<ComplaintRecord | null>(null);
-  const [duplicateConflict, setDuplicateConflict] = useState<{
-    message: string;
-    code: string;
-    duplicateType: string;
-    existingComplaint?: SafeExistingComplaint;
-  } | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedExistingToken, setCopiedExistingToken] = useState(false);
+  const confirmedDeclaration = formData.declarationConfirmed ?? false;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+
 
   const categoryName = formData.category
     ? CATEGORY_LABELS[formData.category] || formData.category
@@ -84,96 +95,52 @@ export const Step5Review: React.FC<Step5Props> = ({
     }
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setSubmissionError(null);
-    setDuplicateConflict(null);
-
-    try {
-      const response = await apiCreateComplaint({
-        category: formData.category,
-        customCategory: formData.customCategory || undefined,
-        description: formData.description,
-        observedDate: formData.observedDate,
-        locationArea: formData.locationSearch.trim(),
-        addressText: formData.addressText || undefined,
-        hasImage: !!formData.imageFile,
-        imageFile: formData.imageFile || undefined,
-        evidenceMetadata: formData.imageFile
-          ? {
-              filename: formData.imageFile.name,
-              sizeBytes: formData.imageFile.size,
-              mimetype: formData.imageFile.type,
-              submittedAt: new Date().toISOString(),
-              note: 'Photo accepted as citizen-submitted evidence only. Authenticity unverified.',
-            }
-          : undefined,
-      });
-
-      setSubmittedComplaint(response.complaint);
-      onSuccess?.(response.complaint);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: any) {
-      if (
-        err.name === 'DuplicateComplaintError' ||
-        err.code === 'EXACT_IMAGE_DUPLICATE' ||
-        err.code === 'EXACT_TEXT_DUPLICATE'
-      ) {
-        setDuplicateConflict({
-          message: err.message,
-          code: err.code || 'DUPLICATE_COMPLAINT',
-          duplicateType: err.duplicateType || 'UNKNOWN_DUPLICATE',
-          existingComplaint: err.existingComplaint,
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        setSubmissionError(err.message || 'Failed to submit complaint. Please try again.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleToggleDeclaration = (checked: boolean) => {
+    onDeclarationChange?.(checked);
   };
 
-  // DUPLICATE CONFLICT SCREEN (HTTP 409)
+
+
+  // --------------------------------------------------------------------------
+  // DUPLICATE CONFLICT VIEW (HTTP 409)
+  // --------------------------------------------------------------------------
   if (duplicateConflict) {
     const existing = duplicateConflict.existingComplaint;
     const isImageDuplicate = duplicateConflict.code === 'EXACT_IMAGE_DUPLICATE';
 
     return (
-      <div className="space-y-6 animate-fadeIn">
-        {/* Warning Banner */}
+      <div ref={containerRef} className="space-y-6 animate-fadeIn">
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-2">
           <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 mx-auto">
-            <AlertTriangle className="w-7 h-7" />
+            <AlertTriangle className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-amber-950">
-            Duplicate Complaint Submission Rejected
+          <h2 className="text-lg sm:text-xl font-bold text-amber-950">
+            Duplicate Grievance Detected
           </h2>
-          <p className="text-xs sm:text-sm text-amber-800 max-w-lg mx-auto">
+          <p className="text-xs sm:text-sm text-amber-800 max-w-lg mx-auto leading-relaxed">
             {duplicateConflict.message}
           </p>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 text-xs rounded-full font-medium mt-1">
             <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
-            Status: 409 Conflict — Pre-submission Rejection
+            Status: 409 Conflict — Pre-intake deduplication
           </div>
         </div>
 
-        {/* Existing Complaint Reference Card */}
         {existing && (
-          <Card className="border-amber-200 bg-amber-50/30">
+          <Card className="border-amber-200 bg-amber-50/40">
             <CardBody className="p-5 space-y-4">
-              <div className="border-b border-amber-100 pb-3">
-                <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider block">
-                  Reference to Existing Complaint in Mysore Registry
+              <div className="border-b border-amber-200/60 pb-3">
+                <span className="text-[11px] font-semibold text-amber-900 uppercase tracking-wider block">
+                  Reference to Existing Grievance in Mysuru
                 </span>
                 <p className="text-xs text-bridge-charcoal-600 mt-0.5">
-                  An active grievance was already registered with the exact same evidence. Citizen identity and personal details are strictly protected.
+                  An active municipal ticket is already recorded for this issue. You can monitor its resolution directly.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-xs">
+                  <span className="text-[10px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                     Public Tracking Token
                   </span>
                   <div className="flex items-center justify-between mt-1">
@@ -184,15 +151,21 @@ export const Step5Review: React.FC<Step5Props> = ({
                       variant="outline"
                       size="sm"
                       onClick={handleCopyExistingToken}
-                      icon={copiedExistingToken ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      icon={
+                        copiedExistingToken ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )
+                      }
                     >
                       {copiedExistingToken ? 'Copied' : 'Copy'}
                     </Button>
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-xs">
+                  <span className="text-[10px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                     Current Status & Category
                   </span>
                   <div className="flex items-center gap-2 mt-1.5">
@@ -205,8 +178,8 @@ export const Step5Review: React.FC<Step5Props> = ({
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-xs">
+                  <span className="text-[10px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
                     Observed Area
                   </span>
                   <span className="text-xs font-semibold text-bridge-charcoal-800 mt-1 block">
@@ -214,9 +187,9 @@ export const Step5Review: React.FC<Step5Props> = ({
                   </span>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-amber-200/80 shadow-xs">
-                  <span className="text-[11px] font-medium text-bridge-charcoal-500 uppercase tracking-wider block">
-                    Registration Date
+                <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-xs">
+                  <span className="text-[10px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
+                    Observation Date
                   </span>
                   <span className="text-xs font-semibold text-bridge-charcoal-800 mt-1 block">
                     {existing.observedDate}
@@ -227,32 +200,27 @@ export const Step5Review: React.FC<Step5Props> = ({
           </Card>
         )}
 
-        {/* Explainability & Privacy Notice */}
         <div className="p-4 bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl space-y-1.5 text-xs text-bridge-charcoal-600">
           <div className="flex items-center gap-2 font-semibold text-bridge-charcoal-800">
             <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
-            CivicBridge Anti-Duplication Integrity Guarantee
+            CivicTrust Explainable Deduplication
           </div>
           <p>
             {isImageDuplicate
-              ? 'Exact cryptographic match (SHA-256) detected identical image data already filed in the municipal database. No duplicate database record or redundant field inspection order was created.'
-              : 'High-confidence text similarity detected an identical active complaint in this municipal ward. No duplicate record was created.'}
-          </p>
-          <p className="text-[11px] text-bridge-charcoal-500">
-            To prevent municipal queue clogging and facilitate rapid resolution, you can track the existing grievance directly using its tracking token.
+              ? 'Cryptographic match detected identical image data already filed in the municipal system.'
+              : 'High-confidence text and location similarity identified an identical active ticket in this ward.'}
           </p>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
           <Button
             variant="outline"
             onClick={() => {
-              setDuplicateConflict(null);
-              onEditStep(isImageDuplicate ? 4 : 1);
+              onClearDuplicateConflict?.();
+              onEditStep(isImageDuplicate ? 3 : 1);
             }}
           >
-            {isImageDuplicate ? 'Attach a Different Photo' : 'Edit Complaint Details'}
+            {isImageDuplicate ? 'Attach a Different Photo' : 'Modify Complaint Details'}
           </Button>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -262,11 +230,11 @@ export const Step5Review: React.FC<Step5Props> = ({
                 onClick={() => onNavigateToTrack(existing.trackingToken)}
                 icon={<ExternalLink className="w-4 h-4" />}
               >
-                Track Existing Complaint
+                Track Existing Grievance
               </Button>
             )}
             <Button variant="ghost" onClick={onReset}>
-              Start New Complaint
+              Start Over
             </Button>
           </div>
         </div>
@@ -274,25 +242,26 @@ export const Step5Review: React.FC<Step5Props> = ({
     );
   }
 
-  // SUCCESS RECEIPT SCREEN
+  // --------------------------------------------------------------------------
+  // SUCCESS RECEIPT VIEW
+  // --------------------------------------------------------------------------
   if (submittedComplaint) {
     const vr = submittedComplaint.verificationResult;
     return (
-      <div className="space-y-6 animate-fadeIn">
-        {/* Success Banner */}
+      <div ref={containerRef} className="space-y-6 animate-fadeIn">
         <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
           <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 mx-auto">
             <CheckCircle2 className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold text-emerald-950">
-            Complaint Registered Successfully
+            Grievance Registered Successfully
           </h2>
           <p className="text-xs sm:text-sm text-emerald-800 max-w-lg mx-auto">
-            Your civic complaint has been saved in the municipal registry and processed through the automated verification engine.
+            Your complaint has been accepted into the Mysuru municipal registry.
           </p>
         </div>
 
-        {/* Tracking Token & Complaint ID Card */}
+        {/* Tracking Token & Lifecycle Card */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="border-bridge-gold-300 bg-bridge-gold-50/40">
             <CardBody className="p-4 space-y-1">
@@ -307,13 +276,19 @@ export const Step5Review: React.FC<Step5Props> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleCopyToken}
-                  icon={copiedToken ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  icon={
+                    copiedToken ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )
+                  }
                 >
                   {copiedToken ? 'Copied' : 'Copy'}
                 </Button>
               </div>
               <p className="text-[11px] text-bridge-charcoal-600 pt-1">
-                Use this token to track resolution progress publicly without exposing your personal information.
+                Save this token to track progress without revealing your identity.
               </p>
             </CardBody>
           </Card>
@@ -336,14 +311,14 @@ export const Step5Review: React.FC<Step5Props> = ({
           </Card>
         </div>
 
-        {/* Explainable Verification Breakdown */}
+        {/* Explainable Verification Signals */}
         {vr && (
           <Card className="border-bridge-almond-200">
             <CardBody className="p-5 space-y-3">
               <div className="flex items-center gap-2 border-b border-bridge-almond-100 pb-2">
                 <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-bridge-charcoal-900">
-                  Automated Evidence & Similarity Signals
+                  Automated Evidence & Verification Signals
                 </h3>
               </div>
 
@@ -374,7 +349,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                 </div>
               </div>
 
-              {vr.signals.length > 0 && (
+              {vr.signals && vr.signals.length > 0 && (
                 <div className="pt-2">
                   <span className="text-[11px] font-semibold text-bridge-charcoal-600">Signals Detected:</span>
                   <ul className="mt-1 space-y-1 list-disc list-inside text-xs text-bridge-charcoal-700">
@@ -385,7 +360,6 @@ export const Step5Review: React.FC<Step5Props> = ({
                 </div>
               )}
 
-              {/* Uncertainties & Limitations (Honest Disclosure) */}
               <div className="pt-2 border-t border-bridge-almond-100 space-y-1 text-[11px] text-bridge-charcoal-500 italic">
                 <p>• Photo evidence is treated as citizen-submitted evidence only. Authenticity unverified.</p>
                 <p>• Text and proximity similarity scores support human decision-making and do not prove whether a claim is genuine.</p>
@@ -394,7 +368,6 @@ export const Step5Review: React.FC<Step5Props> = ({
           </Card>
         )}
 
-        {/* Action Buttons */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-end gap-3">
           <Button
             type="button"
@@ -432,41 +405,46 @@ export const Step5Review: React.FC<Step5Props> = ({
     );
   }
 
+  // --------------------------------------------------------------------------
   // REVIEW & SUBMIT FORM
+  // --------------------------------------------------------------------------
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-bridge-charcoal-900">
-          Review your complaint details
+        <h2 className="text-base sm:text-lg font-bold text-bridge-charcoal-900">
+          Review Grievance Information
         </h2>
         <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
-          Verify that all information is accurate before submitting. You can click &quot;Edit&quot; on any section to make corrections.
+          Verify that all details are accurate before final submission. You can click &quot;Edit&quot; on any section to make adjustments.
         </p>
       </div>
 
       {submissionError && (
         <div
           role="alert"
-          className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-start gap-2 animate-fadeIn"
+          className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-start gap-2.5 animate-fadeIn"
         >
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-          <span>{submissionError}</span>
+          <div>
+            <span className="font-semibold block">Submission Error</span>
+            <span>{submissionError}</span>
+          </div>
         </div>
       )}
 
       {/* Summary Review Cards */}
-      <div className="space-y-4">
-        {/* Item 1: Issue Category */}
+      <div className="space-y-3">
+        {/* Item 1: Category */}
         <Card>
-          <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
+          <CardBody className="p-4 flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Tag className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
-                  Issue Type
+                <span className="text-[11px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
+                  Grievance Category
                 </span>
               </div>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-0.5">
                 <Badge variant="info" size="md">
                   {categoryName}
                 </Badge>
@@ -493,11 +471,11 @@ export const Step5Review: React.FC<Step5Props> = ({
 
         {/* Item 2: Description & Date */}
         <Card>
-          <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1 min-w-0">
+          <CardBody className="p-4 flex items-start justify-between gap-4">
+            <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Description & Date Observed
                 </span>
               </div>
@@ -505,7 +483,7 @@ export const Step5Review: React.FC<Step5Props> = ({
                 {formData.description || <span className="text-bridge-charcoal-400 italic">No description provided</span>}
               </p>
               <div className="flex items-center gap-1.5 text-xs text-bridge-charcoal-600 pt-1">
-                <span className="font-semibold text-bridge-charcoal-800">Observed On:</span>
+                <span className="font-semibold text-bridge-charcoal-800">Date:</span>
                 <span>{formData.observedDate || 'Not specified'}</span>
               </div>
             </div>
@@ -525,21 +503,27 @@ export const Step5Review: React.FC<Step5Props> = ({
 
         {/* Item 3: Location */}
         <Card>
-          <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1 min-w-0">
+          <CardBody className="p-4 flex items-start justify-between gap-4">
+            <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Location in Mysuru
                 </span>
               </div>
               <p className="text-sm font-semibold text-bridge-charcoal-900">
-                {formData.locationSearch || 'Not selected'}
+                {formData.locationArea || 'Not selected'}
               </p>
               {formData.addressText && (
                 <p className="text-xs text-bridge-charcoal-600">
                   {formData.addressText}
                 </p>
+              )}
+              {formData.latitude && formData.longitude && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-mono pt-1">
+                  <Navigation className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>GPS: {formData.latitude.toFixed(5)}° N, {formData.longitude.toFixed(5)}° E</span>
+                </div>
               )}
             </div>
 
@@ -556,13 +540,13 @@ export const Step5Review: React.FC<Step5Props> = ({
           </CardBody>
         </Card>
 
-        {/* Item 4: Evidence */}
+        {/* Item 4: Photo Evidence */}
         <Card>
-          <CardBody className="p-4 sm:p-5 flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1 min-w-0">
+          <CardBody className="p-4 flex items-start justify-between gap-4">
+            <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-bridge-charcoal-500 uppercase tracking-wider">
                   Photo Evidence
                 </span>
               </div>
@@ -581,13 +565,13 @@ export const Step5Review: React.FC<Step5Props> = ({
                       {formData.imageFile.name}
                     </p>
                     <p className="text-[11px] text-bridge-charcoal-500">
-                      {(formData.imageFile.size / 1024).toFixed(1)} KB • {formData.imageFile.type}
+                      {(formData.imageFile.size / 1024).toFixed(0)} KB • {formData.imageFile.type}
                     </p>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-bridge-charcoal-500 italic">
-                  No photo evidence attached
+                  No photo evidence attached (Optional)
                 </p>
               )}
             </div>
@@ -597,7 +581,7 @@ export const Step5Review: React.FC<Step5Props> = ({
               variant="outline"
               size="sm"
               icon={<Edit3 className="w-3 h-3" />}
-              onClick={() => onEditStep(4)}
+              onClick={() => onEditStep(3)}
               aria-label="Edit Evidence"
             >
               Edit
@@ -606,42 +590,32 @@ export const Step5Review: React.FC<Step5Props> = ({
         </Card>
       </div>
 
-      {/* Action Bar */}
-      <div className="pt-4 border-t border-bridge-almond-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={isSubmitting}
-          onClick={onReset}
-        >
-          Reset Form
-        </Button>
+      {/* Citizen Confirmation Checkbox */}
+      <div id="citizen-declaration-card" className="p-4 rounded-xl bg-bridge-almond-50 border border-bridge-almond-200 space-y-2">
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={confirmedDeclaration}
+            onChange={(e) => handleToggleDeclaration(e.target.checked)}
+            className="w-4 h-4 rounded border-bridge-almond-300 text-bridge-gold-600 focus:ring-bridge-gold-500 mt-0.5 cursor-pointer"
+          />
+          <div className="text-xs text-bridge-charcoal-700 leading-relaxed">
+            <span className="font-semibold text-bridge-charcoal-900 block">
+              Citizen Declaration
+            </span>
+            I declare that this grievance report is based on personal observation within Mysuru City Corporation jurisdiction and represents accurate information to the best of my knowledge.
+          </div>
+        </label>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            disabled={isSubmitting}
-            onClick={() => onEditStep(4)}
-            className="flex-1 sm:flex-initial"
-          >
-            Back
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            size="md"
-            disabled={isSubmitting}
-            icon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            onClick={handleSubmit}
-            className="flex-1 sm:flex-initial"
-          >
-            {isSubmitting ? 'Registering & Verifying...' : 'Submit Complaint'}
-          </Button>
-        </div>
+        {declarationError && (
+          <p className="text-xs text-rose-600 flex items-center gap-1.5 pt-1 animate-fadeIn">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>{declarationError}</span>
+          </p>
+        )}
       </div>
+
+
     </div>
   );
 };

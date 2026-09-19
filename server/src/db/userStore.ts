@@ -22,7 +22,7 @@ function mapRowToUser(row: any): UserRecord {
 
 export class SqliteUserStore implements IUserStore {
   constructor() {
-    this.seedDefaultUsers();
+    // Users are not seeded automatically to respect empty database state
   }
 
   public seedDefaultUsers(): void {

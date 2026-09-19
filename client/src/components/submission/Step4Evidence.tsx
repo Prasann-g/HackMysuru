@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Upload, AlertCircle, X, CheckCircle, ShieldAlert } from 'lucide-react';
+import { Camera, Upload, AlertCircle, X, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface Step4Props {
@@ -31,13 +31,11 @@ export const Step4Evidence: React.FC<Step4Props> = ({
   const handleProcessFile = (file: File) => {
     onClearError();
 
-    // Validate type
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      onError('Unsupported image format. Please upload a JPEG, PNG, or WebP image.');
+      onError('Unsupported image format. Please upload a JPEG, PNG, or WebP photo.');
       return;
     }
 
-    // Validate size
     if (file.size > MAX_SIZE_BYTES) {
       onError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is ${MAX_SIZE_MB} MB.`);
       return;
@@ -70,40 +68,47 @@ export const Step4Evidence: React.FC<Step4Props> = ({
     }
   };
 
+  const handleRemove = () => {
+    onImageRemoved();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-bridge-charcoal-900">
-          Upload photo evidence
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-bold text-bridge-charcoal-900">
+            Attach Visual Evidence
+          </h2>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-bridge-almond-100 text-bridge-charcoal-600">
+            Optional
+          </span>
+        </div>
         <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
-          Attach a photograph of the civic problem, ideally taken with the GPS Map Camera app showing visible location and timestamp stamps.
+          Upload a clear photograph of the civic problem. If you don't have a photo right now, you can skip this step.
         </p>
       </div>
 
-      {/* Mandatory Evidence & GPS Map Camera Notice (AGENTS.md Section 7) */}
-      <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 space-y-2">
-        <div className="flex items-center gap-2 font-semibold text-xs sm:text-sm text-amber-950">
-          <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
-          <span>GPS Map Camera Evidence Notice (Section 7 Compliance)</span>
+      {/* Clear Evidence Notice (AGENTS.md Section 7 Compliance) */}
+      <div className="p-3.5 rounded-xl bg-bridge-almond-50 border border-bridge-almond-200 text-bridge-charcoal-800 space-y-1">
+        <div className="flex items-center gap-2 font-semibold text-xs text-bridge-charcoal-900">
+          <Info className="w-4 h-4 text-bridge-gold-700 shrink-0" />
+          <span>Evidence Guidelines</span>
         </div>
-        <div className="text-xs text-amber-900 leading-relaxed space-y-1">
-          <p>
-            Visible stamps (latitude, longitude, date, time) on photos from the GPS Map Camera application are treated as <strong>submitted evidence only</strong>, not definitive proof of authenticity or location.
-          </p>
-          <p className="text-amber-800 text-[11px] italic">
-            Note: Automated OCR and EXIF metadata extraction are not active in this frontend prototype. We do not claim this photo has been verified.
-          </p>
-        </div>
+        <p className="text-xs text-bridge-charcoal-600 leading-relaxed">
+          Photos taken with GPS Map Camera applications (displaying location and time stamps) are welcomed as supporting visual evidence. In accordance with platform policy, visual stamps are evaluated as submitted evidence during verification.
+        </p>
       </div>
 
       {error && (
         <div
           role="alert"
-          className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-xs flex items-center gap-2"
+          className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2 animate-fadeIn"
         >
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>{error}</span>
+          <span className="font-medium">{error}</span>
         </div>
       )}
 
@@ -114,10 +119,10 @@ export const Step4Evidence: React.FC<Step4Props> = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-150 flex flex-col items-center justify-center gap-3 ${
+          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-150 flex flex-col items-center justify-center gap-3 ${
             isDragging
-              ? 'border-bridge-gold-500 bg-bridge-gold-50/50'
-              : 'border-bridge-almond-300 hover:border-bridge-gold-400 bg-white hover:bg-bridge-almond-50/50'
+              ? 'border-bridge-gold-500 bg-bridge-gold-50/60'
+              : 'border-bridge-almond-300 hover:border-bridge-gold-400 bg-white hover:bg-bridge-almond-50/30'
           }`}
           role="button"
           tabIndex={0}
@@ -134,7 +139,7 @@ export const Step4Evidence: React.FC<Step4Props> = ({
 
           <div>
             <span className="text-sm font-semibold text-bridge-charcoal-900 block">
-              Click to browse or drag and drop image here
+              Click to browse or drag and drop photo here
             </span>
             <span className="text-xs text-bridge-charcoal-500 block mt-1">
               Supports JPEG, PNG, WebP (Max file size: {MAX_SIZE_MB} MB)
@@ -165,29 +170,29 @@ export const Step4Evidence: React.FC<Step4Props> = ({
         </div>
       ) : (
         /* Image Preview Box */
-        <div className="bg-white border border-bridge-almond-200 rounded-2xl p-5 shadow-civic-sm space-y-4">
+        <div className="bg-white border border-bridge-almond-200 rounded-2xl p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-bridge-charcoal-900">
-                Photo Selected ({imageFile?.name})
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-semibold text-bridge-charcoal-900 truncate max-w-xs">
+                {imageFile?.name || 'Photo Attached'}
               </span>
             </div>
             <button
               type="button"
-              onClick={onImageRemoved}
-              className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 p-1 rounded hover:bg-rose-50 cursor-pointer"
+              onClick={handleRemove}
+              className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1 p-1 rounded hover:bg-rose-50 cursor-pointer transition-colors"
             >
               <X className="w-3.5 h-3.5" />
               <span>Remove</span>
             </button>
           </div>
 
-          <div className="relative rounded-xl overflow-hidden bg-bridge-charcoal-900 max-h-80 flex items-center justify-center border border-bridge-almond-200">
+          <div className="relative rounded-xl overflow-hidden bg-bridge-charcoal-900 max-h-72 flex items-center justify-center border border-bridge-almond-200">
             <img
               src={imagePreviewUrl}
-              alt="Submitted complaint evidence preview"
-              className="max-h-80 object-contain w-auto rounded-lg"
+              alt="Submitted evidence preview"
+              className="max-h-72 object-contain w-auto rounded-lg"
             />
           </div>
 
@@ -196,7 +201,7 @@ export const Step4Evidence: React.FC<Step4Props> = ({
               Size: {imageFile ? (imageFile.size / 1024).toFixed(0) : 0} KB
             </span>
             <span>
-              Format: {imageFile?.type || 'Image'}
+              Type: {imageFile?.type || 'Image'}
             </span>
             <Button
               type="button"
@@ -204,7 +209,7 @@ export const Step4Evidence: React.FC<Step4Props> = ({
               size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
-              Change Photo
+              Replace Photo
             </Button>
           </div>
 
