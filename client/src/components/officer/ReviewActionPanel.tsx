@@ -118,7 +118,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
                 'Visual evidence inspection required on site to corroborate citizen-submitted photo stamp.'
               )
             }
-            className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs transition-colors"
+            className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 active:scale-95 border border-amber-200 rounded-lg text-xs transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500"
           >
             Request On-Site Inspection
           </button>
@@ -130,7 +130,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
                 'Dispatched junior engineer and field team for physical remediation.'
               )
             }
-            className="px-2.5 py-1 bg-bridge-gold-50 text-bridge-gold-800 hover:bg-bridge-gold-100 border border-bridge-gold-200 rounded-lg text-xs transition-colors"
+            className="px-2.5 py-1 bg-bridge-gold-50 text-bridge-gold-800 hover:bg-bridge-gold-100 active:scale-95 border border-bridge-gold-200 rounded-lg text-xs transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
           >
             Dispatch Field Crew
           </button>
@@ -142,7 +142,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
                 'Field repair verified by ward supervisor. Remediation confirmed completed.'
               )
             }
-            className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs transition-colors"
+            className="px-2.5 py-1 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 active:scale-95 border border-emerald-200 rounded-lg text-xs transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
           >
             Mark Resolved
           </button>
@@ -160,7 +160,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
             disabled={isUpdating}
-            className="w-full bg-white border border-bridge-almond-300 rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
+            className="civic-input w-full rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 cursor-pointer transition-all duration-150"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -178,7 +178,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
             disabled={isUpdating}
-            className="w-full bg-white border border-bridge-almond-300 rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
+            className="civic-input w-full rounded-lg px-3 py-2 text-xs font-medium text-bridge-charcoal-800 cursor-pointer transition-all duration-150"
           >
             {MCC_DEPARTMENTS.map((dept) => (
               <option key={dept} value={dept}>
@@ -206,7 +206,7 @@ export const ReviewActionPanel: React.FC<ReviewActionPanelProps> = ({
           onChange={(e) => setReviewNotes(e.target.value)}
           placeholder="Record inspection findings, contractor dispatch numbers, duplicate cross-references, or on-site notes..."
           disabled={isUpdating}
-          className="w-full bg-white border border-bridge-almond-300 rounded-lg p-3 text-xs text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent transition"
+          className="civic-input w-full rounded-lg p-3 text-xs text-bridge-charcoal-800 placeholder-bridge-charcoal-400 transition-all duration-150"
         />
       </div>
 

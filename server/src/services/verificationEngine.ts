@@ -7,6 +7,7 @@ import type {
   ImageComparisonSignal,
 } from '../types/verification.js';
 import { calculateHammingDistance, DHASH_THRESHOLDS } from '../utils/imageHash.js';
+import { detectSpamAndAnomalies } from '../utils/spamDetector.js';
 
 // Common English stop words to filter during tokenization
 const STOP_WORDS = new Set([
@@ -64,6 +65,16 @@ export function validateDescription(description?: string): { valid: boolean; err
       error: `Description exceeds maximum allowed limit of 1000 characters (${trimmed.length} chars).`,
     };
   }
+
+  // Deterministic spam and anomaly check
+  const spamCheck = detectSpamAndAnomalies(trimmed);
+  if (spamCheck.isSpam) {
+    return {
+      valid: false,
+      error: `Description appears invalid or automated: ${spamCheck.reasons.join(' ')}`,
+    };
+  }
+
   return { valid: true };
 }
 
@@ -248,11 +259,20 @@ export function verifyComplaint(
   const validationErrors: string[] = [];
 
   // Deterministic checks
+  const spamCheck = detectSpamAndAnomalies(input.description);
   const descCheck = validateDescription(input.description);
   if (!descCheck.valid && descCheck.error) {
     validationErrors.push(descCheck.error);
   } else {
     signals.push(`Description length verified (${input.description.trim().length} characters).`);
+    if (spamCheck.riskLevel === 'SUSPICIOUS') {
+      signals.push(...spamCheck.signals);
+      uncertainties.push(
+        'Description exhibits repetitive or non-standard linguistic patterns; field officer review advised.'
+      );
+    } else {
+      signals.push(...spamCheck.signals);
+    }
   }
 
   const dateCheck = validateObservedDate(input.observedDate);
@@ -512,6 +532,17 @@ export function verifyComplaint(
     `Comparison candidate pool evaluated against ${existingComplaints.length} existing reference complaints.`
   );
 
+  // 3. Evidence Quality & Forensic Signal Integration
+  if (input.evidenceQuality) {
+    const eq = input.evidenceQuality;
+    signals.push(...eq.signals);
+    if (eq.warnings.length > 0) {
+      signals.push(...eq.warnings);
+    }
+    uncertainties.push(...eq.uncertainties);
+    limitations.push(...eq.limitations);
+  }
+
   // Synthesize Final Outcome & Recommended Next Action
   let outcome: VerificationResult['outcome'] = 'RECOMMENDED_VERIFIED';
   let recommendedAction = 'Proceed with ward engineer review and department assignment.';
@@ -522,6 +553,9 @@ export function verifyComplaint(
   } else if (!alignment.aligned) {
     outcome = 'INCONSISTENT_EVIDENCE';
     recommendedAction = `Ward officer review recommended: verify if complaint should be reclassified from '${input.category}' to '${alignment.competingCategoryKeywords?.category}'.`;
+  } else if (input.evidenceQuality && !input.evidenceQuality.isValidImage) {
+    outcome = 'INCONSISTENT_EVIDENCE';
+    recommendedAction = 'Officer review recommended: attached photographic evidence is corrupted or possesses an invalid binary signature.';
   } else if (overallDuplicateRisk === 'MEDIUM') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = `Review similarities with ${matches[0].existingComplaintId} before dispatching field team.`;
@@ -529,6 +563,12 @@ export function verifyComplaint(
     outcome = 'REQUIRES_HUMAN_REVIEW';
     const matchedImageCandidate = matches.find((m) => m.imageMatch)?.existingComplaintId || 'existing grievance';
     recommendedAction = `Officer visual review recommended: Image reuse signal detected (${imageComparisonSignal.replace(/_/g, ' ')}) matching complaint #${matchedImageCandidate}. Inspect evidence photos before field dispatch.`;
+  } else if (input.evidenceQuality && input.evidenceQuality.recommendedReviewLevel === 'MANUAL_REVIEW_RECOMMENDED') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = `Officer visual review recommended: uploaded evidence exhibits significant quality degradation or near-blank content (Quality Score: ${input.evidenceQuality.qualityScore}/100). Inspect physical site before dispatching work orders.`;
+  } else if (spamCheck.riskLevel === 'SUSPICIOUS') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = 'Officer review recommended: evaluate description authenticity due to unusual repetitive phrasing or elevated symbol patterns.';
   }
 
   return {
@@ -541,6 +581,19 @@ export function verifyComplaint(
     recommendedAction,
     categoryAlignment: alignment,
     imageComparisonSignal,
+    spamAnalysis: {
+      isSpam: spamCheck.isSpam,
+      riskLevel: spamCheck.riskLevel,
+      reasons: spamCheck.reasons,
+      metrics: {
+        charCount: spamCheck.metrics.charCount,
+        wordCount: spamCheck.metrics.wordCount,
+        distinctWordCount: spamCheck.metrics.distinctWordCount,
+        shannonEntropy: spamCheck.metrics.shannonEntropy,
+        symbolRatio: spamCheck.metrics.symbolRatio,
+      },
+    },
+    evidenceQuality: input.evidenceQuality,
     processedAt: new Date().toISOString(),
   };
 }

@@ -38,6 +38,48 @@ export interface DuplicateMatch {
   imageMatch?: ImageMatchDetail;
 }
 
+export interface EvidenceQualityAnalysis {
+  isValidImage: boolean;
+  mimeType?: string;
+  format?: string;
+  width?: number;
+  height?: number;
+  fileSizeBytes: number;
+  qualityScore: number; // 0-100 explainable score
+  sharpness: {
+    laplacianVariance: number;
+    isBlurry: boolean;
+    explanation: string;
+  };
+  brightness: {
+    mean: number; // 0-255 scale
+    isSeverelyDark: boolean;
+    isSeverelyOverexposed: boolean;
+    explanation: string;
+  };
+  contrast: {
+    stdev: number;
+    isBlankOrUniform: boolean;
+    explanation: string;
+  };
+  metadata: {
+    hasExif: boolean;
+    cameraMake?: string;
+    cameraModel?: string;
+    software?: string;
+    dateTimeOriginal?: string;
+    hasGpsMetadata: boolean;
+    gpsLatitude?: number;
+    gpsLongitude?: number;
+    gpsDisclaimer: string;
+  };
+  signals: string[];
+  warnings: string[];
+  uncertainties: string[];
+  limitations: string[];
+  recommendedReviewLevel: 'NONE' | 'ADVISORY' | 'MANUAL_REVIEW_RECOMMENDED' | 'REJECT';
+}
+
 export interface VerificationResult {
   outcome: VerificationOutcome;
   duplicateRisk: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -52,6 +94,19 @@ export interface VerificationResult {
     competingCategoryKeywords?: { category: IssueCategory; keywords: string[] };
   };
   imageComparisonSignal?: ImageComparisonSignal;
+  spamAnalysis?: {
+    isSpam: boolean;
+    riskLevel: 'CLEAN' | 'SUSPICIOUS' | 'FLAGGED_SPAM';
+    reasons: string[];
+    metrics: {
+      charCount: number;
+      wordCount: number;
+      distinctWordCount: number;
+      shannonEntropy: number;
+      symbolRatio: number;
+    };
+  };
+  evidenceQuality?: EvidenceQualityAnalysis;
   validationErrors?: string[];
   processedAt: string;
 }
@@ -67,6 +122,7 @@ export interface ComplaintInput {
   hasImage?: boolean;
   imageSha256?: string;
   imagePhash?: string;
+  evidenceQuality?: EvidenceQualityAnalysis;
 }
 
 export interface ExistingComplaint {

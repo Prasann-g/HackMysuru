@@ -110,7 +110,7 @@ export const ReportGrievanceModal: React.FC<ReportGrievanceModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+              className="p-1.5 rounded-lg text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
               aria-label="Close dialog"
             >
               <X className="w-5 h-5" />

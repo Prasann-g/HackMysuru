@@ -37,6 +37,20 @@ describe('Civic Trust Verification Engine Foundation (Step 4.2)', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain('exceeds maximum');
     });
+
+    it('rejects repetitive spam text in description', () => {
+      const spamText = 'Road is damaged aaaaaaaaaaaa very badly';
+      const result = validateDescription(spamText);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Repetitive character sequence detected');
+    });
+
+    it('rejects keyboard smash text in description', () => {
+      const smashText = 'Pothole at asdfghjkl cross road';
+      const result = validateDescription(smashText);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('keyboard smash');
+    });
   });
 
   // 2. Observed Date Validation
@@ -233,6 +247,34 @@ describe('Civic Trust Verification Engine Foundation (Step 4.2)', () => {
       expect(result.uncertainties.length).toBeGreaterThan(0);
       expect(result.limitations.length).toBeGreaterThan(0);
       expect(result.uncertainties.some((u) => u.includes('submitted visual evidence only'))).toBe(true);
+    });
+
+    it('populates spamAnalysis metrics on successful verification', () => {
+      const input: ComplaintInput = {
+        category: 'pothole',
+        description: 'Legitimate distinct road depression in Saraswathipuram 1st Main.',
+        observedDate: '2026-09-18',
+      };
+
+      const result = verifyComplaint(input, existingPool);
+      expect(result.spamAnalysis).toBeDefined();
+      expect(result.spamAnalysis?.riskLevel).toBe('CLEAN');
+      expect(result.spamAnalysis?.isSpam).toBe(false);
+      expect(result.spamAnalysis?.metrics.shannonEntropy).toBeGreaterThanOrEqual(2.5);
+    });
+
+    it('escalates to REQUIRES_HUMAN_REVIEW when text is suspicious (e.g. repeated emphasis)', () => {
+      const input: ComplaintInput = {
+        category: 'pothole',
+        description: 'pothole pothole pothole near the water tank on 3rd cross road',
+        observedDate: '2026-09-18',
+      };
+
+      const result = verifyComplaint(input, existingPool);
+      expect(result.outcome).toBe('REQUIRES_HUMAN_REVIEW');
+      expect(result.spamAnalysis?.riskLevel).toBe('SUSPICIOUS');
+      expect(result.recommendedAction).toContain('Officer review recommended');
+      expect(result.uncertainties.some((u) => u.includes('repetitive or non-standard'))).toBe(true);
     });
   });
 });

@@ -16,7 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-bridge-gold-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-bridge-gold-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100';
 
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',
@@ -25,10 +25,10 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-bridge-charcoal-800 text-white hover:bg-bridge-charcoal-900 shadow-bridge-sm active:bg-bridge-charcoal-950 border border-bridge-charcoal-700',
-    secondary: 'bg-bridge-almond-100 text-bridge-charcoal-800 hover:bg-bridge-almond-200 border border-bridge-almond-300 active:bg-bridge-almond-300',
-    outline: 'bg-white text-bridge-charcoal-800 hover:bg-bridge-ivory-100 border border-bridge-almond-300 shadow-bridge-sm active:bg-bridge-almond-200',
-    ghost: 'text-bridge-charcoal-700 hover:bg-bridge-almond-100/80 hover:text-bridge-charcoal-900 active:bg-bridge-almond-200',
+    primary: 'bg-bridge-charcoal-800 text-white hover:bg-bridge-charcoal-900 shadow-bridge-sm hover:shadow-civic active:bg-bridge-charcoal-950 border border-bridge-charcoal-700',
+    secondary: 'bg-bridge-almond-100 text-bridge-charcoal-800 hover:bg-bridge-almond-200 hover:border-bridge-almond-400 border border-bridge-almond-300 active:bg-bridge-almond-300',
+    outline: 'bg-white text-bridge-charcoal-800 hover:bg-bridge-ivory-100 hover:border-bridge-almond-400 shadow-bridge-sm hover:shadow-civic-sm border border-bridge-almond-300 active:bg-bridge-almond-200',
+    ghost: 'text-bridge-charcoal-700 hover:bg-bridge-almond-100/90 hover:text-bridge-charcoal-900 active:bg-bridge-almond-200',
   };
 
   return (

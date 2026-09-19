@@ -20,6 +20,8 @@ import {
   computeImageSha256,
   computeImageDHash,
 } from '../utils/imageHash.js';
+import { analyzeEvidenceQuality } from '../utils/evidenceQuality.js';
+import type { EvidenceQualityAnalysis } from '../types/verification.js';
 import type {
   ComplaintRecord,
   CreateComplaintInput,
@@ -118,6 +120,7 @@ complaintRouter.post(
     let imageSha256: string | undefined;
     let imagePhash: string | undefined;
     let evidenceMetadata = input.evidenceMetadata;
+    let evidenceQuality: EvidenceQualityAnalysis | undefined;
     let diskPath: string | undefined;
 
     let magicValidation: ReturnType<typeof validateImageMagicBytes> | undefined;
@@ -132,6 +135,9 @@ complaintRouter.post(
       hasImage = true;
       imageSha256 = computeImageSha256(req.file.buffer);
       imagePhash = (await computeImageDHash(req.file.buffer)) || undefined;
+
+      // Evidence Quality & Forensic Signal Evaluation
+      evidenceQuality = await analyzeEvidenceQuality(req.file.buffer);
 
       // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
       const exactMatches = await complaintStore.findByImageSha256(imageSha256);
@@ -232,6 +238,7 @@ complaintRouter.post(
         hasImage,
         imageSha256,
         imagePhash,
+        evidenceQuality,
       },
       verificationCandidates
     );

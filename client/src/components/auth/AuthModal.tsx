@@ -139,7 +139,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 active:scale-95 transition-all duration-150 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -172,10 +172,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setMode('login');
               setError(null);
             }}
-            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-all duration-150 cursor-pointer active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
               mode === 'login'
                 ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
-                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800 hover:border-bridge-almond-300'
             }`}
           >
             Citizen Login
@@ -186,10 +186,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setMode('signup');
               setError(null);
             }}
-            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-all duration-150 cursor-pointer active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
               mode === 'signup'
                 ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
-                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800 hover:border-bridge-almond-300'
             }`}
           >
             Register
@@ -200,10 +200,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setMode('officer');
               setError(null);
             }}
-            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-colors cursor-pointer ${
+            className={`flex-1 pb-2.5 text-xs font-semibold text-center border-b-2 transition-all duration-150 cursor-pointer active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
               mode === 'officer'
                 ? 'border-bridge-gold-500 text-bridge-charcoal-900 font-bold'
-                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800'
+                : 'border-transparent text-bridge-charcoal-500 hover:text-bridge-charcoal-800 hover:border-bridge-almond-300'
             }`}
           >
             MCC Officer
@@ -251,7 +251,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ramesh Rao"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
+                  className="civic-input w-full pl-9 pr-3 py-2 text-sm rounded-lg text-bridge-charcoal-900 disabled:opacity-60 transition-all duration-150"
                 />
               </div>
             </div>
@@ -266,7 +266,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
+              <Mail className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5 pointer-events-none" />
               <input
                 id="auth-email"
                 type="email"
@@ -276,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder={
                   mode === 'officer' ? 'officer.ward48@mcc.gov.in' : 'name@example.com'
                 }
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
+                className="civic-input w-full pl-9 pr-3 py-2 text-sm rounded-lg text-bridge-charcoal-900 disabled:opacity-60 transition-all duration-150"
               />
             </div>
           </div>
@@ -291,7 +291,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span className="text-bridge-charcoal-400 font-normal">(Optional)</span>
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
+                <MapPin className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5 pointer-events-none" />
                 <input
                   id="auth-ward"
                   type="text"
@@ -299,7 +299,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={ward}
                   onChange={(e) => setWard(e.target.value)}
                   placeholder="e.g. Kuvempunagar, Ward 48"
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
+                  className="civic-input w-full pl-9 pr-3 py-2 text-sm rounded-lg text-bridge-charcoal-900 disabled:opacity-60 transition-all duration-150"
                 />
               </div>
             </div>
@@ -313,7 +313,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               Password <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5" />
+              <Lock className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-2.5 pointer-events-none" />
               <input
                 id="auth-password"
                 type="password"
@@ -321,7 +321,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-bridge-almond-300 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 text-bridge-charcoal-900 disabled:opacity-60"
+                className="civic-input w-full pl-9 pr-3 py-2 text-sm rounded-lg text-bridge-charcoal-900 disabled:opacity-60 transition-all duration-150"
               />
             </div>
           </div>

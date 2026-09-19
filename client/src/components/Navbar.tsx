@@ -69,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogoClick}
-              className="flex items-center text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 rounded-lg p-1 cursor-pointer"
+              className="flex items-center text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 rounded-lg p-1 cursor-pointer transition-transform duration-200 active:scale-[0.98] motion-reduce:active:scale-100"
               aria-label="CivicBridge Home"
             >
               <BrandLogo size="md" variant="full" />
@@ -131,17 +131,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-bridge-almond-200 bg-bridge-almond-50 hover:bg-bridge-almond-100 text-bridge-charcoal-800 transition-colors focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-bridge-almond-200 bg-bridge-almond-50 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 hover:shadow-civic-sm text-bridge-charcoal-800 transition-all duration-200 active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
                     aria-expanded={profileDropdownOpen}
                     aria-label="Account menu"
                   >
-                    <div className="w-7 h-7 rounded-full bg-bridge-charcoal-800 text-white flex items-center justify-center text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full bg-bridge-charcoal-800 text-white flex items-center justify-center text-xs font-bold shadow-xs">
                       {currentUser.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-xs font-semibold max-w-[120px] truncate">
                       {currentUser.name}
                     </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-bridge-charcoal-500" />
+                    <ChevronDown className="w-3.5 h-3.5 text-bridge-charcoal-500 transition-transform duration-200" />
                   </button>
 
                   {/* Profile Dropdown Menu */}
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             setProfileDropdownOpen(false);
                             onOpenProfile();
                           }}
-                          className="w-full text-left px-4 py-2 text-xs text-bridge-charcoal-700 hover:bg-bridge-almond-50 hover:text-bridge-charcoal-900 flex items-center gap-2 cursor-pointer"
+                          className="w-full text-left px-4 py-2 text-xs text-bridge-charcoal-700 hover:bg-bridge-almond-50 hover:text-bridge-charcoal-900 flex items-center gap-2 cursor-pointer transition-all duration-150 border-l-2 border-transparent hover:border-bridge-gold-500"
                         >
                           <UserIcon className="w-3.5 h-3.5 text-bridge-gold-700" />
                           <span>Profile Details</span>
@@ -197,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             setProfileDropdownOpen(false);
                             onLogout();
                           }}
-                          className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-medium"
+                          className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-medium transition-all duration-150 border-l-2 border-transparent hover:border-rose-500"
                         >
                           <LogOut className="w-3.5 h-3.5" />
                           <span>Log Out</span>
@@ -238,7 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100 focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+              className="p-2 rounded-lg text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100 transition-all duration-200 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
             >

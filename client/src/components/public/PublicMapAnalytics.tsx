@@ -477,10 +477,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                         <button
                           key={area}
                           onClick={() => setSelectedArea(isSelected ? 'ALL' : area)}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          className={`p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
                             isSelected
-                              ? 'bg-bridge-gold-50 border-bridge-gold-500 ring-2 ring-bridge-gold-200'
-                              : 'bg-white border-bridge-almond-200 hover:border-bridge-gold-300 hover:bg-bridge-almond-50/50'
+                              ? 'bg-bridge-gold-50 border-bridge-gold-500 ring-2 ring-bridge-gold-200 shadow-civic-sm'
+                              : 'bg-white border-bridge-almond-200 hover:border-bridge-gold-300 hover:bg-bridge-almond-50/70 hover:shadow-civic-sm hover:-translate-y-0.5 motion-reduce:hover:translate-y-0'
                           }`}
                         >
                           <span className="text-xs font-bold text-bridge-charcoal-900 block truncate">
@@ -595,13 +595,13 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-bridge-almond-100">
                   {/* Search Bar */}
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-bridge-charcoal-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-bridge-charcoal-400 pointer-events-none" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search ID or locality..."
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                      className="civic-input w-full pl-8 pr-3 py-1.5 text-xs rounded-lg placeholder-bridge-charcoal-400 transition-all duration-150"
                     />
                   </div>
 
@@ -609,7 +609,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                    className="civic-input px-2.5 py-1.5 text-xs rounded-lg hover:border-bridge-almond-400 cursor-pointer transition-all duration-150"
                   >
                     <option value="ALL">All Categories</option>
                     {Object.keys(data.byCategory).map((cat) => (
@@ -623,7 +623,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-lg text-bridge-charcoal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                    className="civic-input px-2.5 py-1.5 text-xs rounded-lg hover:border-bridge-almond-400 cursor-pointer transition-all duration-150"
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="SUBMITTED">Submitted</option>
@@ -707,7 +707,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                             <td className="py-3 px-4 text-right">
                               <button
                                 onClick={() => onNavigateToTrack()}
-                                className="text-bridge-gold-700 hover:text-bridge-gold-900 font-semibold inline-flex items-center gap-0.5 p-1 rounded hover:bg-bridge-gold-50 cursor-pointer"
+                                className="text-bridge-gold-700 hover:text-bridge-gold-900 active:scale-95 font-semibold inline-flex items-center gap-0.5 p-1 rounded hover:bg-bridge-gold-50 cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
                                 title="Look up complaint progress"
                               >
                                 <span>Track</span>

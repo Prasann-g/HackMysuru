@@ -195,7 +195,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
               <button
                 type="button"
                 onClick={() => handleCopy(complaint?.id || complaintId, 'header-id')}
-                className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-0.5 rounded"
+                className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 active:scale-90 transition-all p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
                 title="Copy ID"
               >
                 {copiedField === 'header-id' ? (
@@ -211,7 +211,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopy(complaint.trackingToken, 'header-trk')}
-                    className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700"
+                    className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 active:scale-90 transition-all p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
                     title="Copy Token"
                   >
                     {copiedField === 'header-trk' ? (
@@ -246,7 +246,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 rounded-lg transition"
+              className="p-1.5 text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 active:scale-95 rounded-lg transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
               aria-label="Close drawer"
             >
               <X className="w-5 h-5" />

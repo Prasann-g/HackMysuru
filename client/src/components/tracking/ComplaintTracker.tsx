@@ -208,7 +208,7 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
                   placeholder="e.g. TRK-XXXX-XXXX"
-                  className="w-full px-4 py-3 pl-11 text-sm sm:text-base font-mono rounded-xl border border-bridge-almond-300 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 focus:border-transparent uppercase tracking-wider bg-white placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-bridge-charcoal-400"
+                  className="civic-input w-full px-4 py-3 pl-11 text-sm sm:text-base font-mono rounded-xl uppercase tracking-wider placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-bridge-charcoal-400 transition-all duration-150"
                   aria-label="Complaint Tracking Token"
                 />
                 <Search className="w-5 h-5 text-bridge-charcoal-400 absolute left-3.5 top-3.5 pointer-events-none" />

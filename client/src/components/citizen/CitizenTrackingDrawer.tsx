@@ -237,7 +237,7 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+              className="p-1.5 rounded-lg text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
               aria-label="Close drawer"
             >
               <X className="w-5 h-5" />
@@ -255,13 +255,13 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
             className="flex items-center gap-2"
           >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-bridge-charcoal-400" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-bridge-charcoal-400 pointer-events-none" />
               <input
                 type="text"
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
                 placeholder="Enter tracking token (e.g., DEMO-2026-0001 or TRK-...)"
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-xl text-bridge-charcoal-900 placeholder:text-bridge-charcoal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                className="civic-input w-full pl-9 pr-3 py-1.5 text-xs rounded-xl transition-all duration-150"
               />
             </div>
             <Button

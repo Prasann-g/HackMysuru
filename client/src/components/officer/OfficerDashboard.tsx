@@ -240,10 +240,10 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
       <div className="flex items-center gap-3 border-b border-bridge-almond-200 pb-2">
         <button
           onClick={() => setActiveView('queue')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
             activeView === 'queue'
-              ? 'bg-bridge-charcoal-900 text-white shadow-sm'
-              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 border border-bridge-almond-200'
+              ? 'bg-bridge-charcoal-900 text-white shadow-civic'
+              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -252,10 +252,10 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
 
         <button
           onClick={() => setActiveView('map')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
             activeView === 'map'
-              ? 'bg-bridge-charcoal-900 text-white shadow-sm'
-              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 border border-bridge-almond-200'
+              ? 'bg-bridge-charcoal-900 text-white shadow-civic'
+              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <MapPin className="w-4 h-4" />

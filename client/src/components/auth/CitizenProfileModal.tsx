@@ -109,7 +109,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
       aria-labelledby="citizen-modal-title"
     >
       <div
-        className={`bg-white rounded-2xl w-full p-6 sm:p-7 shadow-bridge-modal border border-bridge-almond-200 transition-all ${
+        className={`bg-white rounded-2xl w-full p-6 sm:p-7 shadow-civic-lg border border-bridge-almond-200 transition-all ${
           view === 'complaints' ? 'max-w-2xl' : 'max-w-lg'
         }`}
       >
@@ -137,7 +137,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 p-1 rounded-lg focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
+            className="text-bridge-charcoal-400 hover:text-bridge-charcoal-700 hover:bg-bridge-almond-100 active:scale-95 transition-all duration-150 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -256,7 +256,7 @@ export const CitizenProfileModal: React.FC<CitizenProfileModalProps> = ({
                 {complaints.map((c) => (
                   <div
                     key={c.id}
-                    className="p-4 rounded-xl border border-bridge-almond-200 bg-bridge-almond-50/50 hover:bg-white hover:border-bridge-gold-400 transition-all space-y-2.5"
+                    className="p-4 rounded-xl border border-bridge-almond-200 bg-bridge-almond-50/50 hover:bg-white hover:border-bridge-gold-400 hover:shadow-civic-sm transition-all duration-200 space-y-2.5"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">

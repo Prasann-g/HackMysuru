@@ -125,13 +125,13 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Free Text Search */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-bridge-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={filters.q || ''}
               onChange={handleSearchChange}
               placeholder="Search by ID, Tracking Token, description, street..."
-              className="w-full bg-white border border-bridge-almond-300 rounded-lg pl-9 pr-3 py-1.5 text-xs text-bridge-charcoal-800 placeholder-bridge-charcoal-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition"
+              className="civic-input w-full rounded-lg pl-9 pr-3 py-1.5 text-xs placeholder-bridge-charcoal-400 transition-all duration-150"
             />
           </div>
 
@@ -171,7 +171,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.status || 'ALL'}
               onChange={handleStatusChange}
-              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 hover:border-bridge-almond-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition-all duration-150 cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               <option value="SUBMITTED">Submitted</option>
@@ -188,7 +188,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.duplicateRisk || 'ALL'}
               onChange={handleRiskChange}
-              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 hover:border-bridge-almond-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition-all duration-150 cursor-pointer"
             >
               <option value="ALL">All Duplicate Risks</option>
               <option value="HIGH">High Duplicate Risk</option>
@@ -202,7 +202,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.locationArea || 'All Localities'}
               onChange={handleLocalityChange}
-              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 hover:border-bridge-almond-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition-all duration-150 cursor-pointer"
             >
               {LOCALITY_OPTIONS.map((loc) => (
                 <option key={loc} value={loc}>
@@ -217,7 +217,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             <select
               value={filters.category || ''}
               onChange={handleCategoryChange}
-              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 focus:outline-none focus:ring-1 focus:ring-bridge-gold-500"
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 hover:border-bridge-almond-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition-all duration-150 cursor-pointer"
             >
               {CATEGORY_OPTIONS.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -285,7 +285,15 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                     key={item.id}
                     data-test-id="complaint-row"
                     data-complaint-id={item.id}
+                    tabIndex={0}
+                    role="button"
                     onClick={() => onSelectComplaint(item.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectComplaint(item.id);
+                      }
+                    }}
                     className={`queue-row cursor-pointer ${isSelected ? 'bg-bridge-gold-50/70 border-l-4 border-l-bridge-gold-600' : ''
                       }`}
                   >

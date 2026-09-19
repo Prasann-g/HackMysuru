@@ -220,7 +220,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
 
       {/* 2. Executive Grievance KPI Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card>
+        <Card hoverable>
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -233,13 +233,13 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                 All-time grievances reported
               </span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-bridge-almond-100 border border-bridge-almond-200 flex items-center justify-center text-bridge-charcoal-700">
+            <div className="w-12 h-12 rounded-xl bg-bridge-almond-100 border border-bridge-almond-200 flex items-center justify-center text-bridge-charcoal-700 transition-colors duration-200">
               <FileText className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
 
-        <Card>
+        <Card hoverable>
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -252,13 +252,13 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                 Awaiting officer verification
               </span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 transition-colors duration-200">
               <Clock className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
 
-        <Card>
+        <Card hoverable>
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -271,13 +271,13 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                 Assigned to ward division
               </span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-700">
+            <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-700 transition-colors duration-200">
               <Building2 className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
 
-        <Card>
+        <Card hoverable>
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -301,10 +301,10 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       <div className="flex items-center gap-3 border-b border-bridge-almond-200 pb-2">
         <button
           onClick={() => setActiveView('ledger')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
             activeView === 'ledger'
-              ? 'bg-bridge-charcoal-900 text-white shadow-sm'
-              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 border border-bridge-almond-200'
+              ? 'bg-bridge-charcoal-900 text-white shadow-civic'
+              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -313,10 +313,10 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
 
         <button
           onClick={() => setActiveView('map')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
             activeView === 'map'
-              ? 'bg-bridge-charcoal-900 text-white shadow-sm'
-              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 border border-bridge-almond-200'
+              ? 'bg-bridge-charcoal-900 text-white shadow-civic'
+              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <MapPin className="w-4 h-4" />
@@ -349,7 +349,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                 value={quickTrackInput}
                 onChange={(e) => setQuickTrackInput(e.target.value)}
                 placeholder="Enter token (e.g., DEMO-2026-0001 or TRK-...)"
-                className="flex-1 sm:w-64 px-3 py-1.5 text-xs bg-bridge-almond-50/60 border border-bridge-almond-300 rounded-xl text-bridge-charcoal-900 placeholder:text-bridge-charcoal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                className="civic-input flex-1 sm:w-64 px-3 py-1.5 text-xs rounded-xl"
               />
               <Button type="submit" variant="primary" size="sm">
                 Track
@@ -377,30 +377,30 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                   <div className="flex items-center bg-bridge-almond-100 p-1 rounded-xl border border-bridge-almond-200 text-xs">
                     <button
                       onClick={() => setStatusFilter('ALL')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
                         statusFilter === 'ALL'
                           ? 'bg-white text-bridge-charcoal-900 shadow-xs'
-                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900'
+                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-white/60'
                       }`}
                     >
                       All ({totalCount})
                     </button>
                     <button
                       onClick={() => setStatusFilter('ACTIVE')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
                         statusFilter === 'ACTIVE'
                           ? 'bg-white text-bridge-charcoal-900 shadow-xs'
-                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900'
+                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-white/60'
                       }`}
                     >
                       Active ({inReviewCount + inProgressCount})
                     </button>
                     <button
                       onClick={() => setStatusFilter('RESOLVED')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500 ${
                         statusFilter === 'RESOLVED'
                           ? 'bg-white text-bridge-charcoal-900 shadow-xs'
-                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900'
+                          : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-white/60'
                       }`}
                     >
                       Resolved ({resolvedCount})
@@ -415,7 +415,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search token, area..."
-                      className="w-full sm:w-48 pl-8 pr-3 py-1.5 text-xs bg-white border border-bridge-almond-300 rounded-xl text-bridge-charcoal-900 placeholder:text-bridge-charcoal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500"
+                      className="civic-input w-full sm:w-48 pl-8 pr-3 py-1.5 text-xs rounded-xl"
                     />
                   </div>
                 </div>
@@ -483,7 +483,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                     return (
                       <div
                         key={item.id}
-                        className="p-5 sm:p-6 hover:bg-bridge-almond-50/60 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                        className="p-5 sm:p-6 hover:bg-bridge-almond-50/70 border-l-2 border-l-transparent hover:border-l-bridge-gold-500 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                       >
                         {/* Left Details */}
                         <div className="space-y-2 flex-1 min-w-0">
@@ -493,7 +493,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                               <span>{item.trackingToken}</span>
                               <button
                                 onClick={() => handleCopy(item.trackingToken)}
-                                className="text-bridge-charcoal-400 hover:text-bridge-gold-700 p-0.5 rounded cursor-pointer"
+                                className="text-bridge-charcoal-400 hover:text-bridge-gold-700 active:scale-90 transition-all p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
                                 title="Copy tracking token"
                               >
                                 {copiedToken === item.trackingToken ? (
