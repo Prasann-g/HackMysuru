@@ -60,9 +60,12 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
     try {
       // Query the real backend tracking endpoint
       const result = await apiTrackComplaint(clean);
-      setError(null);
-      // Valid token confirmed by backend -> invoke parent handler to open detailed drawer
-      onTrack?.(result.trackingToken || clean);
+      // Valid token confirmed by backend -> open full tracking portal or drawer
+      if (onOpenFullPage) {
+        onOpenFullPage(result.trackingToken || clean);
+      } else {
+        onTrack?.(result.trackingToken || clean);
+      }
     } catch (err: any) {
       setError(
         err.message ||
@@ -107,9 +110,9 @@ export const ComplaintTracker: React.FC<ComplaintTrackerProps> = ({
           <button
             type="button"
             onClick={() => onOpenFullPage(tokenInput.trim() || undefined)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-bridge-gold-200 bg-bridge-gold-50 hover:bg-bridge-gold-100/80 text-bridge-gold-800 text-xs font-semibold shadow-2xs transition-colors shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 self-start sm:self-center"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-bridge-gold-300 bg-bridge-gold-50 hover:bg-bridge-gold-100 text-bridge-gold-900 text-xs font-bold shadow-2xs transition-all duration-150 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 self-start sm:self-center"
           >
-            <span>View Full Tracking Experience</span>
+            <span>Open Full Tracking Portal</span>
             <ArrowUpRight className="w-3.5 h-3.5 text-bridge-gold-700" />
           </button>
         )}

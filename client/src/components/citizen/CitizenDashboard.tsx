@@ -123,8 +123,12 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   };
 
   const handleOpenTracker = (token: string) => {
-    setSelectedTrackingToken(token);
-    setIsTrackingDrawerOpen(true);
+    if (onNavigateToTrack) {
+      onNavigateToTrack(token);
+    } else {
+      setSelectedTrackingToken(token);
+      setIsTrackingDrawerOpen(true);
+    }
   };
 
   // Metrics calculated strictly from real authentic complaints

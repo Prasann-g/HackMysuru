@@ -34,8 +34,19 @@ export function App() {
     return currentUser ? (currentUser.role === 'OFFICER' ? 'officer' : 'dashboard') : 'home';
   });
 
-  // Dedicated tracking page token state
-  const [dedicatedTrackToken, setDedicatedTrackToken] = useState<string | null>(() => {
+  // Dedicated Tracking Portal State
+  const [trackPortalOpen, setTrackPortalOpen] = useState<boolean>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      return tabParam === 'track' || window.location.hash === '#track';
+    } catch {
+      return false;
+    }
+  });
+
+  // Dedicated tracking portal token state
+  const [trackPortalToken, setTrackPortalToken] = useState<string | null>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       return params.get('token');
@@ -127,17 +138,16 @@ export function App() {
     }
   };
 
-  // Public Tracking Action (Routes to Dedicated Track Complaint Page)
+  // Public Tracking Action (Opens Dedicated Track Complaint Portal)
   const handleOpenTrackerFromLanding = (token?: string) => {
-    setDedicatedTrackToken(token || null);
-    setActiveTab('track');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTrackPortalToken(token || null);
+    setTrackPortalOpen(true);
   };
 
   // Top Nav Tab Change (Routes authenticated users to their unified dashboard or dedicated tracking page)
   const handleTabChange = (tab: NavTab) => {
     if (tab === 'track') {
-      setActiveTab('track');
+      setTrackPortalOpen(true);
     } else if (tab === 'home' || tab === 'dashboard' || tab === 'officer') {
       if (currentUser?.role === 'OFFICER') {
         setActiveTab('officer');
@@ -156,9 +166,10 @@ export function App() {
     <div className="min-h-screen flex flex-col bg-bridge-ivory-50 text-bridge-charcoal-900 selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900">
       {/* Top Navigation Bar */}
       <Navbar
-        activeTab={activeTab}
+        activeTab={trackPortalOpen ? 'track' : activeTab}
         currentUser={currentUser}
         onTabChange={handleTabChange}
+        onOpenTrackGrievance={() => setTrackPortalOpen(true)}
         onOpenAuth={(mode) => {
           setAuthModalMode(mode);
           setAuthReason(undefined);
@@ -173,43 +184,15 @@ export function App() {
 
       {/* Main Unified Workspace Area */}
       <main className="flex-1">
-        {activeTab === 'track' ? (
-          /* DEDICATED TRACK COMPLAINT PAGE */
-          <TrackComplaintPage
-            initialToken={dedicatedTrackToken}
-            currentUser={currentUser}
-            onBackToDashboard={() => {
-              setDedicatedTrackToken(null);
-              if (currentUser?.role === 'OFFICER') {
-                setActiveTab('officer');
-              } else if (currentUser?.role === 'CITIZEN') {
-                setActiveTab('dashboard');
-              } else {
-                setActiveTab('home');
-              }
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onReportGrievance={() => {
-              if (currentUser?.role === 'CITIZEN') {
-                setActiveTab('dashboard');
-                setOpenCitizenReportTrigger((prev) => prev + 1);
-              } else {
-                setAuthModalMode('login');
-                setAuthReason('Please sign in or create a citizen account to report a municipal grievance.');
-                setAuthModalOpen(true);
-              }
-            }}
-          />
-        ) : currentUser?.role === 'CITIZEN' ? (
+        {currentUser?.role === 'CITIZEN' ? (
           /* ONE UNIFIED CITIZEN DASHBOARD */
           <CitizenDashboard
             key={`citizen-dash-${openCitizenReportTrigger}`}
             currentUser={currentUser}
             initialOpenReportModal={openCitizenReportTrigger > 0}
             onNavigateToTrack={(token) => {
-              setDedicatedTrackToken(token || null);
-              setActiveTab('track');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setTrackPortalToken(token || null);
+              setTrackPortalOpen(true);
             }}
           />
         ) : currentUser?.role === 'OFFICER' ? (
@@ -259,7 +242,28 @@ export function App() {
         }}
       />
 
-      {/* Public Landing Page Tracking Drawer */}
+      {/* Dedicated Track Complaint Portal (Report Grievance style full-screen portal) */}
+      <TrackComplaintPage
+        isOpen={trackPortalOpen}
+        initialToken={trackPortalToken}
+        onClose={() => {
+          setTrackPortalOpen(false);
+          setTrackPortalToken(null);
+        }}
+        onReportGrievance={() => {
+          setTrackPortalOpen(false);
+          if (currentUser?.role === 'CITIZEN') {
+            setOpenCitizenReportTrigger((prev) => prev + 1);
+          } else {
+            setAuthModalMode('login');
+            setAuthReason('Please sign in or create a citizen account to report a municipal grievance.');
+            setAuthModalOpen(true);
+          }
+        }}
+        currentUser={currentUser}
+      />
+
+      {/* Public Landing Page Tracking Drawer (Legacy fallback) */}
       <CitizenTrackingDrawer
         isOpen={landingTrackerOpen}
         token={landingTrackingToken}

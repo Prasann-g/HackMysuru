@@ -9,7 +9,7 @@ import {
   Building2,
   PlusCircle,
   ShieldCheck,
-  Search,
+  FileSearch,
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -26,6 +26,7 @@ interface NavbarProps {
   onLogout: () => void;
   onOpenProfile: () => void;
   onOpenReportGrievance?: () => void;
+  onOpenTrackGrievance?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onOpenProfile,
   onOpenReportGrievance,
+  onOpenTrackGrievance,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -114,20 +116,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Desktop Authentication / Action Area */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Track Grievance Nav Link */}
-            <button
-              type="button"
-              onClick={() => onTabChange('track')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
+          <div className="hidden md:flex items-center gap-2.5">
+            {/* Track Grievance Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (onOpenTrackGrievance) onOpenTrackGrievance();
+                else onTabChange('track');
+              }}
+              icon={<FileSearch className="w-3.5 h-3.5 text-bridge-gold-700" />}
+              className={`border-bridge-gold-300 transition-all font-semibold shadow-2xs ${
                 activeTab === 'track'
-                  ? 'bg-bridge-gold-100 text-bridge-gold-900 border border-bridge-gold-300 font-bold shadow-xs'
-                  : 'text-bridge-charcoal-700 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100 border border-transparent'
+                  ? 'bg-bridge-gold-100 text-bridge-gold-900 ring-2 ring-bridge-gold-400/20'
+                  : 'bg-bridge-gold-50/70 hover:bg-bridge-gold-100 text-bridge-charcoal-900'
               }`}
             >
-              <Search className="w-3.5 h-3.5 text-bridge-gold-700" />
-              <span>Track Grievance</span>
-            </button>
+              Track Grievance
+            </Button>
 
             {currentUser ? (
               <div className="flex items-center gap-3">
@@ -197,11 +203,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <button
                           onClick={() => {
                             setProfileDropdownOpen(false);
-                            onTabChange('track');
+                            if (onOpenTrackGrievance) onOpenTrackGrievance();
+                            else onTabChange('track');
                           }}
                           className="w-full text-left px-4 py-2 text-xs text-bridge-charcoal-700 hover:bg-bridge-almond-50 hover:text-bridge-charcoal-900 flex items-center gap-2 cursor-pointer transition-all duration-150 border-l-2 border-transparent hover:border-bridge-gold-500"
                         >
-                          <Search className="w-3.5 h-3.5 text-bridge-gold-700" />
+                          <FileSearch className="w-3.5 h-3.5 text-bridge-gold-700" />
                           <span>Track Grievance</span>
                         </button>
 
@@ -315,7 +322,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onTabChange('track');
+                  if (onOpenTrackGrievance) onOpenTrackGrievance();
+                  else onTabChange('track');
                 }}
                 className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
                   activeTab === 'track'
@@ -323,7 +331,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
                 }`}
               >
-                <Search className="w-4 h-4 text-bridge-gold-700" />
+                <FileSearch className="w-4 h-4 text-bridge-gold-700" />
                 <span>Track Grievance</span>
               </button>
 
@@ -354,7 +362,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onTabChange('track');
+                  if (onOpenTrackGrievance) onOpenTrackGrievance();
+                  else onTabChange('track');
                 }}
                 className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
                   activeTab === 'track'
@@ -362,7 +371,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
                 }`}
               >
-                <Search className="w-4 h-4 text-bridge-gold-700" />
+                <FileSearch className="w-4 h-4 text-bridge-gold-700" />
                 <span>Track Grievance</span>
               </button>
 
