@@ -29,6 +29,12 @@ import {
 import { validateTemporalEvidence } from '../utils/temporalEvidenceValidator.js';
 import { calculateSlaMetrics } from '../utils/slaBenchmarks.js';
 import { followthroughRepository } from '../modules/followthrough/followthrough.repository.js';
+import {
+  evaluateRouting,
+  createFallbackRoutingDecision,
+} from '../services/routingEngine.js';
+import { getWardForCoordinates } from '../services/wardService.js';
+import type { RoutingDecision } from '../types/routing.js';
 import type {
   EvidenceQualityAnalysis,
   GeoEvidenceResult,
@@ -335,6 +341,24 @@ complaintRouter.post(
     const id = `MCC-2026-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const trackingToken = `TRK-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
+    // Evaluate explainable routing decision with resilient error isolation
+    let routingDecision: RoutingDecision;
+    try {
+      routingDecision = evaluateRouting({
+        latitude: input.latitude !== undefined && input.latitude !== null && Number.isFinite(Number(input.latitude)) ? Number(input.latitude) : undefined,
+        longitude: input.longitude !== undefined && input.longitude !== null && Number.isFinite(Number(input.longitude)) ? Number(input.longitude) : undefined,
+        locationArea: input.locationArea,
+        addressText: input.addressText,
+        category: input.category,
+        observedDate: input.observedDate,
+        verificationOutcome: verificationResult?.outcome,
+        duplicateRisk: verificationResult?.duplicateRisk,
+      });
+    } catch (routingErr) {
+      console.error('[Routing Engine Exception] Error evaluating routing decision:', routingErr);
+      routingDecision = createFallbackRoutingDecision(routingErr);
+    }
+
     const newComplaint: ComplaintRecord = {
       id,
       trackingToken,
@@ -354,7 +378,8 @@ complaintRouter.post(
       imagePhash,
       status: 'SUBMITTED',
       verificationResult,
-      assignedDepartment: getDefaultDepartment(input.category),
+      assignedDepartment: routingDecision.department || getDefaultDepartment(input.category),
+      routingDecision,
       isDemo: false,
       createdAt: now,
       updatedAt: now,
@@ -451,10 +476,14 @@ complaintRouter.get('/track/:token', async (req, res) => {
     description: complaint.description,
     locationArea: complaint.locationArea,
     addressText: complaint.addressText,
+    wardNumber: complaint.wardNumber || complaint.routingDecision?.wardNumber,
+    wardName: complaint.wardName || complaint.routingDecision?.wardName,
     hasImage: complaint.hasImage,
     observedDate: complaint.observedDate,
     status: complaint.status,
-    assignedDepartment: complaint.assignedDepartment,
+    assignedDepartment: complaint.assignedDepartment || complaint.routingDecision?.department,
+    assignedAuthority: complaint.routingDecision?.authorityName || 'Jurisdiction Unverified',
+    routingStatus: complaint.routingDecision?.status || 'REVIEW_REQUIRED',
     verificationOutcome: complaint.verificationResult?.outcome,
     duplicateRisk: complaint.verificationResult?.duplicateRisk,
     signals: complaint.verificationResult?.signals || [],
@@ -637,4 +666,87 @@ complaintRouter.get('/:id/image', requireAuth, async (req, res) => {
     }
   });
   stream.pipe(res);
+});
+
+// 6. Update Complaint Location (GPS & Ward Resolution)
+complaintRouter.patch('/:id/location', requireAuth, async (req, res) => {
+  const id = (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id) as string;
+  const { latitude, longitude, locationAccuracy, locationSource } = req.body;
+
+  const latNum = Number(latitude);
+  const lonNum = Number(longitude);
+
+  if (
+    latitude === undefined ||
+    longitude === undefined ||
+    !Number.isFinite(latNum) ||
+    !Number.isFinite(lonNum) ||
+    latNum < -90 ||
+    latNum > 90 ||
+    lonNum < -180 ||
+    lonNum > 180
+  ) {
+    res.status(400).json({ error: 'Valid latitude and longitude coordinates are required.' });
+    return;
+  }
+
+  try {
+    const complaint = await complaintStore.findById(id);
+    if (!complaint) {
+      res.status(404).json({ error: 'Complaint not found.' });
+      return;
+    }
+
+    if (req.user?.role === 'CITIZEN' && complaint.citizenId !== req.user.userId) {
+      res.status(403).json({ error: 'You are not authorized to modify this complaint.' });
+      return;
+    }
+
+    const ward = getWardForCoordinates(latNum, lonNum);
+    const isMatched = ward.status === 'matched';
+
+    let routingDecision: RoutingDecision;
+    try {
+      routingDecision = evaluateRouting({
+        latitude: latNum,
+        longitude: lonNum,
+        locationArea: complaint.locationArea,
+        addressText: complaint.addressText,
+        category: complaint.category,
+        observedDate: complaint.observedDate,
+        verificationOutcome: complaint.verificationResult?.outcome,
+        duplicateRisk: complaint.verificationResult?.duplicateRisk,
+      });
+    } catch (routingErr) {
+      routingDecision = createFallbackRoutingDecision(routingErr);
+    }
+
+    const updates: Partial<ComplaintRecord> = {
+      latitude: latNum,
+      longitude: lonNum,
+      locationAccuracy: locationAccuracy !== undefined ? Number(locationAccuracy) : undefined,
+      locationSource: locationSource ? String(locationSource) : undefined,
+      wardNumber: isMatched ? ward.wardNumber || undefined : undefined,
+      wardName: isMatched ? ward.wardName || undefined : undefined,
+      wardId: isMatched ? (ward.wardId !== null ? ward.wardId : undefined) : undefined,
+      boundaryVersion: ward.boundaryVersion,
+      routingDecision,
+      assignedDepartment: routingDecision.department || complaint.assignedDepartment,
+    };
+
+    const updated = await complaintStore.update(id, updates);
+
+    res.status(200).json({
+      message: 'Complaint location updated successfully.',
+      complaint: updated,
+      ward: {
+        status: ward.status,
+        number: ward.wardNumber,
+        name: ward.wardName,
+        boundaryVersion: ward.boundaryVersion,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update complaint location.', details: err.message });
+  }
 });

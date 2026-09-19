@@ -38,6 +38,7 @@ import { ReviewActionPanel } from './ReviewActionPanel';
 import { AuthenticatedEvidenceImage } from '../common/AuthenticatedEvidenceImage';
 import { FollowThroughPanel } from '../followthrough/FollowThroughPanel';
 import { ComplaintTimeline } from '../followthrough/ComplaintTimeline';
+import { RoutingDecisionCard } from './RoutingDecisionCard';
 
 interface OfficerDetailDrawerProps {
   complaintId: string | null;
@@ -462,6 +463,16 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* ROUTING & JURISDICTION DOSSIER */}
+              <RoutingDecisionCard
+                complaint={complaint}
+                currentOfficer={currentOfficer}
+                onRerouted={(updated) => {
+                  setDetail((prev) => (prev ? { ...prev, complaint: updated } : null));
+                  onUpdated();
+                }}
+              />
 
               {/* SECTION 2: STRUCTURED EVIDENCE REVIEW & FORENSICS (Rule 7 Compliance) */}
               <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">

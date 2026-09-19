@@ -1,4 +1,5 @@
 import type { CitizenUser } from '../types/auth';
+import type { RoutingDecision, OfficerReroutePayload } from '../types/routing';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const TOKEN_KEY = 'civictrust_token';
@@ -301,6 +302,7 @@ export interface ComplaintRecord {
   duplicateClusterId?: string;
   primaryComplaintId?: string;
   resolutionAction?: string;
+  routingDecision?: RoutingDecision;
   delayRisk?: DelayRiskResult;
   isDemo: boolean;
   createdAt: string;
@@ -332,10 +334,14 @@ export interface PublicTrackResult {
   description: string;
   locationArea: string;
   addressText?: string;
+  wardNumber?: string;
+  wardName?: string;
   hasImage?: boolean;
   observedDate: string;
   status: string;
   assignedDepartment?: string;
+  assignedAuthority?: string;
+  routingStatus?: string;
   verificationOutcome?: string;
   duplicateRisk?: string;
   signals?: string[];
@@ -596,6 +602,35 @@ export async function apiUpdateOfficerReview(
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || 'Failed to update complaint review.');
+  }
+
+  return data;
+}
+
+export async function apiRerouteComplaint(
+  id: string,
+  payload: OfficerReroutePayload
+): Promise<{ message: string; complaint: ComplaintRecord }> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Authentication required.');
+  }
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/reroute`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to override complaint routing.');
   }
 
   return data;

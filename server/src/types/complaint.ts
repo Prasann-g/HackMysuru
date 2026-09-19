@@ -1,5 +1,6 @@
 import type { IssueCategory, VerificationResult } from './verification.js';
 import type { DelayRiskPredictionResult } from '../services/ml/delayRiskPredictor.js';
+import type { RoutingDecision } from './routing.js';
 
 export type ComplaintStatus =
   | 'SUBMITTED'
@@ -30,6 +31,12 @@ export interface ComplaintRecord {
   addressText?: string;
   latitude?: number;
   longitude?: number;
+  locationAccuracy?: number;
+  locationSource?: string;
+  wardNumber?: string;
+  wardName?: string;
+  wardId?: number;
+  boundaryVersion?: string;
   hasImage: boolean;
   evidenceMetadata?: EvidenceMetadata;
   imagePath?: string;
@@ -41,6 +48,7 @@ export interface ComplaintRecord {
   assignedOfficerId?: string;
   assignedDepartment?: string;
   reviewNotes?: string;
+  routingDecision?: RoutingDecision;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -94,10 +102,14 @@ export interface PublicTrackResult {
   description: string;
   locationArea: string;
   addressText?: string;
+  wardNumber?: string;
+  wardName?: string;
   hasImage?: boolean;
   observedDate: string;
   status: ComplaintStatus;
   assignedDepartment?: string;
+  assignedAuthority?: string;
+  routingStatus?: string;
   verificationOutcome?: string;
   duplicateRisk?: string;
   signals?: string[];

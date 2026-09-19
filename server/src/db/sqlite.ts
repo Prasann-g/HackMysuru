@@ -65,6 +65,12 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
       address_text TEXT,
       latitude REAL,
       longitude REAL,
+      location_accuracy REAL,
+      location_source TEXT,
+      ward_number TEXT,
+      ward_name TEXT,
+      ward_id INTEGER,
+      boundary_version TEXT,
       has_image INTEGER NOT NULL DEFAULT 0,
       evidence_metadata TEXT,
       image_path TEXT,
@@ -86,6 +92,7 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
       resolution_action TEXT DEFAULT 'NONE',
       resolved_by_officer_id TEXT,
       resolved_at TEXT,
+      routing_decision TEXT,
       FOREIGN KEY (citizen_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (assigned_officer_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (primary_complaint_id) REFERENCES complaints(id) ON DELETE SET NULL
@@ -145,6 +152,13 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
     { name: 'resolution_action', type: "TEXT DEFAULT 'NONE'" },
     { name: 'resolved_by_officer_id', type: 'TEXT' },
     { name: 'resolved_at', type: 'TEXT' },
+    { name: 'routing_decision', type: 'TEXT' },
+    { name: 'location_accuracy', type: 'REAL' },
+    { name: 'location_source', type: 'TEXT' },
+    { name: 'ward_number', type: 'TEXT' },
+    { name: 'ward_name', type: 'TEXT' },
+    { name: 'ward_id', type: 'INTEGER' },
+    { name: 'boundary_version', type: 'TEXT' },
   ];
   for (const col of extraCols) {
     try {

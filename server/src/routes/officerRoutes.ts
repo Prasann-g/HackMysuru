@@ -4,7 +4,9 @@ import { complaintStore } from '../db/complaintStore.js';
 import { userStore } from '../db/userStore.js';
 import { assessDelayRisk } from '../services/delayRiskEngine.js';
 import { followthroughRepository } from '../modules/followthrough/followthrough.repository.js';
+import { applyOfficerOverride, evaluateRouting } from '../services/routingEngine.js';
 import type { ComplaintStatus, OfficerReviewInput } from '../types/complaint.js';
+import type { OfficerRerouteInput } from '../types/routing.js';
 
 export const officerRouter = Router();
 
@@ -160,3 +162,102 @@ officerRouter.patch('/complaints/:id/review', async (req, res) => {
     res.status(500).json({ error: 'Failed to update complaint review.' });
   }
 });
+
+// 4. Officer Routing Override with Audit Trail
+officerRouter.patch('/complaints/:id/reroute', async (req, res) => {
+  const { id } = req.params;
+  const { authorityType, department, overrideReason } = req.body as OfficerRerouteInput;
+
+  if (!overrideReason || typeof overrideReason !== 'string' || overrideReason.trim().length === 0) {
+    res.status(400).json({
+      error: 'Override reason is mandatory and cannot be empty.',
+    });
+    return;
+  }
+
+  const validAuthorities = ['MCC', 'TOWN_PANCHAYAT', 'GRAM_PANCHAYAT', 'UNKNOWN'];
+  if (authorityType && !validAuthorities.includes(authorityType)) {
+    res.status(400).json({
+      error: `Invalid authority type. Allowed values: ${validAuthorities.join(', ')}.`,
+    });
+    return;
+  }
+
+  try {
+    const complaint = await complaintStore.findById(id);
+    if (!complaint) {
+      res.status(404).json({ error: 'Complaint not found.' });
+      return;
+    }
+
+    // Ensure we have an existing routing decision, or create one on the fly for legacy records
+    const currentDecision =
+      complaint.routingDecision ||
+      evaluateRouting({
+        latitude: complaint.latitude,
+        longitude: complaint.longitude,
+        locationArea: complaint.locationArea,
+        addressText: complaint.addressText,
+        category: complaint.category,
+        observedDate: complaint.observedDate,
+        verificationOutcome: complaint.verificationResult?.outcome,
+        duplicateRisk: complaint.verificationResult?.duplicateRisk,
+      });
+
+    // Derive officer identity strictly from server-side authenticated session
+    const officerUser = await userStore.findById(req.user!.userId);
+    const officerInfo = {
+      id: req.user!.userId,
+      name: officerUser?.name || 'Municipal Officer',
+      role: req.user!.role,
+    };
+
+    const updatedDecision = applyOfficerOverride(currentDecision, officerInfo, {
+      authorityType,
+      department,
+      overrideReason,
+    });
+
+    const now = new Date().toISOString();
+    const updated = await complaintStore.update(id, {
+      routingDecision: updatedDecision,
+      assignedDepartment: updatedDecision.department,
+    });
+
+    // Record Follow-through activity log for officer routing override
+    try {
+      await followthroughRepository.logActivity({
+        id: `ACT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        complaintId: id,
+        eventType: 'OFFICER_REVIEW',
+        sourceTable: 'complaints',
+        sourceRecordId: id,
+        actorId: req.user!.userId,
+        actorName: officerUser?.name || req.user?.email || 'Officer',
+        actorRole: 'OFFICER',
+        oldStatus: complaint.status,
+        newStatus: complaint.status,
+        notes: `Jurisdiction rerouted to ${updatedDecision.authorityName} (${updatedDecision.department}): ${overrideReason}`,
+        metadata: {
+          rerouted: true,
+          previousAuthority: currentDecision.authorityType,
+          newAuthority: updatedDecision.authorityType,
+          previousDepartment: currentDecision.department,
+          newDepartment: updatedDecision.department,
+          overrideReason,
+        },
+        createdAt: now,
+      });
+    } catch (logErr: any) {
+      console.error('[officerRoutes] Failed to log reroute activity:', logErr.message);
+    }
+
+    res.status(200).json({
+      message: 'Complaint routing decision overridden and audited successfully.',
+      complaint: updated,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to override complaint routing.', details: err.message });
+  }
+});
+

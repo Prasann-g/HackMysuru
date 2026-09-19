@@ -13,6 +13,10 @@ import { getSupabaseClient } from './supabase.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 function mapRowToComplaint(row: any): ComplaintRecord {
+  const routingDecision = row.routing_decision
+    ? (typeof row.routing_decision === 'string' ? JSON.parse(row.routing_decision) : row.routing_decision)
+    : undefined;
+
   return {
     id: row.id,
     trackingToken: row.tracking_token,
@@ -25,6 +29,14 @@ function mapRowToComplaint(row: any): ComplaintRecord {
     addressText: row.address_text || undefined,
     latitude: row.latitude !== null && row.latitude !== undefined ? Number(row.latitude) : undefined,
     longitude: row.longitude !== null && row.longitude !== undefined ? Number(row.longitude) : undefined,
+    locationAccuracy: row.location_accuracy !== null && row.location_accuracy !== undefined ? Number(row.location_accuracy) : undefined,
+    locationSource: row.location_source || undefined,
+    wardNumber: row.ward_number || routingDecision?.wardNumber || undefined,
+    wardName: row.ward_name || routingDecision?.wardName || undefined,
+    wardId: row.ward_id !== null && row.ward_id !== undefined
+      ? Number(row.ward_id)
+      : (routingDecision?.wardId !== undefined ? Number(routingDecision.wardId) : undefined),
+    boundaryVersion: row.boundary_version || routingDecision?.boundaryVersion || undefined,
     hasImage: Boolean(row.has_image),
     evidenceMetadata: row.evidence_metadata
       ? (typeof row.evidence_metadata === 'string' ? JSON.parse(row.evidence_metadata) : row.evidence_metadata)
@@ -39,6 +51,7 @@ function mapRowToComplaint(row: any): ComplaintRecord {
     assignedOfficerId: row.assigned_officer_id || undefined,
     assignedDepartment: row.assigned_department || undefined,
     reviewNotes: row.review_notes || undefined,
+    routingDecision,
     isDemo: Boolean(row.is_demo),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -112,6 +125,7 @@ export class SupabaseComplaintStore implements IComplaintStore {
       resolution_action: complaint.resolutionAction || 'NONE',
       resolved_by_officer_id: complaint.resolvedByOfficerId || null,
       resolved_at: complaint.resolvedAt || null,
+      routing_decision: complaint.routingDecision || null,
     };
 
     const { error } = await client.from('complaints').insert(row);
@@ -308,6 +322,7 @@ export class SupabaseComplaintStore implements IComplaintStore {
       resolution_action: merged.resolutionAction || 'NONE',
       resolved_by_officer_id: merged.resolvedByOfficerId || null,
       resolved_at: merged.resolvedAt || null,
+      routing_decision: merged.routingDecision || null,
       updated_at: merged.updatedAt,
     };
 

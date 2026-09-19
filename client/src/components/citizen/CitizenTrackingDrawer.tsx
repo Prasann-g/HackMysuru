@@ -486,9 +486,7 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                     >
                       <CategoryIcon className="w-3.5 h-3.5" />
                       <span>
-                        {data.category === 'other' && data.customCategory
-                          ? data.customCategory
-                          : categoryCfg.label}
+                        {data.customCategory || categoryCfg.label}
                       </span>
                     </span>
 
@@ -509,6 +507,14 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                     >
                       {data.status.replace(/_/g, ' ')}
                     </Badge>
+
+                    {/* Jurisdiction Badge */}
+                    {data.assignedAuthority && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-bridge-gold-50 text-bridge-gold-900 border border-bridge-gold-200">
+                        <ShieldCheck className="w-3 h-3 text-bridge-gold-600" />
+                        <span>{data.assignedAuthority}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -520,7 +526,9 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                     </span>
                     <div className="font-semibold text-bridge-charcoal-800 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                      <span className="truncate">{data.locationArea}</span>
+                      <span className="truncate">
+                        {data.locationArea}{data.wardNumber ? ` (Ward ${data.wardNumber})` : ''}
+                      </span>
                     </div>
                   </div>
 
@@ -556,7 +564,7 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                     </span>
                     <div className="font-semibold text-bridge-charcoal-800 flex items-center gap-1">
                       <Building2 className="w-3.5 h-3.5 text-bridge-gold-600 shrink-0" />
-                      <span className="truncate">
+                      <span className="truncate" title={`${data.assignedAuthority || 'Jurisdiction Unverified'} — ${data.assignedDepartment || 'Triage in Progress'}`}>
                         {data.assignedDepartment || 'Triage in Progress'}
                       </span>
                     </div>
@@ -786,7 +794,7 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                         Neighborhood / Area
                       </span>
                       <p className="font-semibold text-bridge-charcoal-900">
-                        {data.locationArea}
+                        {data.locationArea}{data.wardNumber ? ` • Ward ${data.wardNumber}` : ''}
                       </p>
                       {data.addressText && (
                         <p className="text-bridge-charcoal-600 text-[11px] mt-0.5">

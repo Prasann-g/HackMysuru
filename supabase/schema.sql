@@ -65,7 +65,14 @@ CREATE TABLE IF NOT EXISTS public.complaints (
   duplicate_cluster_id TEXT,
   resolution_action TEXT DEFAULT 'NONE',
   resolved_by_officer_id TEXT,
-  resolved_at TIMESTAMPTZ
+  resolved_at TIMESTAMPTZ,
+  routing_decision JSONB,
+  location_accuracy DOUBLE PRECISION,
+  location_source TEXT,
+  ward_number TEXT,
+  ward_name TEXT,
+  ward_id INTEGER,
+  boundary_version TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_complaints_citizen ON public.complaints(citizen_id);

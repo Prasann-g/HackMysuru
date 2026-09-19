@@ -9,6 +9,8 @@ import { authRouter } from './routes/authRoutes.js';
 import { complaintRouter } from './routes/complaintRoutes.js';
 import { officerRouter } from './routes/officerRoutes.js';
 import { followthroughRouter } from './routes/followthroughRoutes.js';
+import { routingRouter } from './routes/routingRoutes.js';
+import { getMysuruWardsGeoJson } from './services/wardService.js';
 import { initDatabase } from './db/sqlite.js';
 import { seedDemoData } from './db/seedDemoData.js';
 
@@ -37,6 +39,17 @@ app.use('/api/auth', authRouter);
 app.use('/api/complaints', complaintRouter);
 app.use('/api/officer', officerRouter);
 app.use('/api/followthrough', followthroughRouter);
+app.use('/api/routing', routingRouter);
+
+// Ward Boundaries GeoJSON Endpoint
+app.get('/api/wards/geojson', (_req, res) => {
+  const geojson = getMysuruWardsGeoJson();
+  if (!geojson) {
+    res.status(404).json({ error: 'Ward boundaries GeoJSON not found.' });
+    return;
+  }
+  res.status(200).json(geojson);
+});
 
 // 1. Health-check endpoint
 app.get('/api/health', (_req, res) => {

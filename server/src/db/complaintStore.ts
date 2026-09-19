@@ -25,6 +25,12 @@ function mapRowToComplaint(row: any): ComplaintRecord {
     addressText: row.address_text || undefined,
     latitude: row.latitude !== null && row.latitude !== undefined ? Number(row.latitude) : undefined,
     longitude: row.longitude !== null && row.longitude !== undefined ? Number(row.longitude) : undefined,
+    locationAccuracy: row.location_accuracy !== null && row.location_accuracy !== undefined ? Number(row.location_accuracy) : undefined,
+    locationSource: row.location_source || undefined,
+    wardNumber: row.ward_number || undefined,
+    wardName: row.ward_name || undefined,
+    wardId: row.ward_id !== null && row.ward_id !== undefined ? Number(row.ward_id) : undefined,
+    boundaryVersion: row.boundary_version || undefined,
     hasImage: Boolean(row.has_image),
     evidenceMetadata: row.evidence_metadata ? JSON.parse(row.evidence_metadata) : undefined,
     imagePath: row.image_path || undefined,
@@ -35,6 +41,7 @@ function mapRowToComplaint(row: any): ComplaintRecord {
     assignedOfficerId: row.assigned_officer_id || undefined,
     assignedDepartment: row.assigned_department || undefined,
     reviewNotes: row.review_notes || undefined,
+    routingDecision: row.routing_decision ? JSON.parse(row.routing_decision) : undefined,
     isDemo: Boolean(row.is_demo),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -68,13 +75,15 @@ export class SqliteComplaintStore implements IComplaintStore {
       INSERT INTO complaints (
         id, tracking_token, citizen_id, category, custom_category,
         description, observed_date, location_area, address_text,
-        latitude, longitude, has_image, evidence_metadata,
+        latitude, longitude, location_accuracy, location_source,
+        ward_number, ward_name, ward_id, boundary_version,
+        has_image, evidence_metadata,
         image_path, image_sha256, image_phash,
         status, verification_result, assigned_officer_id, assigned_department,
         review_notes, is_demo, created_at, updated_at,
         primary_complaint_id, duplicate_cluster_id, resolution_action,
-        resolved_by_officer_id, resolved_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        resolved_by_officer_id, resolved_at, routing_decision
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -89,6 +98,12 @@ export class SqliteComplaintStore implements IComplaintStore {
       complaint.addressText || null,
       complaint.latitude !== undefined ? complaint.latitude : null,
       complaint.longitude !== undefined ? complaint.longitude : null,
+      complaint.locationAccuracy !== undefined ? complaint.locationAccuracy : null,
+      complaint.locationSource || null,
+      complaint.wardNumber || null,
+      complaint.wardName || null,
+      complaint.wardId !== undefined ? complaint.wardId : null,
+      complaint.boundaryVersion || null,
       complaint.hasImage ? 1 : 0,
       complaint.evidenceMetadata ? JSON.stringify(complaint.evidenceMetadata) : null,
       complaint.imagePath || null,
@@ -106,7 +121,8 @@ export class SqliteComplaintStore implements IComplaintStore {
       complaint.duplicateClusterId || null,
       complaint.resolutionAction || 'NONE',
       complaint.resolvedByOfficerId || null,
-      complaint.resolvedAt || null
+      complaint.resolvedAt || null,
+      complaint.routingDecision ? JSON.stringify(complaint.routingDecision) : null
     );
 
     return complaint;
@@ -301,6 +317,12 @@ export class SqliteComplaintStore implements IComplaintStore {
         address_text = ?,
         latitude = ?,
         longitude = ?,
+        location_accuracy = ?,
+        location_source = ?,
+        ward_number = ?,
+        ward_name = ?,
+        ward_id = ?,
+        boundary_version = ?,
         has_image = ?,
         evidence_metadata = ?,
         status = ?,
@@ -313,6 +335,7 @@ export class SqliteComplaintStore implements IComplaintStore {
         resolution_action = ?,
         resolved_by_officer_id = ?,
         resolved_at = ?,
+        routing_decision = ?,
         updated_at = ?
       WHERE id = ?
     `);
@@ -326,6 +349,12 @@ export class SqliteComplaintStore implements IComplaintStore {
       merged.addressText || null,
       merged.latitude !== undefined ? merged.latitude : null,
       merged.longitude !== undefined ? merged.longitude : null,
+      merged.locationAccuracy !== undefined ? merged.locationAccuracy : null,
+      merged.locationSource || null,
+      merged.wardNumber || null,
+      merged.wardName || null,
+      merged.wardId !== undefined ? merged.wardId : null,
+      merged.boundaryVersion || null,
       merged.hasImage ? 1 : 0,
       merged.evidenceMetadata ? JSON.stringify(merged.evidenceMetadata) : null,
       merged.status,
@@ -338,6 +367,7 @@ export class SqliteComplaintStore implements IComplaintStore {
       merged.resolutionAction || 'NONE',
       merged.resolvedByOfficerId || null,
       merged.resolvedAt || null,
+      merged.routingDecision ? JSON.stringify(merged.routingDecision) : null,
       merged.updatedAt,
       id
     );
