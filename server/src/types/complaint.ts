@@ -91,12 +91,32 @@ export interface PublicTrackResult {
   customCategory?: string;
   description: string;
   locationArea: string;
+  addressText?: string;
+  hasImage?: boolean;
   observedDate: string;
   status: ComplaintStatus;
   assignedDepartment?: string;
   verificationOutcome?: string;
   duplicateRisk?: string;
   signals?: string[];
+  recommendedAction?: string;
+  uncertainties?: string[];
+  limitations?: string[];
+  evidenceQuality?: {
+    qualityScore?: number;
+    sharpness?: { isBlurry: boolean; explanation: string };
+    brightness?: { isSeverelyDark: boolean; isSeverelyOverexposed: boolean; explanation: string };
+    contrast?: { isBlankOrUniform: boolean; explanation: string };
+    metadata?: { hasExif: boolean; hasGpsMetadata: boolean; gpsLatitude?: number; gpsLongitude?: number; gpsDisclaimer?: string };
+    warnings?: string[];
+  };
+  geoEvidence?: {
+    status: string;
+    reviewRequired: boolean;
+    signals: string[];
+    withinServiceArea?: boolean;
+    distanceMeters?: number;
+  };
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;

@@ -4,5 +4,8 @@ export default defineConfig({
   test: {
     fileParallelism: false,
     testTimeout: 30000,
+    env: {
+      DATA_STORE: 'sqlite',
+    },
   },
 });

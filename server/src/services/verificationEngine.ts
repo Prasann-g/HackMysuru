@@ -8,6 +8,7 @@ import type {
 } from '../types/verification.js';
 import { calculateHammingDistance, DHASH_THRESHOLDS } from '../utils/imageHash.js';
 import { detectSpamAndAnomalies } from '../utils/spamDetector.js';
+import { isWithinMysuruServiceArea } from '../utils/geoEvidenceValidator.js';
 
 // Common English stop words to filter during tokenization
 const STOP_WORDS = new Set([
@@ -543,6 +544,21 @@ export function verifyComplaint(
     limitations.push(...eq.limitations);
   }
 
+  // 4. Geo-Tagged Evidence Signals & Limitations Integration
+  if (input.geoEvidence) {
+    const geo = input.geoEvidence;
+    signals.push(...geo.signals);
+    limitations.push(...geo.limitations);
+  } else if (
+    input.latitude !== undefined &&
+    input.longitude !== undefined &&
+    !isWithinMysuruServiceArea(input.latitude, input.longitude)
+  ) {
+    signals.push(
+      'OUT_OF_BOUNDS_LOCATION: Application GPS coordinates lie outside the supported Mysuru municipal service area.'
+    );
+  }
+
   // Synthesize Final Outcome & Recommended Next Action
   let outcome: VerificationResult['outcome'] = 'RECOMMENDED_VERIFIED';
   let recommendedAction = 'Proceed with ward engineer review and department assignment.';
@@ -556,6 +572,18 @@ export function verifyComplaint(
   } else if (input.evidenceQuality && !input.evidenceQuality.isValidImage) {
     outcome = 'INCONSISTENT_EVIDENCE';
     recommendedAction = 'Officer review recommended: attached photographic evidence is corrupted or possesses an invalid binary signature.';
+  } else if (input.geoEvidence && input.geoEvidence.imageRequired && !input.geoEvidence.imagePresent) {
+    outcome = 'INCOMPLETE_EVIDENCE';
+    recommendedAction = 'Citizen submission incomplete: photographic evidence is mandatory for complaint verification. Please attach an image of the civic issue.';
+  } else if (
+    (input.geoEvidence && input.geoEvidence.status === 'OUT_OF_BOUNDS') ||
+    (input.latitude !== undefined &&
+      input.longitude !== undefined &&
+      !isWithinMysuruServiceArea(input.latitude, input.longitude))
+  ) {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction =
+      'Officer review required: device GPS was captured outside the Mysuru municipal service area. Verify physical jurisdiction before field assignment.';
   } else if (overallDuplicateRisk === 'MEDIUM') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = `Review similarities with ${matches[0].existingComplaintId} before dispatching field team.`;
@@ -563,9 +591,25 @@ export function verifyComplaint(
     outcome = 'REQUIRES_HUMAN_REVIEW';
     const matchedImageCandidate = matches.find((m) => m.imageMatch)?.existingComplaintId || 'existing grievance';
     recommendedAction = `Officer visual review recommended: Image reuse signal detected (${imageComparisonSignal.replace(/_/g, ' ')}) matching complaint #${matchedImageCandidate}. Inspect evidence photos before field dispatch.`;
+  } else if (input.geoEvidence && input.geoEvidence.status === 'MISMATCH') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = `Officer review recommended: attached photo EXIF GPS diverges from reported complaint coordinates (${input.geoEvidence.distanceMeters ?? '>1500'}m). Inspect physical site to verify actual location.`;
+  } else if (input.geoEvidence && input.geoEvidence.status === 'INVALID') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = 'Officer review recommended: attached photo contains malformed or out-of-range embedded GPS coordinates.';
   } else if (input.evidenceQuality && input.evidenceQuality.recommendedReviewLevel === 'MANUAL_REVIEW_RECOMMENDED') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = `Officer visual review recommended: uploaded evidence exhibits significant quality degradation or near-blank content (Quality Score: ${input.evidenceQuality.qualityScore}/100). Inspect physical site before dispatching work orders.`;
+  } else if (input.evidenceQuality && input.evidenceQuality.sharpness.isBlurry) {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = `Officer visual review recommended: uploaded photographic evidence exhibits noticeable blur or focus degradation (Laplacian variance: ${input.evidenceQuality.sharpness.laplacianVariance}). Inspect physical site or request clearer photo before dispatching work orders.`;
+  } else if (
+    input.evidenceQuality &&
+    (input.evidenceQuality.brightness.isSeverelyDark || input.evidenceQuality.brightness.isSeverelyOverexposed)
+  ) {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction =
+      'Officer visual review recommended: uploaded evidence exhibits extreme lighting or glare. Verify defect visibility on-site.';
   } else if (spamCheck.riskLevel === 'SUSPICIOUS') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = 'Officer review recommended: evaluate description authenticity due to unusual repetitive phrasing or elevated symbol patterns.';
@@ -594,6 +638,7 @@ export function verifyComplaint(
       },
     },
     evidenceQuality: input.evidenceQuality,
+    geoEvidence: input.geoEvidence,
     processedAt: new Date().toISOString(),
   };
 }

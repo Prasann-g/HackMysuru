@@ -80,6 +80,33 @@ export interface EvidenceQualityAnalysis {
   recommendedReviewLevel: 'NONE' | 'ADVISORY' | 'MANUAL_REVIEW_RECOMMENDED' | 'REJECT';
 }
 
+export type GeoEvidenceStatus =
+  | 'VALID'
+  | 'MISSING'
+  | 'MISMATCH'
+  | 'INVALID'
+  | 'UNAVAILABLE'
+  | 'OUT_OF_BOUNDS';
+
+export interface GeoCoordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface GeoEvidenceResult {
+  imageRequired: boolean;
+  imagePresent: boolean;
+  exifGpsPresent: boolean;
+  exifCoordinates?: GeoCoordinates;
+  capturedCoordinates?: GeoCoordinates;
+  distanceMeters?: number;
+  withinServiceArea?: boolean;
+  status: GeoEvidenceStatus;
+  reviewRequired: boolean;
+  signals: string[];
+  limitations: string[];
+}
+
 export interface VerificationResult {
   outcome: VerificationOutcome;
   duplicateRisk: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -107,6 +134,7 @@ export interface VerificationResult {
     };
   };
   evidenceQuality?: EvidenceQualityAnalysis;
+  geoEvidence?: GeoEvidenceResult;
   validationErrors?: string[];
   processedAt: string;
 }
@@ -119,10 +147,13 @@ export interface ComplaintInput {
   observedDate: string;
   locationArea?: string;
   addressText?: string;
+  latitude?: number;
+  longitude?: number;
   hasImage?: boolean;
   imageSha256?: string;
   imagePhash?: string;
   evidenceQuality?: EvidenceQualityAnalysis;
+  geoEvidence?: GeoEvidenceResult;
 }
 
 export interface ExistingComplaint {

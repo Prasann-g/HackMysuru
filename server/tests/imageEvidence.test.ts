@@ -82,6 +82,8 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Saraswathipuram');
+    formData.append('latitude', '12.3051');
+    formData.append('longitude', '76.6551');
     formData.append(
       'image',
       new Blob([sampleJpeg], { type: 'image/jpeg' }),
@@ -134,6 +136,8 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Kuvempunagar');
+    formData.append('latitude', '12.3051');
+    formData.append('longitude', '76.6551');
     formData.append(
       'image',
       new Blob([samplePng], { type: 'image/png' }),
@@ -159,8 +163,8 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     expect(matches.some((m) => m.id === data.complaint.id)).toBe(true);
   });
 
-  // 3. Complaint Without Image
-  it('persists complaint cleanly without image fields when no file is uploaded', async () => {
+  // 3. Rejection When No Image is Uploaded
+  it('rejects complaint when no photo evidence is uploaded (HTTP 400 IMAGE_REQUIRED)', async () => {
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
@@ -172,19 +176,15 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
         description: `Completely unique dark alleyway without street lights near old post office ${runNonce}.`,
         observedDate: '2026-09-18',
         locationArea: 'Jayalakshmipuram',
+        latitude: 12.3051,
+        longitude: 76.6551,
       }),
     });
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.complaint.hasImage).toBe(false);
-    expect(data.complaint.imageSha256).toBeUndefined();
-    expect(data.complaint.imagePath).toBeUndefined();
-
-    const stored = await complaintStore.findById(data.complaint.id);
-    expect(stored!.hasImage).toBe(false);
-    expect(stored!.imageSha256).toBeUndefined();
-    expect(stored!.imagePath).toBeUndefined();
+    expect(data.code).toBe('IMAGE_REQUIRED');
+    expect(data.error).toContain('Photographic evidence is mandatory');
   });
 
   // 4. Invalid File Type Rejection
@@ -199,6 +199,8 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Vijayanagar');
+    formData.append('latitude', '12.3051');
+    formData.append('longitude', '76.6551');
     formData.append(
       'image',
       new Blob([textBuffer], { type: 'text/plain' }),
@@ -231,6 +233,8 @@ describe('ML Verification — Step 1: Image Evidence Infrastructure', () => {
     );
     formData.append('observedDate', '2026-09-18');
     formData.append('locationArea', 'Gokulam');
+    formData.append('latitude', '12.3051');
+    formData.append('longitude', '76.6551');
     formData.append(
       'image',
       new Blob([oversizedBuffer], { type: 'image/jpeg' }),

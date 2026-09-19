@@ -23,6 +23,7 @@ import { apiGetMyComplaints, type ComplaintRecord } from '../../services/api';
 import type { CitizenUser } from '../../types/auth';
 import { ReportGrievanceModal } from './ReportGrievanceModal';
 import { CitizenTrackingDrawer } from './CitizenTrackingDrawer';
+import { ComplaintTracker } from '../tracking/ComplaintTracker';
 import { PublicMapAnalytics } from '../public/PublicMapAnalytics';
 
 interface CitizenDashboardProps {
@@ -68,6 +69,7 @@ const STATUS_CONFIG: Record<
 
 export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   currentUser,
+  onNavigateToTrack,
   initialOpenReportModal = false,
 }) => {
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
@@ -85,7 +87,6 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   const [isReportModalOpen, setIsReportModalOpen] = useState(initialOpenReportModal);
   const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
   const [selectedTrackingToken, setSelectedTrackingToken] = useState<string | null>(null);
-  const [quickTrackInput, setQuickTrackInput] = useState('');
 
   const handleRefresh = useCallback(() => {
     setLoading(true);
@@ -124,13 +125,6 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   const handleOpenTracker = (token: string) => {
     setSelectedTrackingToken(token);
     setIsTrackingDrawerOpen(true);
-  };
-
-  const handleQuickTrackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (quickTrackInput.trim()) {
-      handleOpenTracker(quickTrackInput.trim());
-    }
   };
 
   // Metrics calculated strictly from real authentic complaints
@@ -327,35 +321,11 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       {/* 4. Active View Content */}
       {activeView === 'ledger' ? (
         <div className="space-y-6">
-          {/* Quick Track Search Strip */}
-          <div className="bg-white border border-bridge-almond-200 rounded-2xl p-4 sm:p-5 shadow-bridge-card flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-700 shrink-0">
-                <Search className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-bridge-charcoal-900">
-                  Direct Tracking Token Lookup
-                </h3>
-                <p className="text-[11px] text-bridge-charcoal-500">
-                  Inspect any grievance status and verification timeline directly
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleQuickTrackSubmit} className="flex items-center gap-2 max-w-md w-full sm:w-auto">
-              <input
-                type="text"
-                value={quickTrackInput}
-                onChange={(e) => setQuickTrackInput(e.target.value)}
-                placeholder="Enter token (e.g., DEMO-2026-0001 or TRK-...)"
-                className="civic-input flex-1 sm:w-64 px-3 py-1.5 text-xs rounded-xl"
-              />
-              <Button type="submit" variant="primary" size="sm">
-                Track
-              </Button>
-            </form>
-          </div>
+          {/* 1. Track Your Civic Request Search Card */}
+          <ComplaintTracker
+            onTrack={handleOpenTracker}
+            onOpenFullPage={(tok) => onNavigateToTrack?.(tok || '')}
+          />
 
           {/* Grievance Ledger & Activity View */}
           <Card className="border-bridge-almond-200 shadow-bridge-card">

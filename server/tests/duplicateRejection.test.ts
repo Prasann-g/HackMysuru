@@ -143,6 +143,8 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     form.append('description', `Dangerous road depression on Kuvempunagar Double Road near junction ${nonce}.`);
     form.append('observedDate', '2026-03-15');
     form.append('locationArea', 'Kuvempunagar');
+    form.append('latitude', '12.2855');
+    form.append('longitude', '76.6350');
     form.append('image', new Blob([imageBufOriginal], { type: 'image/jpeg' }), 'evidence.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
@@ -180,6 +182,8 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     form.append('description', `Unattended trash accumulating on the sidewalk near market ${nonce}.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Vontikoppal');
+    form.append('latitude', '12.2855');
+    form.append('longitude', '76.6350');
     form.append('image', new Blob([imageBufOriginal], { type: 'image/jpeg' }), 'reused.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
@@ -233,6 +237,8 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     form.append('description', `Extinguished overhead luminaire on 8th cross avenue ${nonce}.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Saraswathipuram');
+    form.append('latitude', '12.2955');
+    form.append('longitude', '76.6450');
     form.append('image', new Blob([imageBufDistinct], { type: 'image/jpeg' }), 'distinct.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
@@ -255,6 +261,8 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
     form.append('description', `Unique roadway depression inspection record ${nonce} with isolated phrasing.`);
     form.append('observedDate', '2026-03-16');
     form.append('locationArea', 'Kuvempunagar');
+    form.append('latitude', '12.2855');
+    form.append('longitude', '76.6350');
     form.append('image', new Blob([imageBufRecompressed], { type: 'image/jpeg' }), 'recompressed.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
@@ -279,39 +287,52 @@ describe('Intake Duplicate Rejection Workflow (HTTP 409 Conflict)', () => {
   });
 
   it('rejects identical text complaint in the same category and area (HTTP 409 Conflict)', async () => {
-    // 1. Citizen A submits a unique text complaint
+    const imageBufTextA = await sharp({
+      create: { width: 60, height: 60, channels: 3, background: { r: 10, g: 150, b: 20 } },
+    }).jpeg().toBuffer();
+    const imageBufTextB = await sharp({
+      create: { width: 60, height: 60, channels: 3, background: { r: 150, g: 10, b: 120 } },
+    }).jpeg().toBuffer();
+
+    // 1. Citizen A submits a unique text complaint with image and GPS
     const uniqueText = `Fallen eucalyptus branch obstructing pedestrian footbridge in Gokulam Park ${nonce}.`;
+    const formA = new FormData();
+    formA.append('category', 'other');
+    formA.append('description', uniqueText);
+    formA.append('observedDate', '2026-03-17');
+    formA.append('locationArea', 'Gokulam');
+    formA.append('latitude', '12.3250');
+    formA.append('longitude', '76.6350');
+    formA.append('image', new Blob([imageBufTextA], { type: 'image/jpeg' }), 'footbridgeA.jpg');
+
     const resA = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenTokenA}`,
       },
-      body: JSON.stringify({
-        category: 'other',
-        description: uniqueText,
-        observedDate: '2026-03-17',
-        locationArea: 'Gokulam',
-      }),
+      body: formA,
     });
     expect(resA.status).toBe(201);
     const dataA = await resA.json();
     const existingId = dataA.complaint.id;
     const existingToken = dataA.complaint.trackingToken;
 
-    // 2. Citizen B submits near-identical text (Jaccard >= 0.90) in the same category and area
+    // 2. Citizen B submits near-identical text (Jaccard >= 0.90) in the same category and area with distinct image
+    const formB = new FormData();
+    formB.append('category', 'other');
+    formB.append('description', `Fallen eucalyptus branch obstructing pedestrian footbridge in Gokulam Park near path ${nonce}.`);
+    formB.append('observedDate', '2026-03-17');
+    formB.append('locationArea', 'Gokulam');
+    formB.append('latitude', '12.3250');
+    formB.append('longitude', '76.6350');
+    formB.append('image', new Blob([imageBufTextB], { type: 'image/jpeg' }), 'footbridgeB.jpg');
+
     const resB = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenTokenB}`,
       },
-      body: JSON.stringify({
-        category: 'other',
-        description: `Fallen eucalyptus branch obstructing pedestrian footbridge in Gokulam Park near path ${nonce}.`,
-        observedDate: '2026-03-17',
-        locationArea: 'Gokulam',
-      }),
+      body: formB,
     });
 
     // 3. Assert HTTP 409 Conflict

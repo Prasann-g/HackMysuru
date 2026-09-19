@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   ExternalLink,
   Navigation,
+  MapPinOff,
 } from 'lucide-react';
 import type { ComplaintFormData } from './types';
 import { Button } from '../ui/Button';
@@ -42,6 +43,11 @@ interface Step5Props {
   } | null;
   declarationError?: string | null;
   onClearDuplicateConflict?: () => void;
+  outOfServiceAreaError?: {
+    message: string;
+    code: string;
+  } | null;
+  onClearOutOfServiceAreaError?: () => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -66,14 +72,14 @@ export const Step5Review: React.FC<Step5Props> = ({
   duplicateConflict = null,
   declarationError = null,
   onClearDuplicateConflict,
+  outOfServiceAreaError = null,
+  onClearOutOfServiceAreaError,
 }) => {
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedExistingToken, setCopiedExistingToken] = useState(false);
   const confirmedDeclaration = formData.declarationConfirmed ?? false;
 
   const containerRef = useRef<HTMLDivElement>(null);
-
-
 
   const categoryName = formData.category
     ? CATEGORY_LABELS[formData.category] || formData.category
@@ -99,7 +105,138 @@ export const Step5Review: React.FC<Step5Props> = ({
     onDeclarationChange?.(checked);
   };
 
+  // --------------------------------------------------------------------------
+  // OUT OF SERVICE AREA REJECTION VIEW (HTTP 400 - Option B: Reject Intake)
+  // --------------------------------------------------------------------------
+  if (outOfServiceAreaError) {
+    return (
+      <div ref={containerRef} className="space-y-6 animate-fadeIn">
+        <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-center space-y-3">
+          <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-700 mx-auto">
+            <MapPinOff className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-rose-950">
+            Grievance Not Registered — Out of Municipal Service Area
+          </h2>
+          <p className="text-xs sm:text-sm text-rose-800 max-w-lg mx-auto leading-relaxed">
+            {outOfServiceAreaError.message}
+          </p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-800 text-xs rounded-full font-medium mt-1">
+            <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+            Status: HTTP 400 Intake Rejection (OUT_OF_SERVICE_AREA)
+          </div>
+        </div>
 
+        <Card className="border-rose-200 bg-rose-50/30">
+          <CardBody className="p-5 space-y-4 text-xs">
+            <div className="border-b border-rose-200/60 pb-3">
+              <span className="text-[11px] font-semibold text-rose-900 uppercase tracking-wider block">
+                Municipal Boundary Enforcement Notice
+              </span>
+              <p className="text-xs text-bridge-charcoal-600 mt-1 leading-relaxed">
+                CivicBridge operates exclusively for complaints within the <strong>Mysuru City Corporation (MCC)</strong> jurisdiction (bounding box: 12.15°–12.45° N, 76.50°–76.80° E). Grievances outside these boundaries cannot be registered.
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-xl border border-rose-200 shadow-xs space-y-2 text-bridge-charcoal-700">
+              <p className="font-semibold text-bridge-charcoal-900">Intake Safeguard Confirmations:</p>
+              <ul className="list-disc list-inside space-y-1 text-bridge-charcoal-600 text-[11px]">
+                <li><strong>No complaint record</strong> was created in the municipal database.</li>
+                <li><strong>No tracking token</strong> was generated or reserved.</li>
+                <li><strong>No department</strong> was assigned or dispatched.</li>
+                <li><strong>No uploaded evidence</strong> was retained.</li>
+              </ul>
+            </div>
+
+            {/* Location Contrast Comparison: Captured device location vs Locality entered by citizen */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {/* Box 1: Captured device location */}
+              <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Navigation className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                    Captured Device Location
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase bg-rose-100 text-rose-800 px-2 py-0.5 rounded shrink-0">
+                    GPS Coordinates
+                  </span>
+                </div>
+                <p className="font-mono text-xs text-rose-900 font-semibold pt-0.5">
+                  {formData.latitude !== null && formData.latitude !== undefined
+                    ? `${Number(formData.latitude).toFixed(6)}° N`
+                    : 'N/A'},{' '}
+                  {formData.longitude !== null && formData.longitude !== undefined
+                    ? `${Number(formData.longitude).toFixed(6)}° E`
+                    : 'N/A'}
+                </p>
+                <p className="text-[11px] text-rose-800 leading-relaxed">
+                  The captured device location is outside the supported Mysuru service area (MCC municipal boundary: 12.15°–12.45° N, 76.50°–76.80° E).
+                </p>
+              </div>
+
+              {/* Box 2: Locality entered by citizen */}
+              <div className="p-3.5 bg-bridge-ivory-50 rounded-xl border border-bridge-almond-200 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-bridge-charcoal-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-bridge-gold-700 shrink-0" />
+                    Locality Entered by Citizen
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase bg-bridge-almond-100 text-bridge-charcoal-700 px-2 py-0.5 rounded shrink-0">
+                    Form Input
+                  </span>
+                </div>
+                <p className="text-xs text-bridge-charcoal-900 font-bold pt-0.5">
+                  {formData.locationArea || 'Not specified'}
+                </p>
+                {formData.addressText && (
+                  <p className="text-[11px] text-bridge-charcoal-600">
+                    Landmark / Street: {formData.addressText}
+                  </p>
+                )}
+                <p className="text-[11px] text-bridge-charcoal-500 italic">
+                  Self-reported text entered manually in the grievance form.
+                </p>
+              </div>
+            </div>
+
+            {/* Location Inconsistency Warning */}
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1 text-amber-900">
+              <div className="flex items-center gap-2 font-bold text-amber-950">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Location Inconsistency Warning</span>
+              </div>
+              <p className="text-xs text-amber-800 leading-relaxed pl-6">
+                The locality entered in the form (<strong>{formData.locationArea || 'Specified Locality'}</strong>) does not override the device GPS location. CivicBridge enforces municipal boundaries based on authentic device GPS coordinates. The system does not assume that the device GPS location is {formData.locationArea || 'the reported area'}.
+              </p>
+            </div>
+          </CardBody>
+        </Card>
+
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={onReset}
+          >
+            Start Over
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={() => {
+              onClearOutOfServiceAreaError?.();
+              onEditStep(3);
+            }}
+          >
+            Correct Location in Section 3 &amp; Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // --------------------------------------------------------------------------
   // DUPLICATE CONFLICT VIEW (HTTP 409)
@@ -328,9 +465,12 @@ export const Step5Review: React.FC<Step5Props> = ({
                   <div className="mt-1">
                     <Badge
                       variant={
-                        vr.duplicateRisk === 'HIGH'
+                        vr.duplicateRisk === 'HIGH' || vr.outcome === 'POSSIBLE_DUPLICATE'
                           ? 'duplicate'
-                          : vr.duplicateRisk === 'MEDIUM'
+                          : vr.duplicateRisk === 'MEDIUM' ||
+                            vr.outcome === 'REQUIRES_HUMAN_REVIEW' ||
+                            vr.outcome === 'INCONSISTENT_EVIDENCE' ||
+                            vr.outcome === 'INCOMPLETE_EVIDENCE'
                           ? 'review'
                           : 'verified'
                       }

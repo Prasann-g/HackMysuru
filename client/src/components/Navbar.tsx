@@ -9,6 +9,7 @@ import {
   Building2,
   PlusCircle,
   ShieldCheck,
+  Search,
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -28,6 +29,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
   currentUser,
   onTabChange,
   onOpenAuth,
@@ -113,6 +115,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Authentication / Action Area */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Track Grievance Nav Link */}
+            <button
+              type="button"
+              onClick={() => onTabChange('track')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
+                activeTab === 'track'
+                  ? 'bg-bridge-gold-100 text-bridge-gold-900 border border-bridge-gold-300 font-bold shadow-xs'
+                  : 'text-bridge-charcoal-700 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100 border border-transparent'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5 text-bridge-gold-700" />
+              <span>Track Grievance</span>
+            </button>
+
             {currentUser ? (
               <div className="flex items-center gap-3">
                 {/* Citizen Quick Report CTA right in header */}
@@ -178,6 +194,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                       {/* Menu Actions */}
                       <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            onTabChange('track');
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-bridge-charcoal-700 hover:bg-bridge-almond-50 hover:text-bridge-charcoal-900 flex items-center gap-2 cursor-pointer transition-all duration-150 border-l-2 border-transparent hover:border-bridge-gold-500"
+                        >
+                          <Search className="w-3.5 h-3.5 text-bridge-gold-700" />
+                          <span>Track Grievance</span>
+                        </button>
+
                         <button
                           onClick={() => {
                             setProfileDropdownOpen(false);
@@ -284,6 +311,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </Button>
               )}
 
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onTabChange('track');
+                }}
+                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
+                  activeTab === 'track'
+                    ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold border border-bridge-gold-300'
+                    : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
+                }`}
+              >
+                <Search className="w-4 h-4 text-bridge-gold-700" />
+                <span>Track Grievance</span>
+              </button>
+
               <div className="pt-2 border-t border-bridge-almond-200 flex items-center justify-between text-xs">
                 <button
                   onClick={() => {
@@ -307,6 +350,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : (
             <div className="space-y-2 pt-1 pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onTabChange('track');
+                }}
+                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
+                  activeTab === 'track'
+                    ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold border border-bridge-gold-300'
+                    : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
+                }`}
+              >
+                <Search className="w-4 h-4 text-bridge-gold-700" />
+                <span>Track Grievance</span>
+              </button>
+
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"

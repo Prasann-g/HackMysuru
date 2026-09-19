@@ -129,6 +129,16 @@ export class DuplicateComplaintError extends Error {
   }
 }
 
+export class OutOfServiceAreaError extends Error {
+  code: string;
+
+  constructor(message: string, code: string = 'OUT_OF_SERVICE_AREA') {
+    super(message);
+    this.name = 'OutOfServiceAreaError';
+    this.code = code;
+  }
+}
+
 export interface CreateComplaintPayload {
   category: string;
   customCategory?: string;
@@ -186,6 +196,60 @@ export interface ComplaintRecord {
       detectedKeywords: string[];
     };
     imageComparisonSignal?: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY' | 'NO_IMAGE_MATCH' | 'IMAGE_COMPARISON_UNAVAILABLE';
+    evidenceQuality?: {
+      isValidImage: boolean;
+      mimeType?: string;
+      format?: string;
+      width?: number;
+      height?: number;
+      fileSizeBytes: number;
+      qualityScore: number;
+      sharpness: {
+        laplacianVariance: number;
+        isBlurry: boolean;
+        explanation: string;
+      };
+      brightness: {
+        mean: number;
+        isSeverelyDark: boolean;
+        isSeverelyOverexposed: boolean;
+        explanation: string;
+      };
+      contrast: {
+        stdev: number;
+        isBlankOrUniform: boolean;
+        explanation: string;
+      };
+      metadata: {
+        hasExif: boolean;
+        cameraMake?: string;
+        cameraModel?: string;
+        software?: string;
+        dateTimeOriginal?: string;
+        hasGpsMetadata: boolean;
+        gpsLatitude?: number;
+        gpsLongitude?: number;
+        gpsDisclaimer: string;
+      };
+      signals: string[];
+      warnings: string[];
+      uncertainties: string[];
+      limitations: string[];
+      recommendedReviewLevel: 'NONE' | 'ADVISORY' | 'MANUAL_REVIEW_RECOMMENDED' | 'REJECT';
+    };
+    geoEvidence?: {
+      imageRequired: boolean;
+      imagePresent: boolean;
+      exifGpsPresent: boolean;
+      exifCoordinates?: { latitude: number; longitude: number };
+      capturedCoordinates?: { latitude: number; longitude: number };
+      distanceMeters?: number;
+      withinServiceArea?: boolean;
+      status: 'VALID' | 'MISSING' | 'MISMATCH' | 'INVALID' | 'UNAVAILABLE' | 'OUT_OF_BOUNDS';
+      reviewRequired: boolean;
+      signals: string[];
+      limitations: string[];
+    };
   };
   assignedDepartment?: string;
   assignedOfficerId?: string;
@@ -233,12 +297,32 @@ export interface PublicTrackResult {
   customCategory?: string;
   description: string;
   locationArea: string;
+  addressText?: string;
+  hasImage?: boolean;
   observedDate: string;
   status: string;
   assignedDepartment?: string;
   verificationOutcome?: string;
   duplicateRisk?: string;
   signals?: string[];
+  recommendedAction?: string;
+  uncertainties?: string[];
+  limitations?: string[];
+  evidenceQuality?: {
+    qualityScore?: number;
+    sharpness?: { isBlurry: boolean; explanation: string };
+    brightness?: { isSeverelyDark: boolean; isSeverelyOverexposed: boolean; explanation: string };
+    contrast?: { isBlankOrUniform: boolean; explanation: string };
+    metadata?: { hasExif: boolean; hasGpsMetadata: boolean; gpsLatitude?: number; gpsLongitude?: number; gpsDisclaimer?: string };
+    warnings?: string[];
+  };
+  geoEvidence?: {
+    status: string;
+    reviewRequired: boolean;
+    signals: string[];
+    withinServiceArea?: boolean;
+    distanceMeters?: number;
+  };
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -296,6 +380,14 @@ export async function apiCreateComplaint(
       data.code || 'DUPLICATE_COMPLAINT',
       data.duplicateType || 'UNKNOWN_DUPLICATE',
       data.existingComplaint
+    );
+  }
+
+  if (data.code === 'OUT_OF_SERVICE_AREA') {
+    throw new OutOfServiceAreaError(
+      data.error ||
+        'The captured device location is outside the supported Mysuru service area. The locality entered in the form does not override the device GPS location.',
+      data.code
     );
   }
 

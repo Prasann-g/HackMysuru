@@ -82,12 +82,12 @@ export const Step4Evidence: React.FC<Step4Props> = ({
           <h2 className="text-base sm:text-lg font-bold text-bridge-charcoal-900">
             Attach Visual Evidence
           </h2>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-bridge-almond-100 text-bridge-charcoal-600">
-            Optional
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+            Required
           </span>
         </div>
         <p className="text-xs sm:text-sm text-bridge-charcoal-600 mt-1">
-          Upload a clear photograph of the civic problem. If you don't have a photo right now, you can skip this step.
+          Upload a clear photograph of the civic problem. Photographic evidence is mandatory for complaint verification.
         </p>
       </div>
 

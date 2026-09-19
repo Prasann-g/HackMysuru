@@ -37,8 +37,8 @@ const SECTIONS: SectionDef[] = [
   {
     id: 3,
     label: 'Place & Evidence',
-    sublabel: 'Location & optional photo',
-    required: false,
+    sublabel: 'Location & photo evidence',
+    required: true,
   },
   {
     id: 4,
@@ -86,6 +86,10 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
     code: string;
     duplicateType: string;
     existingComplaint?: SafeExistingComplaint;
+  } | null>(null);
+  const [outOfServiceAreaError, setOutOfServiceAreaError] = useState<{
+    message: string;
+    code: string;
   } | null>(null);
   const [declarationError, setDeclarationError] = useState<string | null>(null);
 
@@ -166,6 +170,7 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
     setSubmissionError(null);
     setSubmittedComplaint(null);
     setDuplicateConflict(null);
+    setOutOfServiceAreaError(null);
     setDeclarationError(null);
     setCurrentSection(1);
     setMaxVisitedSection(1);
@@ -204,8 +209,15 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
       } else if (trimmedLoc.length < 3) {
         newErrors.locationArea = 'Locality must be at least 3 characters.';
       }
-      if (errors.image) {
-        return false;
+      if (formData.latitude === null || formData.longitude === null) {
+        newErrors.locationArea = newErrors.locationArea
+          ? `${newErrors.locationArea} Also, device GPS location is required.`
+          : 'Device GPS location is required for verification. Please click "Detect My Location".';
+      }
+      if (!formData.imageFile) {
+        newErrors.image = 'Photographic evidence is mandatory for complaint verification. Please attach a photo.';
+      } else if (errors.image) {
+        newErrors.image = errors.image;
       }
     }
 
@@ -226,7 +238,13 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
       );
     }
     if (currentSection === 3) {
-      return formData.locationArea.trim().length >= 3 && !errors.image;
+      return (
+        formData.locationArea.trim().length >= 3 &&
+        formData.latitude !== null &&
+        formData.longitude !== null &&
+        formData.imageFile !== null &&
+        !errors.image
+      );
     }
     return true;
   };
@@ -255,6 +273,7 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
   };
 
   const handleEditSection = (sectionNumber: number) => {
+    setOutOfServiceAreaError(null);
     setCurrentSection(sectionNumber);
     scrollToTop();
   };
@@ -272,9 +291,20 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
       return;
     }
 
+    if (!formData.imageFile) {
+      setSubmissionError('Photographic evidence is mandatory for complaint verification. Please attach a photo in Section 3.');
+      return;
+    }
+
+    if (formData.latitude === null || formData.longitude === null) {
+      setSubmissionError('Device GPS location is required for verification. Please capture your location in Section 3.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmissionError(null);
     setDuplicateConflict(null);
+    setOutOfServiceAreaError(null);
     setDeclarationError(null);
 
     try {
@@ -314,6 +344,12 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
           code: err.code || 'DUPLICATE_COMPLAINT',
           duplicateType: err.duplicateType || 'UNKNOWN_DUPLICATE',
           existingComplaint: err.existingComplaint,
+        });
+        scrollToTop();
+      } else if (err.name === 'OutOfServiceAreaError' || err.code === 'OUT_OF_SERVICE_AREA') {
+        setOutOfServiceAreaError({
+          message: err.message,
+          code: err.code || 'OUT_OF_SERVICE_AREA',
         });
         scrollToTop();
       } else {
@@ -471,6 +507,8 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
                 duplicateConflict={duplicateConflict}
                 declarationError={declarationError}
                 onClearDuplicateConflict={() => setDuplicateConflict(null)}
+                outOfServiceAreaError={outOfServiceAreaError}
+                onClearOutOfServiceAreaError={() => setOutOfServiceAreaError(null)}
               />
             )}
           </div>
@@ -487,7 +525,7 @@ export const ComplaintSubmissionPortal: React.FC<ComplaintSubmissionPortalProps>
       </div>
 
       {/* ── PINNED / STICKY BOTTOM ACTION BAR: ALWAYS VISIBLE! ── */}
-      {!submittedComplaint && !duplicateConflict && (
+      {!submittedComplaint && !duplicateConflict && !outOfServiceAreaError && (
         <footer className="shrink-0 border-t border-bridge-almond-200 bg-white px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3 z-20 shadow-bridge-sm">
           {/* Left Action Button */}
           {currentSection === 1 ? (

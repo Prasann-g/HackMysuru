@@ -555,6 +555,138 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                       </div>
                     </div>
 
+                    {/* Stage 2 Evidence Quality & Forensic Metrics Card */}
+                    {complaint.verificationResult?.evidenceQuality && (
+                      <div className="bg-bridge-almond-50/70 rounded-xl p-4 border border-bridge-almond-200 text-xs space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-bridge-almond-200">
+                          <div className="flex items-center gap-1.5 font-semibold text-bridge-charcoal-800">
+                            <ShieldCheck className="w-4 h-4 text-bridge-gold-600" />
+                            <span>Evidence Quality &amp; Forensic Signals:</span>
+                          </div>
+                          <span className="font-semibold text-xs px-2.5 py-0.5 rounded-full bg-bridge-gold-100 text-bridge-gold-900 border border-bridge-gold-200 font-mono">
+                            Quality Score: {complaint.verificationResult.evidenceQuality.qualityScore}/100
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px]">
+                          <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-400 block">Sharpness / Blur:</span>
+                            <span className="font-semibold text-bridge-charcoal-800 block mt-0.5">
+                              {complaint.verificationResult.evidenceQuality.sharpness.isBlurry ? (
+                                <span className="text-amber-700 font-bold">Blurry / Low Sharpness</span>
+                              ) : (
+                                <span className="text-emerald-700 font-semibold">Sharp / In Focus</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-bridge-charcoal-500 block mt-0.5">
+                              Laplacian: {complaint.verificationResult.evidenceQuality.sharpness.laplacianVariance}
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-400 block">Exposure / Light:</span>
+                            <span className="font-semibold text-bridge-charcoal-800 block mt-0.5">
+                              {complaint.verificationResult.evidenceQuality.brightness.isSeverelyDark ? (
+                                <span className="text-amber-700 font-bold">Low Light / Night Scene</span>
+                              ) : complaint.verificationResult.evidenceQuality.brightness.isSeverelyOverexposed ? (
+                                <span className="text-amber-700 font-bold">Overexposed Glare</span>
+                              ) : (
+                                <span className="text-emerald-700 font-semibold">Balanced Ambient</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-bridge-charcoal-500 block mt-0.5">
+                              Mean: {complaint.verificationResult.evidenceQuality.brightness.mean}/255
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200 col-span-2 sm:col-span-1">
+                            <span className="text-bridge-charcoal-400 block">EXIF / GPS Header:</span>
+                            <span className="font-semibold text-bridge-charcoal-800 block mt-0.5">
+                              {complaint.verificationResult.evidenceQuality.metadata.hasExif ? (
+                                <span className="text-bridge-gold-800 font-semibold">EXIF Present</span>
+                              ) : (
+                                <span className="text-bridge-charcoal-500">No EXIF (Standard)</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-bridge-charcoal-500 block mt-0.5 truncate">
+                              {complaint.verificationResult.evidenceQuality.metadata.cameraModel ||
+                                complaint.verificationResult.evidenceQuality.metadata.software ||
+                                'Non-authoritative'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {complaint.verificationResult.evidenceQuality.metadata.hasGpsMetadata && (
+                          <div className="bg-white/90 p-2.5 rounded-lg border border-bridge-almond-200 text-[11px] flex items-center justify-between">
+                            <span className="text-bridge-charcoal-600 flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-bridge-gold-600" />
+                              <span>Advisory GPS Metadata:</span>
+                              <strong className="font-mono text-bridge-charcoal-800">
+                                {complaint.verificationResult.evidenceQuality.metadata.gpsLatitude?.toFixed(4)},{' '}
+                                {complaint.verificationResult.evidenceQuality.metadata.gpsLongitude?.toFixed(4)}
+                              </strong>
+                            </span>
+                            <span className="text-[10px] text-bridge-charcoal-400 italic">
+                              Advisory Evidence Only
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Geo-Tagged Evidence Verification (Stage 2 Extension) */}
+                    {complaint.verificationResult?.geoEvidence && (
+                      <div className="bg-gradient-to-br from-bridge-warm-ivory to-white border border-bridge-almond-300 rounded-xl p-3.5 shadow-sm space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-bridge-gold-600" />
+                            <span className="text-xs font-semibold text-bridge-charcoal-900 tracking-wide uppercase">
+                              Geo-Tagged Evidence Verification
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                              complaint.verificationResult.geoEvidence.status === 'VALID'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : complaint.verificationResult.geoEvidence.status === 'MISMATCH' ||
+                                  complaint.verificationResult.geoEvidence.status === 'OUT_OF_BOUNDS'
+                                ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                : complaint.verificationResult.geoEvidence.status === 'INVALID'
+                                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                : 'bg-slate-50 text-slate-700 border-slate-300'
+                            }`}
+                          >
+                            {complaint.verificationResult.geoEvidence.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-500 block">EXIF GPS:</span>
+                            <strong className="font-mono text-bridge-charcoal-800">
+                              {complaint.verificationResult.geoEvidence.exifCoordinates
+                                ? `${complaint.verificationResult.geoEvidence.exifCoordinates.latitude.toFixed(4)}, ${complaint.verificationResult.geoEvidence.exifCoordinates.longitude.toFixed(4)}`
+                                : 'Not Embedded'}
+                            </strong>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-500 block">Correlation Distance:</span>
+                            <strong className="font-mono text-bridge-charcoal-800">
+                              {complaint.verificationResult.geoEvidence.distanceMeters !== undefined
+                                ? `${complaint.verificationResult.geoEvidence.distanceMeters.toLocaleString()} m`
+                                : 'N/A'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {complaint.verificationResult.geoEvidence.signals.length > 0 && (
+                          <div className="text-[11px] text-bridge-charcoal-700 bg-white/70 p-2 rounded-lg border border-bridge-almond-200/80">
+                            {complaint.verificationResult.geoEvidence.signals[0]}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Rule 7 Mandatory Integrity Notice */}
                     <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-950 leading-relaxed">
                       <div className="flex items-start gap-2.5">

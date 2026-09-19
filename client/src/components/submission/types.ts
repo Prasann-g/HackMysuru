@@ -110,3 +110,37 @@ export const MYSURU_LOCALITIES = [
   'K.G. Koppal',
   'Agrahara',
 ];
+
+/**
+ * Mysuru Municipal / MCC Operational Service Area Bounding Box.
+ * Latitude: 12.15° N to 12.45° N
+ * Longitude: 76.50° E to 76.80° E
+ */
+export const MYSURU_SERVICE_BOUNDS = {
+  MIN_LATITUDE: 12.15,
+  MAX_LATITUDE: 12.45,
+  MIN_LONGITUDE: 76.50,
+  MAX_LONGITUDE: 76.80,
+} as const;
+
+export function isWithinMysuruServiceArea(
+  latitude?: number | null,
+  longitude?: number | null
+): boolean {
+  if (
+    latitude === null ||
+    latitude === undefined ||
+    longitude === null ||
+    longitude === undefined ||
+    isNaN(latitude) ||
+    isNaN(longitude)
+  ) {
+    return false;
+  }
+  return (
+    latitude >= MYSURU_SERVICE_BOUNDS.MIN_LATITUDE &&
+    latitude <= MYSURU_SERVICE_BOUNDS.MAX_LATITUDE &&
+    longitude >= MYSURU_SERVICE_BOUNDS.MIN_LONGITUDE &&
+    longitude <= MYSURU_SERVICE_BOUNDS.MAX_LONGITUDE
+  );
+}

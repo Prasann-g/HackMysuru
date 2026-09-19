@@ -111,12 +111,12 @@ export const Step3Location: React.FC<Step3Props> = ({
             <div>
               <h3 className="text-xs sm:text-sm font-semibold text-bridge-charcoal-900 flex items-center gap-1.5">
                 <span>Auto-Detect Device Location</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-bridge-almond-200 text-bridge-charcoal-700">
-                  Optional
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                  Required
                 </span>
               </h3>
               <p className="text-xs text-bridge-charcoal-600 mt-0.5">
-                Capture browser GPS coordinates for accurate spatial mapping.
+                Device GPS capture is required for verified municipal dispatch.
               </p>
             </div>
           </div>

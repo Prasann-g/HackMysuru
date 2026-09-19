@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
+import sharp from 'sharp';
 import { app } from '../src/index.js';
 
 describe('MCC Officer Verification & Review Dashboard (Step 4.4)', () => {
@@ -49,19 +50,26 @@ describe('MCC Officer Verification & Review Dashboard (Step 4.4)', () => {
     officerToken = offData.token;
 
     // 3. Create a test complaint to inspect and review
+    const sampleImage = await sharp({
+      create: { width: 50, height: 50, channels: 3, background: { r: 30, g: 120, b: 200 } },
+    }).jpeg().toBuffer();
+
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', `Dangerous road crater in Kuvempunagar near Saraswathipuram fire station ${Date.now()}.`);
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('addressText', 'Near Fire Station Signal, Saraswathipuram');
+    form.append('latitude', '12.2905');
+    form.append('longitude', '76.6234');
+    form.append('image', new Blob([sampleImage], { type: 'image/jpeg' }), 'pothole.jpg');
+
     const resComp = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenToken}`,
       },
-      body: JSON.stringify({
-        category: 'pothole',
-        description: `Dangerous road crater in Kuvempunagar near Saraswathipuram fire station ${Date.now()}.`,
-        observedDate: '2026-09-18',
-        locationArea: 'Kuvempunagar',
-        addressText: 'Near Fire Station Signal, Saraswathipuram',
-      }),
+      body: form,
     });
     const compData = await resComp.json();
     testComplaintId = compData.complaint.id;

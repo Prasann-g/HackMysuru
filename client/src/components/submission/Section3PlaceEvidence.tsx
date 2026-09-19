@@ -12,7 +12,7 @@ import {
   X,
   Info,
 } from 'lucide-react';
-import { MYSURU_LOCALITIES, type GpsStatus } from './types';
+import { MYSURU_LOCALITIES, isWithinMysuruServiceArea, type GpsStatus } from './types';
 import { Button } from '../ui/Button';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -182,12 +182,12 @@ export const Section3PlaceEvidence: React.FC<Section3Props> = ({
               <div>
                 <h3 className="text-xs font-semibold text-bridge-charcoal-900 flex items-center gap-1.5">
                   Auto-Detect Device Location
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-bridge-almond-200 text-bridge-charcoal-700">
-                    Optional
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                    Required
                   </span>
                 </h3>
                 <p className="text-xs text-bridge-charcoal-600 mt-0.5">
-                  Capture GPS coordinates for accurate spatial mapping.
+                  Device GPS capture is required for verified municipal dispatch.
                 </p>
               </div>
             </div>
@@ -220,20 +220,37 @@ export const Section3PlaceEvidence: React.FC<Section3Props> = ({
             </button>
           </div>
 
-          {gpsStatus === 'success' && latitude && longitude && (
-            <div className="mt-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-2 animate-fadeIn">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  <strong>GPS Coordinates Detected:</strong> {latitude.toFixed(5)}° N,{' '}
-                  {longitude.toFixed(5)}° E
-                  {gpsAccuracy && ` (Accuracy: ~${gpsAccuracy}m)`}
+          {gpsStatus === 'success' && latitude !== null && longitude !== null && (
+            isWithinMysuruServiceArea(latitude, longitude) ? (
+              <div className="mt-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-2 animate-fadeIn">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>GPS Captured:</strong> {latitude.toFixed(5)}° N,{' '}
+                    {longitude.toFixed(5)}° E
+                    {gpsAccuracy && ` (~${gpsAccuracy}m)`} — Within Mysuru Bounds
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded shrink-0">
+                  Mysuru Verified
                 </span>
               </div>
-              <span className="text-[10px] font-semibold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded shrink-0">
-                Captured
-              </span>
-            </div>
+            ) : (
+              <div className="mt-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-2 animate-fadeIn">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block">Captured Device Location Outside Mysuru Service Area:</strong>
+                    <span>
+                      {latitude.toFixed(5)}° N, {longitude.toFixed(5)}° E. The captured device location is outside the supported Mysuru service area (12.15°–12.45° N, 76.50°–76.80° E). The locality entered below does not override the device GPS location. Submission will be rejected at intake.
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold uppercase bg-rose-100 text-rose-800 px-2 py-0.5 rounded shrink-0">
+                  Out of Bounds
+                </span>
+              </div>
+            )
           )}
 
           {gpsErrorMsg && (
@@ -343,12 +360,12 @@ export const Section3PlaceEvidence: React.FC<Section3Props> = ({
             <h2 className="text-base font-bold text-bridge-charcoal-900">
               Attach Photo Evidence
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-bridge-almond-100 text-bridge-charcoal-600">
-              Optional
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+              Required
             </span>
           </div>
           <p className="text-xs text-bridge-charcoal-600 mt-1">
-            Upload a clear photograph of the civic problem. You can skip this if no photo is available.
+            Upload a clear photograph of the civic problem. Photographic evidence is mandatory for verification.
           </p>
         </div>
 

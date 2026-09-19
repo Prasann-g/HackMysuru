@@ -21,7 +21,12 @@ import {
   computeImageDHash,
 } from '../utils/imageHash.js';
 import { analyzeEvidenceQuality } from '../utils/evidenceQuality.js';
-import type { EvidenceQualityAnalysis } from '../types/verification.js';
+import {
+  validateGeoEvidence,
+  isValidCoordinate,
+  isWithinMysuruServiceArea,
+} from '../utils/geoEvidenceValidator.js';
+import type { EvidenceQualityAnalysis, GeoEvidenceResult } from '../types/verification.js';
 import type {
   ComplaintRecord,
   CreateComplaintInput,
@@ -114,13 +119,56 @@ complaintRouter.post(
       return;
     }
 
+    const rawLat = input.latitude as unknown;
+    const rawLon = input.longitude as unknown;
+    const latNum =
+      rawLat !== undefined && rawLat !== null && rawLat !== '' && !isNaN(Number(rawLat))
+        ? Number(rawLat)
+        : undefined;
+    const lonNum =
+      rawLon !== undefined && rawLon !== null && rawLon !== '' && !isNaN(Number(rawLon))
+        ? Number(rawLon)
+        : undefined;
+
+    // Validation 5: Mandatory Photographic Evidence Gate
+    if (!req.file && !Boolean(input.hasImage)) {
+      res.status(400).json({
+        error: 'Photographic evidence is mandatory for complaint verification. Please attach an image of the civic issue.',
+        code: 'IMAGE_REQUIRED',
+      });
+      return;
+    }
+
+    // Validation 6: Mandatory Application-Captured Device GPS Gate
+    if (latNum === undefined || lonNum === undefined || !isValidCoordinate(latNum, lonNum)) {
+      res.status(400).json({
+        error: 'Device GPS coordinates are required for complaint verification. Please allow location access.',
+        code: 'GPS_REQUIRED',
+      });
+      return;
+    }
+
+    // Validation 7: Mysuru Municipal Service Area Gate (Option B — Reject Intake)
+    // This check happens BEFORE any file processing, disk writes, database inserts, or token generation.
+    // Out-of-jurisdiction complaints must never be created as records.
+    if (!isWithinMysuruServiceArea(latNum, lonNum)) {
+      res.status(400).json({
+        error:
+          'The captured device location is outside the Mysuru municipal service area. The locality entered in the form does not override the device GPS location. Complaints can only be submitted from within the supported Mysuru City Corporation jurisdiction.',
+        code: 'OUT_OF_SERVICE_AREA',
+      });
+      return;
+    }
+
     const now = new Date().toISOString();
     let hasImage = Boolean(input.hasImage);
+
     let imagePath: string | undefined;
     let imageSha256: string | undefined;
     let imagePhash: string | undefined;
     let evidenceMetadata = input.evidenceMetadata;
     let evidenceQuality: EvidenceQualityAnalysis | undefined;
+    let geoEvidence: GeoEvidenceResult | undefined;
     let diskPath: string | undefined;
 
     let magicValidation: ReturnType<typeof validateImageMagicBytes> | undefined;
@@ -138,6 +186,15 @@ complaintRouter.post(
 
       // Evidence Quality & Forensic Signal Evaluation
       evidenceQuality = await analyzeEvidenceQuality(req.file.buffer);
+
+      // Geo-Tagged Evidence Verification
+      geoEvidence = await validateGeoEvidence({
+        hasImage: true,
+        imageBuffer: req.file.buffer,
+        capturedLatitude: latNum,
+        capturedLongitude: lonNum,
+        imageRequired: true,
+      });
 
       // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
       const exactMatches = await complaintStore.findByImageSha256(imageSha256);
@@ -225,6 +282,13 @@ complaintRouter.post(
         submittedAt: now,
         note: 'Uploaded via citizen complaint portal',
       };
+    } else {
+      geoEvidence = await validateGeoEvidence({
+        hasImage: Boolean(input.hasImage),
+        capturedLatitude: latNum,
+        capturedLongitude: lonNum,
+        imageRequired: true,
+      });
     }
 
     const verificationResult = verifyComplaint(
@@ -235,10 +299,13 @@ complaintRouter.post(
         observedDate: input.observedDate,
         locationArea: input.locationArea,
         addressText: input.addressText,
+        latitude: latNum,
+        longitude: lonNum,
         hasImage,
         imageSha256,
         imagePhash,
         evidenceQuality,
+        geoEvidence,
       },
       verificationCandidates
     );
@@ -342,12 +409,36 @@ complaintRouter.get('/track/:token', async (req, res) => {
     customCategory: complaint.customCategory,
     description: complaint.description,
     locationArea: complaint.locationArea,
+    addressText: complaint.addressText,
+    hasImage: complaint.hasImage,
     observedDate: complaint.observedDate,
     status: complaint.status,
     assignedDepartment: complaint.assignedDepartment,
     verificationOutcome: complaint.verificationResult?.outcome,
     duplicateRisk: complaint.verificationResult?.duplicateRisk,
     signals: complaint.verificationResult?.signals || [],
+    recommendedAction: complaint.verificationResult?.recommendedAction,
+    uncertainties: complaint.verificationResult?.uncertainties,
+    limitations: complaint.verificationResult?.limitations,
+    evidenceQuality: complaint.verificationResult?.evidenceQuality
+      ? {
+          qualityScore: complaint.verificationResult.evidenceQuality.qualityScore,
+          sharpness: complaint.verificationResult.evidenceQuality.sharpness,
+          brightness: complaint.verificationResult.evidenceQuality.brightness,
+          contrast: complaint.verificationResult.evidenceQuality.contrast,
+          metadata: complaint.verificationResult.evidenceQuality.metadata,
+          warnings: complaint.verificationResult.evidenceQuality.warnings,
+        }
+      : undefined,
+    geoEvidence: complaint.verificationResult?.geoEvidence
+      ? {
+          status: complaint.verificationResult.geoEvidence.status,
+          reviewRequired: complaint.verificationResult.geoEvidence.reviewRequired,
+          signals: complaint.verificationResult.geoEvidence.signals,
+          withinServiceArea: complaint.verificationResult.geoEvidence.withinServiceArea,
+          distanceMeters: complaint.verificationResult.geoEvidence.distanceMeters,
+        }
+      : undefined,
     isDemo: complaint.isDemo,
     createdAt: complaint.createdAt,
     updatedAt: complaint.updatedAt,

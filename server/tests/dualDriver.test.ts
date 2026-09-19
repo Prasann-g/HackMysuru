@@ -110,7 +110,7 @@ describe('Phase 3: Dual-Driver Repository Architecture', () => {
   });
 
   // 3. Supabase Driver Contract & Live Verification
-  describe('Supabase Driver Operations', () => {
+  describe.skipIf(CONFIG.DATA_STORE !== 'supabase')('Supabase Driver Operations', () => {
     it('retrieves migrated authentic users from Supabase PostgreSQL', async () => {
       const users = await supabaseUserStore.listAll();
       expect(users.length).toBeGreaterThanOrEqual(13);

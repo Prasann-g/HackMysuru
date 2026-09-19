@@ -194,6 +194,8 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     formA.append('description', `Unique garbage collection complaint alpha ${nonce} regarding overflowing containers.`);
     formA.append('observedDate', '2026-03-10');
     formA.append('locationArea', 'Jayalakshmipuram');
+    formA.append('latitude', '12.3150');
+    formA.append('longitude', '76.6450');
     formA.append('image', new Blob([imageBufA], { type: 'image/jpeg' }), 'photoA.jpg');
 
     const resA = await fetch(`${baseUrl}/api/complaints`, {
@@ -213,6 +215,8 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     formB.append('description', `Unique sanitation report beta ${nonce} with distinct vocabulary about street sweeping.`);
     formB.append('observedDate', '2026-03-11');
     formB.append('locationArea', 'Jayalakshmipuram');
+    formB.append('latitude', '12.3150');
+    formB.append('longitude', '76.6450');
     formB.append('image', new Blob([imageBufA], { type: 'image/jpeg' }), 'reused_photo.jpg');
 
     const resB = await fetch(`${baseUrl}/api/complaints`, {
@@ -424,6 +428,8 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     form.append('description', `Flickering street lamp on 5th main road delivery test ${Date.now()}.`);
     form.append('observedDate', '2026-03-10');
     form.append('locationArea', 'Gokulam');
+    form.append('latitude', '12.3150');
+    form.append('longitude', '76.6450');
     form.append('image', new Blob([imageBufDelivery], { type: 'image/jpeg' }), 'lamp.jpg');
 
     const res = await fetch(`${baseUrl}/api/complaints`, {
@@ -544,6 +550,8 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
       form.append('description', 'Test rollback cleanup on database error.');
       form.append('observedDate', '2026-03-10');
       form.append('locationArea', 'Vontikoppal');
+      form.append('latitude', '12.3150');
+      form.append('longitude', '76.6450');
       form.append('image', new Blob([rollbackBuf], { type: 'image/jpeg' }), 'rollback.jpg');
 
       const res = await fetch(`${baseUrl}/api/complaints`, {

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
+import sharp from 'sharp';
 import { app } from '../src/index.js';
 import { seedDemoData, clearSyntheticDemoComplaints } from '../src/db/seedDemoData.js';
 import { complaintStore } from '../src/db/complaintStore.js';
@@ -16,8 +17,29 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   let citizenBUserId: string;
 
   let officerToken: string;
+  let sampleImageBuf: Buffer;
+  let sampleImageBuf2: Buffer;
+  let sampleImageBuf3: Buffer;
 
   beforeAll(async () => {
+    sampleImageBuf = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 50, g: 120, b: 180 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    sampleImageBuf2 = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 120, g: 50, b: 180 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    sampleImageBuf3 = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 180, g: 120, b: 50 } },
+    })
+      .jpeg()
+      .toBuffer();
+
     // Explicitly seed demo records isolated to this test suite
     if (CONFIG.DATA_STORE === 'sqlite') {
       seedDemoData();
@@ -112,20 +134,22 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   let createdTrackingToken: string;
 
   it('allows authenticated citizen to submit complaint and returns tracking token', async () => {
+    const form = new FormData();
+    form.append('category', 'overflowing_bin');
+    form.append('description', 'Large public garbage bin overflowing with plastic containers near bus stand.');
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('addressText', 'Near Kuvempunagar complex bus stand');
+    form.append('latitude', '12.2905');
+    form.append('longitude', '76.6234');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenToken}`,
       },
-      body: JSON.stringify({
-        category: 'overflowing_bin',
-        description: 'Large public garbage bin overflowing with plastic containers near bus stand.',
-        observedDate: '2026-09-18',
-        locationArea: 'Kuvempunagar',
-        addressText: 'Near Kuvempunagar complex bus stand',
-        hasImage: false,
-      }),
+      body: form,
     });
 
     expect(res.status).toBe(201);
@@ -143,7 +167,7 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   });
 
   // 3. Validation Rejections
-  it('rejects complaint with short description (< 10 chars)', async () => {
+  it('rejects complaint when image is missing (HTTP 400 IMAGE_REQUIRED)', async () => {
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
@@ -152,10 +176,77 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       },
       body: JSON.stringify({
         category: 'pothole',
-        description: 'Too short',
+        description: 'Road damage with deep depression near bus terminal.',
         observedDate: '2026-09-18',
-        locationArea: 'Gokulam',
+        locationArea: 'Kuvempunagar',
+        latitude: 12.2905,
+        longitude: 76.6234,
+        hasImage: false,
       }),
+    });
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe('IMAGE_REQUIRED');
+    expect(data.error).toContain('Photographic evidence is mandatory');
+  });
+
+  it('rejects complaint when device GPS coordinates are missing (HTTP 400 GPS_REQUIRED)', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', 'Road damage with deep depression near bus terminal.');
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
+    const res = await fetch(`${baseUrl}/api/complaints`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
+    });
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe('GPS_REQUIRED');
+    expect(data.error).toContain('Device GPS coordinates are required');
+  });
+
+  it('rejects complaint when device GPS coordinates are out of bounds (HTTP 400 GPS_REQUIRED)', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', 'Road damage with deep depression near bus terminal.');
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('latitude', '105.0'); // Invalid latitude > 90
+    form.append('longitude', '76.6234');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
+    const res = await fetch(`${baseUrl}/api/complaints`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
+    });
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe('GPS_REQUIRED');
+    expect(data.error).toContain('Device GPS coordinates are required');
+  });
+
+  it('rejects complaint with short description (< 10 chars)', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', 'Too short');
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Gokulam');
+    form.append('latitude', '12.3250');
+    form.append('longitude', '76.6350');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
+    const res = await fetch(`${baseUrl}/api/complaints`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
     });
 
     expect(res.status).toBe(400);
@@ -164,18 +255,19 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   });
 
   it('rejects complaint with future observed date', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', 'Pothole observed in the distant future.');
+    form.append('observedDate', '2099-01-01');
+    form.append('locationArea', 'Gokulam');
+    form.append('latitude', '12.3250');
+    form.append('longitude', '76.6350');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${citizenToken}`,
-      },
-      body: JSON.stringify({
-        category: 'pothole',
-        description: 'Pothole observed in the distant future.',
-        observedDate: '2099-01-01',
-        locationArea: 'Gokulam',
-      }),
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
     });
 
     expect(res.status).toBe(400);
@@ -184,18 +276,19 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
   });
 
   it('rejects complaint without location area', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', 'Road damage on unknown road.');
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', '   ');
+    form.append('latitude', '12.3250');
+    form.append('longitude', '76.6350');
+    form.append('image', new Blob([sampleImageBuf], { type: 'image/jpeg' }), 'evidence.jpg');
+
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${citizenToken}`,
-      },
-      body: JSON.stringify({
-        category: 'pothole',
-        description: 'Road damage on unknown road.',
-        observedDate: '2026-09-18',
-        locationArea: '   ',
-      }),
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
     });
 
     expect(res.status).toBe(400);
@@ -205,19 +298,24 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
 
   // 4. Verification Engine Integration: Duplicate Detection against Synthetic Seeds
   it('integrates verification engine and detects HIGH duplicate risk against DEMO-2026-0001', async () => {
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append(
+      'description',
+      'Deep road crater on Saraswathipuram Main Road near Kuvempunagar fire station causing traffic slowdown and significant disruption.'
+    );
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('latitude', '12.2855');
+    form.append('longitude', '76.6350');
+    form.append('image', new Blob([sampleImageBuf2], { type: 'image/jpeg' }), 'evidence.jpg');
+
     const res = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenToken}`,
       },
-      body: JSON.stringify({
-        category: 'pothole',
-        description:
-          'Deep road crater on Saraswathipuram Main Road near Kuvempunagar fire station causing traffic slowdown and significant disruption.',
-        observedDate: '2026-09-18',
-        locationArea: 'Kuvempunagar',
-      }),
+      body: form,
     });
 
     expect(res.status).toBe(201);
@@ -233,6 +331,48 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
       expect(vr.outcome).toBe('POSSIBLE_DUPLICATE');
       expect(vr.matches.some((m: any) => m.existingComplaintId === 'DEMO-2026-0001')).toBe(true);
     }
+  });
+
+  it('rejects complaint with out-of-jurisdiction GPS (e.g. Hubballi) at intake (HTTP 400 OUT_OF_SERVICE_AREA) with no complaint/token created', async () => {
+    const sampleImageHubballi = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 90, g: 190, b: 90 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const complaintsBefore = await complaintStore.findByCitizenId(citizenUserId);
+
+    const form = new FormData();
+    form.append('category', 'pothole');
+    form.append('description', `Pothole reported near railway station road entrance ${Date.now()}.`);
+    form.append('observedDate', '2026-09-18');
+    form.append('locationArea', 'Kuvempunagar');
+    form.append('latitude', '15.3647'); // Hubballi (~400km from Mysuru)
+    form.append('longitude', '75.1240');
+    form.append('image', new Blob([sampleImageHubballi], { type: 'image/jpeg' }), 'evidence.jpg');
+
+    const res = await fetch(`${baseUrl}/api/complaints`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${citizenToken}` },
+      body: form,
+    });
+
+    // 1. Rejection response
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe('OUT_OF_SERVICE_AREA');
+    expect(data.error).toContain('outside the Mysuru municipal service area');
+
+    // 2. Safeguards: No complaint or token generated
+    expect(data.complaint).toBeUndefined();
+    expect(data.trackingToken).toBeUndefined();
+
+    // 3. Database Safeguard: No complaint record created in store
+    const complaintsAfter = await complaintStore.findByCitizenId(citizenUserId);
+    expect(complaintsAfter.length).toBe(complaintsBefore.length);
+
+    // 4. No department assigned
+    expect((data as any).assignedDepartment).toBeUndefined();
   });
 
   // 5. Citizen Ownership Isolation
@@ -252,18 +392,21 @@ describe('Civic Trust Complaint Persistence Store & Synthetic Demo Repository (S
 
   it('prevents Citizen A from viewing Citizen B single complaint (403 Forbidden)', async () => {
     // 1. Citizen B creates complaint
+    const formB = new FormData();
+    formB.append('category', 'broken_streetlight');
+    formB.append('description', 'Dark unlit street pole in Gokulam 2nd Stage.');
+    formB.append('observedDate', '2026-09-18');
+    formB.append('locationArea', 'Gokulam');
+    formB.append('latitude', '12.3250');
+    formB.append('longitude', '76.6350');
+    formB.append('image', new Blob([sampleImageBuf3], { type: 'image/jpeg' }), 'lamp.jpg');
+
     const resB = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${citizenBToken}`,
       },
-      body: JSON.stringify({
-        category: 'broken_streetlight',
-        description: 'Dark unlit street pole in Gokulam 2nd Stage.',
-        observedDate: '2026-09-18',
-        locationArea: 'Gokulam',
-      }),
+      body: formB,
     });
     const { complaint: complaintB } = await resB.json();
 
