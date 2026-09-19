@@ -7,35 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          teal: {
-            50: '#f0fdfa',
-            100: '#ccfbf1',
-            200: '#99f6e4',
-            300: '#5eead4',
-            400: '#2dd4bf',
-            500: '#14b8a6',
-            600: '#0d9488',
-            700: '#0f766e',
-            800: '#115e59',
-            900: '#134e4a',
-          },
-          mint: {
-            50: '#f4fbf9',
-            100: '#e6f7f3',
-            200: '#c5efe4',
-            300: '#9fe3d1',
-          },
-          slate: {
-            50: '#f8fafc',
-            100: '#f1f5f9',
-            200: '#e2e8f0',
-            300: '#cbd5e1',
-            600: '#475569',
-            700: '#334155',
-            800: '#1e293b',
-            900: '#0f172a',
-          }
+        surface: {
+          ivory: '#FAF8F5',
+          cream: '#FDFBF7',
+          white: '#FFFFFF',
+          warmGray: '#F4F1EA',
+          border: '#EAE5DB',
         },
         signal: {
           verified: {
@@ -116,6 +93,7 @@ export default {
         'civic-lg': '0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.04)',
         'bridge-sm': '0 1px 2px 0 rgba(28, 30, 33, 0.04)',
         'bridge-card': '0 2px 4px 0 rgba(28, 30, 33, 0.04), 0 1px 2px 0 rgba(28, 30, 33, 0.02)',
+        'bridge-card-hover': '0 6px 16px -2px rgba(28, 30, 33, 0.08), 0 2px 6px -1px rgba(28, 30, 33, 0.04)',
         'bridge-modal': '0 12px 32px -4px rgba(28, 30, 33, 0.12), 0 4px 12px -2px rgba(28, 30, 33, 0.06)',
       }
     },

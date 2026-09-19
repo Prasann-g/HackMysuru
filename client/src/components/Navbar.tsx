@@ -8,7 +8,6 @@ import {
   UserCheck,
   Building2,
   PlusCircle,
-  ShieldCheck,
   FileSearch,
 } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -16,7 +15,7 @@ import { Badge } from './ui/Badge';
 import { BrandLogo } from './common/BrandLogo';
 import type { CitizenUser } from '../types/auth';
 
-export type NavTab = 'home' | 'dashboard' | 'officer' | 'submit' | 'track' | 'analytics';
+export type NavTab = 'home' | 'dashboard' | 'officer' | 'submit' | 'track' | 'analytics' | 'my-complaints';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -27,6 +26,7 @@ interface NavbarProps {
   onOpenProfile: () => void;
   onOpenReportGrievance?: () => void;
   onOpenTrackGrievance?: () => void;
+  onSelectCitizenTab?: (tab: 'home' | 'my-complaints' | 'map') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -38,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenProfile,
   onOpenReportGrievance,
   onOpenTrackGrievance,
+  onSelectCitizenTab,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -58,6 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       onTabChange('officer');
     } else if (currentUser?.role === 'CITIZEN') {
       onTabChange('dashboard');
+      if (onSelectCitizenTab) onSelectCitizenTab('home');
     } else {
       onTabChange('home');
     }
@@ -66,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-bridge-almond-200 shadow-bridge-sm">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-bridge-almond-200 shadow-bridge-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Name */}
@@ -80,25 +82,75 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          {/* Desktop Center Context Indicator (Zero separate page links when authenticated) */}
-          <div className="hidden md:flex items-center gap-2">
-            {currentUser?.role === 'OFFICER' ? (
+          {/* Desktop Center Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold" aria-label="Main Navigation">
+            {currentUser?.role === 'CITIZEN' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onTabChange('dashboard');
+                    if (onSelectCitizenTab) onSelectCitizenTab('home');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                    activeTab === 'dashboard'
+                      ? 'text-bridge-charcoal-900 bg-surface-warmGray font-bold shadow-2xs border border-bridge-almond-300'
+                      : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100/70'
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenReportGrievance) onOpenReportGrievance();
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100/70 transition-all duration-150 cursor-pointer flex items-center gap-1.5"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 text-bridge-gold-600" />
+                  <span>Report Issue</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onTabChange('dashboard');
+                    if (onSelectCitizenTab) onSelectCitizenTab('my-complaints');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                    activeTab === 'my-complaints'
+                      ? 'text-bridge-charcoal-900 bg-surface-warmGray font-bold shadow-2xs border border-bridge-almond-300'
+                      : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100/70'
+                  }`}
+                >
+                  My Complaints
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenTrackGrievance) onOpenTrackGrievance();
+                    else onTabChange('track');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                    activeTab === 'track'
+                      ? 'text-bridge-charcoal-900 bg-surface-warmGray font-bold shadow-2xs border border-bridge-almond-300'
+                      : 'text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100/70'
+                  }`}
+                >
+                  Track
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenProfile}
+                  className="px-3 py-1.5 rounded-lg text-bridge-charcoal-600 hover:text-bridge-charcoal-900 hover:bg-bridge-almond-100/70 transition-all duration-150 cursor-pointer"
+                >
+                  Profile
+                </button>
+              </>
+            ) : currentUser?.role === 'OFFICER' ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-700 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-800 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-bridge-gold-700" />
-                  <span>MCC Verification Console</span>
-                </span>
-                {currentUser.ward && (
-                  <span className="text-xs text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-0.5 rounded-full">
-                    Ward: {currentUser.ward}
-                  </span>
-                )}
-              </div>
-            ) : currentUser?.role === 'CITIZEN' ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-700 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-bridge-gold-700" />
-                  <span>Mysuru Citizen Workspace</span>
+                  <span>MCC Operations Console</span>
                 </span>
                 {currentUser.ward && (
                   <span className="text-xs text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-0.5 rounded-full">
@@ -107,33 +159,39 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1 text-xs text-bridge-charcoal-500">
-                <span>Mysuru City Corporation</span>
-                <span>•</span>
-                <span>Explainable Civic Verification Platform</span>
+              <div className="flex items-center gap-4 text-xs">
+                <a
+                  href="#how-it-works"
+                  className="text-bridge-charcoal-600 hover:text-bridge-charcoal-900 transition-colors"
+                >
+                  How It Works
+                </a>
+                <a
+                  href="#transparency"
+                  className="text-bridge-charcoal-600 hover:text-bridge-charcoal-900 transition-colors"
+                >
+                  Evidence &amp; Transparency
+                </a>
               </div>
             )}
-          </div>
+          </nav>
 
           {/* Desktop Authentication / Action Area */}
           <div className="hidden md:flex items-center gap-2.5">
-            {/* Track Grievance Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (onOpenTrackGrievance) onOpenTrackGrievance();
-                else onTabChange('track');
-              }}
-              icon={<FileSearch className="w-3.5 h-3.5 text-bridge-gold-700" />}
-              className={`border-bridge-gold-300 transition-all font-semibold shadow-2xs ${
-                activeTab === 'track'
-                  ? 'bg-bridge-gold-100 text-bridge-gold-900 ring-2 ring-bridge-gold-400/20'
-                  : 'bg-bridge-gold-50/70 hover:bg-bridge-gold-100 text-bridge-charcoal-900'
-              }`}
-            >
-              Track Grievance
-            </Button>
+            {/* Track Grievance Button for Guest */}
+            {!currentUser && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (onOpenTrackGrievance) onOpenTrackGrievance();
+                  else onTabChange('track');
+                }}
+                icon={<FileSearch className="w-3.5 h-3.5 text-bridge-gold-700" />}
+              >
+                Track Complaint
+              </Button>
+            )}
 
             {currentUser ? (
               <div className="flex items-center gap-3">
@@ -303,37 +361,67 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </Badge>
               </div>
 
-              {currentUser.role === 'CITIZEN' && onOpenReportGrievance && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenReportGrievance();
-                  }}
-                  icon={<PlusCircle className="w-4 h-4" />}
-                >
-                  Report Grievance
-                </Button>
+              {currentUser.role === 'CITIZEN' && (
+                <div className="space-y-1.5 pt-1 border-t border-bridge-almond-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onTabChange('dashboard');
+                      if (onSelectCitizenTab) onSelectCitizenTab('home');
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
+                      activeTab === 'dashboard'
+                        ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold'
+                        : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
+                    }`}
+                  >
+                    <span>Home Overview</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (onOpenReportGrievance) onOpenReportGrievance();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 text-bridge-gold-800 bg-bridge-gold-50 hover:bg-bridge-gold-100 transition-colors"
+                  >
+                    <PlusCircle className="w-4 h-4 text-bridge-gold-700" />
+                    <span>Report Issue</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onTabChange('dashboard');
+                      if (onSelectCitizenTab) onSelectCitizenTab('my-complaints');
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
+                      activeTab === 'my-complaints'
+                        ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold'
+                        : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
+                    }`}
+                  >
+                    <span>My Complaints</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (onOpenTrackGrievance) onOpenTrackGrievance();
+                      else onTabChange('track');
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
+                      activeTab === 'track'
+                        ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold border border-bridge-gold-300'
+                        : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
+                    }`}
+                  >
+                    <FileSearch className="w-4 h-4 text-bridge-gold-700" />
+                    <span>Track Grievance</span>
+                  </button>
+                </div>
               )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (onOpenTrackGrievance) onOpenTrackGrievance();
-                  else onTabChange('track');
-                }}
-                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors ${
-                  activeTab === 'track'
-                    ? 'bg-bridge-gold-100 text-bridge-gold-900 font-bold border border-bridge-gold-300'
-                    : 'text-bridge-charcoal-700 hover:bg-bridge-almond-100'
-                }`}
-              >
-                <FileSearch className="w-4 h-4 text-bridge-gold-700" />
-                <span>Track Grievance</span>
-              </button>
 
               <div className="pt-2 border-t border-bridge-almond-200 flex items-center justify-between text-xs">
                 <button

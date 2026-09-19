@@ -559,6 +559,14 @@ export function verifyComplaint(
     );
   }
 
+  // 5. Temporal Evidence Signals & Limitations Integration
+  if (input.temporalEvidence) {
+    const temp = input.temporalEvidence;
+    signals.push(...temp.signals);
+    uncertainties.push(...temp.uncertainties);
+    limitations.push(...temp.limitations);
+  }
+
   // Synthesize Final Outcome & Recommended Next Action
   let outcome: VerificationResult['outcome'] = 'RECOMMENDED_VERIFIED';
   let recommendedAction = 'Proceed with ward engineer review and department assignment.';
@@ -589,8 +597,24 @@ export function verifyComplaint(
     recommendedAction = `Review similarities with ${matches[0].existingComplaintId} before dispatching field team.`;
   } else if (imageComparisonSignal === 'EXACT_IMAGE_REUSE' || imageComparisonSignal === 'LIKELY_VISUAL_SIMILARITY') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
-    const matchedImageCandidate = matches.find((m) => m.imageMatch)?.existingComplaintId || 'existing grievance';
-    recommendedAction = `Officer visual review recommended: Image reuse signal detected (${imageComparisonSignal.replace(/_/g, ' ')}) matching complaint #${matchedImageCandidate}. Inspect evidence photos before field dispatch.`;
+    recommendedAction = `Officer visual review recommended: Image reuse signal detected (${imageComparisonSignal.replace(/_/g, ' ')}) matching complaint #${matches.find((m) => m.imageMatch)?.existingComplaintId || 'existing grievance'}. Inspect evidence photos before field dispatch.`;
+  } else if (input.temporalEvidence && input.temporalEvidence.status === 'FUTURE_DATED') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction =
+      'Officer review required: photographic evidence capture timestamp is future-dated relative to submission. Verify evidence timing and device clock integrity before field dispatch.';
+  } else if (input.temporalEvidence && input.temporalEvidence.status === 'EXCESSIVE_AGE') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction =
+      'Officer review recommended: photographic evidence was captured over 180 days prior to complaint submission. Inspect physical site to determine current defect status.';
+  } else if (input.temporalEvidence && input.temporalEvidence.status === 'DISCREPANCY') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction =
+      'Officer review recommended: photographic evidence timestamp diverges by >30 days from citizen-reported observed date. Verify defect recency on-site.';
+  } else if (input.temporalEvidence && input.temporalEvidence.status === 'INVALID') {
+    outcome = 'REQUIRES_HUMAN_REVIEW';
+    recommendedAction = input.temporalEvidence.signals.some((s) => s.includes('TEMPORAL_INVALID_OBSERVED_DATE'))
+      ? 'Officer review required: citizen-reported incident observed date is malformed or an invalid calendar date. Verify occurrence timeframe with citizen.'
+      : 'Officer review recommended: attached photographic evidence contains corrupted or unparseable capture timestamp metadata.';
   } else if (input.geoEvidence && input.geoEvidence.status === 'MISMATCH') {
     outcome = 'REQUIRES_HUMAN_REVIEW';
     recommendedAction = `Officer review recommended: attached photo EXIF GPS diverges from reported complaint coordinates (${input.geoEvidence.distanceMeters ?? '>1500'}m). Inspect physical site to verify actual location.`;
@@ -639,6 +663,7 @@ export function verifyComplaint(
     },
     evidenceQuality: input.evidenceQuality,
     geoEvidence: input.geoEvidence,
+    temporalEvidence: input.temporalEvidence,
     processedAt: new Date().toISOString(),
   };
 }

@@ -26,7 +26,14 @@ import {
   isValidCoordinate,
   isWithinMysuruServiceArea,
 } from '../utils/geoEvidenceValidator.js';
-import type { EvidenceQualityAnalysis, GeoEvidenceResult } from '../types/verification.js';
+import { validateTemporalEvidence } from '../utils/temporalEvidenceValidator.js';
+import { calculateSlaMetrics } from '../utils/slaBenchmarks.js';
+import { followthroughRepository } from '../modules/followthrough/followthrough.repository.js';
+import type {
+  EvidenceQualityAnalysis,
+  GeoEvidenceResult,
+  TemporalEvidenceResult,
+} from '../types/verification.js';
 import type {
   ComplaintRecord,
   CreateComplaintInput,
@@ -169,6 +176,7 @@ complaintRouter.post(
     let evidenceMetadata = input.evidenceMetadata;
     let evidenceQuality: EvidenceQualityAnalysis | undefined;
     let geoEvidence: GeoEvidenceResult | undefined;
+    let temporalEvidence: TemporalEvidenceResult | undefined;
     let diskPath: string | undefined;
 
     let magicValidation: ReturnType<typeof validateImageMagicBytes> | undefined;
@@ -194,6 +202,14 @@ complaintRouter.post(
         capturedLatitude: latNum,
         capturedLongitude: lonNum,
         imageRequired: true,
+      });
+
+      // Temporal Evidence Verification (EXIF Capture Date vs Observed vs Submission)
+      temporalEvidence = validateTemporalEvidence({
+        hasImage: true,
+        rawExifDateTime: evidenceQuality?.metadata?.dateTimeOriginal,
+        submissionDate: now,
+        observedDate: input.observedDate,
       });
 
       // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
@@ -289,6 +305,11 @@ complaintRouter.post(
         capturedLongitude: lonNum,
         imageRequired: true,
       });
+      temporalEvidence = validateTemporalEvidence({
+        hasImage: false,
+        submissionDate: now,
+        observedDate: input.observedDate,
+      });
     }
 
     const verificationResult = verifyComplaint(
@@ -306,6 +327,7 @@ complaintRouter.post(
         imagePhash,
         evidenceQuality,
         geoEvidence,
+        temporalEvidence,
       },
       verificationCandidates
     );
@@ -341,6 +363,25 @@ complaintRouter.post(
     let saved: ComplaintRecord;
     try {
       saved = await complaintStore.create(newComplaint);
+
+      // Record initial activity log for Follow-through lifecycle tracking (only after create succeeds)
+      try {
+        await followthroughRepository.logActivity({
+          id: `ACT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          complaintId: saved.id,
+          eventType: 'COMPLAINT_CREATED',
+          sourceTable: 'complaints',
+          sourceRecordId: saved.id,
+          actorId: req.user!.userId,
+          actorName: req.user?.email,
+          actorRole: 'CITIZEN',
+          newStatus: 'SUBMITTED',
+          notes: 'Complaint registered by citizen.',
+          createdAt: now,
+        });
+      } catch (logErr: any) {
+        console.error('[complaintRoutes] Failed to log initial activity:', logErr.message);
+      }
 
       // In Supabase mode, also sync image to Supabase Storage
       if (req.file && diskPath && CONFIG.DATA_STORE === 'supabase') {
@@ -439,6 +480,30 @@ complaintRouter.get('/track/:token', async (req, res) => {
           distanceMeters: complaint.verificationResult.geoEvidence.distanceMeters,
         }
       : undefined,
+    temporalEvidence: complaint.verificationResult?.temporalEvidence
+      ? {
+          status: complaint.verificationResult.temporalEvidence.status,
+          hasTimestamp: complaint.verificationResult.temporalEvidence.hasTimestamp,
+          exifDateTime: complaint.verificationResult.temporalEvidence.exifDateTime,
+          parsedCaptureDate: complaint.verificationResult.temporalEvidence.parsedCaptureDate,
+          reviewRequired: complaint.verificationResult.temporalEvidence.reviewRequired,
+          signals: complaint.verificationResult.temporalEvidence.signals,
+          diffDaysWithObservedDate:
+            complaint.verificationResult.temporalEvidence.diffDaysWithObservedDate,
+          evidenceAgeDays: complaint.verificationResult.temporalEvidence.evidenceAgeDays,
+        }
+      : undefined,
+    slaTracking: (() => {
+      const sla = calculateSlaMetrics(complaint.category, complaint.createdAt);
+      return {
+        slaTargetHours: sla.slaTargetHours,
+        elapsedHours: sla.elapsedHours,
+        remainingHours: sla.remainingHours,
+        slaProgressPercent: sla.slaProgressPercent,
+        status: sla.status,
+        standardResolutionWindow: sla.standardResolutionWindow,
+      };
+    })(),
     isDemo: complaint.isDemo,
     createdAt: complaint.createdAt,
     updatedAt: complaint.updatedAt,

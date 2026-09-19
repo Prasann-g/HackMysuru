@@ -107,6 +107,31 @@ export interface GeoEvidenceResult {
   limitations: string[];
 }
 
+export type TemporalEvidenceStatus =
+  | 'VALID'
+  | 'MISSING'
+  | 'FUTURE_DATED'
+  | 'DISCREPANCY'
+  | 'EXCESSIVE_AGE'
+  | 'INVALID'
+  | 'UNAVAILABLE';
+
+export interface TemporalEvidenceResult {
+  hasTimestamp: boolean;
+  exifDateTime?: string;
+  parsedCaptureDate?: string;
+  submissionDate: string;
+  observedDate: string;
+  status: TemporalEvidenceStatus;
+  diffMinutesWithSubmission?: number;
+  diffDaysWithObservedDate?: number;
+  evidenceAgeDays?: number;
+  reviewRequired: boolean;
+  signals: string[];
+  uncertainties: string[];
+  limitations: string[];
+}
+
 export interface VerificationResult {
   outcome: VerificationOutcome;
   duplicateRisk: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -135,6 +160,7 @@ export interface VerificationResult {
   };
   evidenceQuality?: EvidenceQualityAnalysis;
   geoEvidence?: GeoEvidenceResult;
+  temporalEvidence?: TemporalEvidenceResult;
   validationErrors?: string[];
   processedAt: string;
 }
@@ -154,6 +180,7 @@ export interface ComplaintInput {
   imagePhash?: string;
   evidenceQuality?: EvidenceQualityAnalysis;
   geoEvidence?: GeoEvidenceResult;
+  temporalEvidence?: TemporalEvidenceResult;
 }
 
 export interface ExistingComplaint {

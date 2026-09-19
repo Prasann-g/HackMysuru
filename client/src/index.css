@@ -126,9 +126,21 @@
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
   }
   .civic-interactive-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(28, 30, 33, 0.08), 0 2px 6px -1px rgba(28, 30, 33, 0.04);
     border-color: #d9b96e;
+  }
+
+  /* Professional soft card elevation */
+  .civic-card {
+    background: #ffffff;
+    border: 1px solid #EAE2D5;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px 0 rgba(28, 30, 33, 0.04), 0 1px 2px 0 rgba(28, 30, 33, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .civic-card:hover {
+    box-shadow: 0 6px 16px -2px rgba(28, 30, 33, 0.08), 0 2px 6px -1px rgba(28, 30, 33, 0.04);
   }
 
   /* Accessible form input focus and hover transition */
@@ -144,6 +156,22 @@
     outline: none;
   }
 
+  /* Custom Warm Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FAF6F0;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #DED3C4;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CFC0AD;
+  }
+
   /* Accessibility: Reduced-motion preference support */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -156,3 +184,167 @@
     }
   }
 }
+
+/* ============================================================
+   FLOWING BACKGROUND — CivicBridge ambient decorative layer
+   To disable entirely: remove <FlowingBackground /> from App.tsx.
+   These styles affect no layout, stacking context, or interactions.
+   ============================================================ */
+
+/* === Root container — fixed behind everything === */
+.civic-flow-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* === Shared shape defaults === */
+.civic-flow-shape {
+  position: absolute;
+  will-change: transform;
+}
+
+/*
+ * Shape 1 — Warm champagne-gold sweep, top-left
+ * Large elongated form that drifts slowly rightward and down.
+ */
+.civic-flow-shape-1 {
+  top: -18vh;
+  left: -20vw;
+  width: 100vw;
+  height: 72vh;
+  background: radial-gradient(
+    ellipse 70% 50% at 50% 50%,
+    rgba(197, 160, 89, 0.22) 0%,
+    rgba(215, 185, 120, 0.11) 55%,
+    transparent 100%
+  );
+  border-radius: 73% 27% 65% 35% / 38% 62% 44% 56%;
+  filter: blur(60px);
+  animation: civic-flow-drift-1 26s ease-in-out infinite alternate;
+}
+
+/*
+ * Shape 2 — Translucent charcoal wave, center-right band
+ * Wide and very flat — diffuse horizon layer.
+ */
+.civic-flow-shape-2 {
+  top: 22vh;
+  left: 15vw;
+  width: 110vw;
+  height: 60vh;
+  background: radial-gradient(
+    ellipse 80% 40% at 55% 50%,
+    rgba(28, 30, 33, 0.13) 0%,
+    rgba(45, 49, 57, 0.06) 60%,
+    transparent 100%
+  );
+  border-radius: 42% 58% 35% 65% / 60% 40% 68% 32%;
+  filter: blur(80px);
+  animation: civic-flow-drift-2 32s ease-in-out infinite alternate;
+}
+
+/*
+ * Shape 3 — Warm beige organic mass, lower-left
+ * Slightly warmer tone for visual depth near the footer.
+ */
+.civic-flow-shape-3 {
+  bottom: -15vh;
+  left: -15vw;
+  width: 85vw;
+  height: 78vh;
+  background: radial-gradient(
+    ellipse 60% 55% at 45% 52%,
+    rgba(185, 165, 135, 0.28) 0%,
+    rgba(205, 185, 155, 0.14) 55%,
+    transparent 100%
+  );
+  border-radius: 55% 45% 70% 30% / 45% 55% 38% 62%;
+  filter: blur(65px);
+  animation: civic-flow-drift-3 28s ease-in-out infinite alternate;
+}
+
+/*
+ * Shape 4 — Champagne accent arc, upper-right corner
+ * Smaller, concentrated; provides a soft focal point.
+ */
+.civic-flow-shape-4 {
+  top: -10vh;
+  right: -18vw;
+  width: 75vw;
+  height: 65vh;
+  background: radial-gradient(
+    ellipse 65% 50% at 50% 48%,
+    rgba(197, 160, 89, 0.18) 0%,
+    rgba(223, 190, 122, 0.08) 50%,
+    transparent 100%
+  );
+  border-radius: 38% 62% 52% 48% / 66% 34% 60% 40%;
+  filter: blur(72px);
+  animation: civic-flow-drift-4 22s ease-in-out infinite alternate;
+}
+
+/*
+ * Shape 5 — Faint mid-crossing wave for depth layering
+ * Stretches diagonally to break uniform flatness.
+ */
+.civic-flow-shape-5 {
+  top: 40vh;
+  left: -10vw;
+  width: 120vw;
+  height: 45vh;
+  background: radial-gradient(
+    ellipse 90% 35% at 48% 50%,
+    rgba(197, 160, 89, 0.10) 0%,
+    rgba(185, 165, 135, 0.05) 65%,
+    transparent 100%
+  );
+  border-radius: 64% 36% 48% 52% / 32% 68% 40% 60%;
+  filter: blur(100px);
+  animation: civic-flow-drift-5 38s ease-in-out infinite alternate;
+}
+
+/* === Keyframe drifts — gentle XY translation + micro-rotation === */
+
+@keyframes civic-flow-drift-1 {
+  0%   { transform: translateX(0px)   translateY(0px)   rotate(0deg); }
+  30%  { transform: translateX(38px)  translateY(-24px) rotate(1.2deg); }
+  60%  { transform: translateX(22px)  translateY(16px)  rotate(-0.8deg); }
+  100% { transform: translateX(-18px) translateY(30px)  rotate(1.8deg); }
+}
+
+@keyframes civic-flow-drift-2 {
+  0%   { transform: translateX(0px)   translateY(0px)   rotate(0deg); }
+  25%  { transform: translateX(-30px) translateY(20px)  rotate(-1.4deg); }
+  70%  { transform: translateX(40px)  translateY(-18px) rotate(0.9deg); }
+  100% { transform: translateX(15px)  translateY(28px)  rotate(-1.6deg); }
+}
+
+@keyframes civic-flow-drift-3 {
+  0%   { transform: translateX(0px)   translateY(0px)   rotate(0deg); }
+  40%  { transform: translateX(26px)  translateY(-32px) rotate(2.0deg); }
+  75%  { transform: translateX(-14px) translateY(-10px) rotate(-1.1deg); }
+  100% { transform: translateX(32px)  translateY(22px)  rotate(1.4deg); }
+}
+
+@keyframes civic-flow-drift-4 {
+  0%   { transform: translateX(0px)   translateY(0px)   rotate(0deg); }
+  35%  { transform: translateX(-22px) translateY(18px)  rotate(-1.6deg); }
+  65%  { transform: translateX(16px)  translateY(-26px) rotate(1.0deg); }
+  100% { transform: translateX(-30px) translateY(14px)  rotate(-2.2deg); }
+}
+
+@keyframes civic-flow-drift-5 {
+  0%   { transform: translateX(0px)   translateY(0px)   rotate(0deg); }
+  50%  { transform: translateX(50px)  translateY(-20px) rotate(1.5deg); }
+  100% { transform: translateX(-25px) translateY(30px)  rotate(-1.0deg); }
+}
+
+/*
+ * prefers-reduced-motion: The global rule in @layer utilities above
+ * sets animation-duration to 0.01ms for all elements, which effectively
+ * freezes the flowing shapes without any extra code here.
+ */

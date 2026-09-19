@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   MapPin,
   BarChart3,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardHeader, CardBody } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -32,6 +34,8 @@ interface CitizenDashboardProps {
   onNavigateToTrack?: (token: string) => void;
   onNavigateToAnalytics?: () => void;
   initialOpenReportModal?: boolean;
+  activeSection?: 'home' | 'my-complaints' | 'map';
+  onSectionChange?: (section: 'home' | 'my-complaints' | 'map') => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -71,6 +75,8 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   currentUser,
   onNavigateToTrack,
   initialOpenReportModal = false,
+  activeSection = 'home',
+  onSectionChange,
 }) => {
   const [complaints, setComplaints] = useState<ComplaintRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +86,12 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Integrated Dashboard Views: 'ledger' or 'map'
-  const [activeView, setActiveView] = useState<'ledger' | 'map'>('ledger');
+  // Fully controlled by parent; user clicks bubble up via onSectionChange
+  const currentSection = activeSection;
+
+  const handleSwitchSection = (sec: 'home' | 'my-complaints' | 'map') => {
+    onSectionChange?.(sec);
+  };
 
   // Integrated Modal & Drawer States
   const [isReportModalOpen, setIsReportModalOpen] = useState(initialOpenReportModal);
@@ -167,6 +177,135 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
     });
   }, [complaints, statusFilter, searchQuery]);
 
+  // Renders a "Simple First, Details Second" card for a complaint
+  const renderComplaintCard = (item: ComplaintRecord) => {
+    const statusInfo = STATUS_CONFIG[item.status] || {
+      label: item.status,
+      variant: 'neutral',
+    };
+    const catBadgeClass = CATEGORY_BADGES[item.category] || CATEGORY_BADGES.other;
+    const formattedDate = new Date(item.createdAt).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    // Resolution Risk calculation
+    const isAtRisk =
+      item.delayRisk?.riskLevel === 'HIGH' || item.delayRisk?.slaStatus === 'AT_RISK';
+    const isBreached =
+      item.delayRisk?.riskLevel === 'BREACHED' || item.delayRisk?.slaStatus === 'BREACHED';
+    const isResolved = item.status === 'RESOLVED' || item.status === 'CLOSED';
+
+    return (
+      <div
+        key={item.id}
+        className="p-5 sm:p-6 bg-white hover:bg-bridge-ivory-50/70 border-b border-bridge-almond-100 last:border-b-0 border-l-4 border-l-transparent hover:border-l-bridge-gold-500 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+      >
+        {/* Left Details */}
+        <div className="space-y-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Tracking Token */}
+            <div className="flex items-center gap-1.5 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-1 rounded-lg text-xs font-mono font-bold text-bridge-charcoal-800">
+              <span>{item.trackingToken}</span>
+              <button
+                onClick={() => handleCopy(item.trackingToken)}
+                className="text-bridge-charcoal-400 hover:text-bridge-gold-700 active:scale-90 transition-all p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
+                title="Copy tracking token"
+              >
+                {copiedToken === item.trackingToken ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
+            {/* Category Badge */}
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${catBadgeClass}`}
+            >
+              {CATEGORY_LABELS[item.category] || item.category}
+            </span>
+
+            {/* Lifecycle Status */}
+            <Badge variant={statusInfo.variant} size="sm">
+              {statusInfo.label}
+            </Badge>
+
+            {/* Single Demo Tag if applicable */}
+            {item.isDemo && (
+              <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md">
+                Demo Record
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <p className="text-xs sm:text-sm text-bridge-charcoal-800 font-medium line-clamp-2 leading-relaxed">
+            {item.description}
+          </p>
+
+          {/* Metadata & Governance Signals Row */}
+          <div className="flex items-center gap-3 sm:gap-4 text-xs text-bridge-charcoal-500 flex-wrap pt-1">
+            <span>
+              <strong className="text-bridge-charcoal-700 font-semibold">Location:</strong>{' '}
+              {item.locationArea} {item.addressText ? `(${item.addressText})` : ''}
+            </span>
+            <span>•</span>
+            <span>
+              <strong className="text-bridge-charcoal-700 font-semibold">Reported:</strong>{' '}
+              {formattedDate}
+            </span>
+
+            {/* SLA Turnaround */}
+            {item.delayRisk && (
+              <>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 font-medium text-bridge-charcoal-700">
+                  <Clock className="w-3.5 h-3.5 text-bridge-gold-700" />
+                  <span>
+                    SLA: {item.delayRisk.remainingHours > 0 ? `${item.delayRisk.remainingHours}h remaining` : 'Elapsed'}
+                  </span>
+                </span>
+              </>
+            )}
+
+            {/* Resolution Risk */}
+            <span>•</span>
+            <span className="inline-flex items-center gap-1 font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-bridge-gold-700" />
+              <span>
+                Risk:{' '}
+                {isResolved ? (
+                  <span className="text-emerald-700">Resolved</span>
+                ) : isBreached ? (
+                  <span className="text-rose-700 font-bold">Breached</span>
+                ) : isAtRisk ? (
+                  <span className="text-amber-700 font-bold">Needs Attention</span>
+                ) : (
+                  <span className="text-emerald-700">On Track</span>
+                )}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {/* Right Action: Open Inline Drawer */}
+        <div className="shrink-0 flex items-center gap-2 pt-2 lg:pt-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenTracker(item.trackingToken)}
+            icon={<ChevronRight className="w-3.5 h-3.5" />}
+          >
+            View Timeline &amp; Details
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       {/* 1. Welcome & Citizen Profile Header */}
@@ -190,8 +329,8 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
             <h1 className="text-2xl sm:text-3xl font-extrabold text-bridge-charcoal-900 tracking-tight">
               Welcome back, {currentUser.name}
             </h1>
-            <p className="text-xs sm:text-sm text-bridge-charcoal-600 max-w-2xl">
-              Track your reported civic grievances, review AI-guided verification outcomes, and submit new issues directly to Mysuru City Corporation.
+            <p className="text-xs sm:text-sm text-bridge-charcoal-600 max-w-2xl leading-relaxed">
+              Track your reported civic grievances, review evidence-backed verification outcomes, and submit new issues directly to Mysuru City Corporation.
             </p>
           </div>
 
@@ -205,12 +344,12 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
               Refresh
             </Button>
             <Button
-              variant="primary"
+              variant="gold"
               size="md"
               onClick={() => setIsReportModalOpen(true)}
               icon={<PlusCircle className="w-4 h-4" />}
             >
-              Report Grievance
+              Report an Issue
             </Button>
           </div>
         </div>
@@ -218,7 +357,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
 
       {/* 2. Executive Grievance KPI Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card hoverable>
+        <Card hoverable className="border-bridge-almond-200">
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -237,7 +376,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
           </CardBody>
         </Card>
 
-        <Card hoverable>
+        <Card hoverable className="border-bridge-almond-200">
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -256,7 +395,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
           </CardBody>
         </Card>
 
-        <Card hoverable>
+        <Card hoverable className="border-bridge-almond-200">
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -275,7 +414,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
           </CardBody>
         </Card>
 
-        <Card hoverable>
+        <Card hoverable className="border-bridge-almond-200">
           <CardBody className="p-5 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold text-bridge-charcoal-500 uppercase tracking-wider block">
@@ -295,42 +434,126 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
         </Card>
       </div>
 
-      {/* 3. Integrated Sub-View Switcher Tabs */}
+      {/* 3. Integrated Section Navigation Tabs */}
       <div className="flex items-center gap-3 border-b border-bridge-almond-200 pb-2">
         <button
-          onClick={() => setActiveView('ledger')}
+          onClick={() => handleSwitchSection('home')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
-            activeView === 'ledger'
+            currentSection === 'home'
+              ? 'bg-bridge-charcoal-900 text-white shadow-civic'
+              : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-bridge-gold-400" />
+          <span>Overview</span>
+        </button>
+
+        <button
+          onClick={() => handleSwitchSection('my-complaints')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
+            currentSection === 'my-complaints'
               ? 'bg-bridge-charcoal-900 text-white shadow-civic'
               : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>My Grievances &amp; Tracking ({totalCount})</span>
+          <span>My Complaints ({totalCount})</span>
         </button>
 
         <button
-          onClick={() => setActiveView('map')}
+          onClick={() => handleSwitchSection('map')}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.985] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bridge-gold-500 ${
-            activeView === 'map'
+            currentSection === 'map'
               ? 'bg-bridge-charcoal-900 text-white shadow-civic'
               : 'bg-white text-bridge-charcoal-700 hover:bg-bridge-almond-100 hover:border-bridge-almond-300 border border-bridge-almond-200'
           }`}
         >
           <MapPin className="w-4 h-4" />
-          <span>Mysuru Spatial Map &amp; City Analytics</span>
+          <span>Mysuru City Map</span>
         </button>
       </div>
 
-      {/* 4. Active View Content */}
-      {activeView === 'ledger' ? (
+      {/* 4. Active Section Content */}
+      {currentSection === 'home' ? (
         <div className="space-y-6">
-          {/* 1. Track Your Civic Request Search Card */}
+          {/* Fast Token Tracker Search Card */}
           <ComplaintTracker
             onTrack={handleOpenTracker}
             onOpenFullPage={(tok) => onNavigateToTrack?.(tok || '')}
           />
 
+          {/* Recent Grievances Preview Section */}
+          <div className="bg-white border border-bridge-almond-200 rounded-2xl shadow-bridge-card overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-bridge-almond-200 flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-bridge-charcoal-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-bridge-gold-700" />
+                  <span>Recent Grievance Reports</span>
+                </h2>
+                <p className="text-xs text-bridge-charcoal-500 mt-0.5">
+                  Latest status updates and evidence review signals for your submissions
+                </p>
+              </div>
+
+              {totalCount > 0 && (
+                <button
+                  onClick={() => handleSwitchSection('my-complaints')}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-bridge-gold-800 hover:text-bridge-gold-900 bg-bridge-gold-50 hover:bg-bridge-gold-100 border border-bridge-gold-200 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
+                >
+                  <span>View All ({totalCount})</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div>
+              {loading ? (
+                <div className="p-12 text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 text-bridge-gold-600 animate-spin mx-auto" />
+                  <p className="text-xs text-bridge-charcoal-600 font-medium">
+                    Loading your registered grievances...
+                  </p>
+                </div>
+              ) : error ? (
+                <div className="p-8 text-center space-y-3">
+                  <AlertCircle className="w-8 h-8 text-rose-600 mx-auto" />
+                  <p className="text-xs text-rose-700 font-medium">{error}</p>
+                  <Button variant="outline" size="sm" onClick={handleRefresh}>
+                    Try Again
+                  </Button>
+                </div>
+              ) : complaints.length === 0 ? (
+                <div className="p-12 text-center max-w-md mx-auto space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-bridge-almond-100 border border-bridge-almond-200 flex items-center justify-center text-bridge-charcoal-500 mx-auto">
+                    <FileText className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-bridge-charcoal-900">
+                      No complaints submitted yet
+                    </h3>
+                    <p className="text-xs text-bridge-charcoal-500 mt-1 leading-relaxed">
+                      Notice a road hazard, waste accumulation, or broken streetlight in Mysuru? Submit a report with photographic evidence to begin verification.
+                    </p>
+                  </div>
+                  <Button
+                    variant="gold"
+                    size="md"
+                    onClick={() => setIsReportModalOpen(true)}
+                    icon={<PlusCircle className="w-4 h-4" />}
+                  >
+                    Report an Issue
+                  </Button>
+                </div>
+              ) : (
+                <div className="divide-y divide-bridge-almond-100">
+                  {complaints.slice(0, 3).map(renderComplaintCard)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : currentSection === 'my-complaints' ? (
+        <div className="space-y-6">
           {/* Grievance Ledger & Activity View */}
           <Card className="border-bridge-almond-200 shadow-bridge-card">
             <CardHeader>
@@ -431,128 +654,18 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
                   </div>
                   {!searchQuery && statusFilter === 'ALL' && (
                     <Button
-                      variant="primary"
+                      variant="gold"
                       size="md"
                       onClick={() => setIsReportModalOpen(true)}
                       icon={<PlusCircle className="w-4 h-4" />}
                     >
-                      File Your First Grievance
+                      Report an Issue
                     </Button>
                   )}
                 </div>
               ) : (
                 <div className="divide-y divide-bridge-almond-100">
-                  {filteredComplaints.map((item) => {
-                    const statusInfo = STATUS_CONFIG[item.status] || {
-                      label: item.status,
-                      variant: 'neutral',
-                    };
-                    const catBadgeClass = CATEGORY_BADGES[item.category] || CATEGORY_BADGES.other;
-                    const formattedDate = new Date(item.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    });
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="p-5 sm:p-6 hover:bg-bridge-almond-50/70 border-l-2 border-l-transparent hover:border-l-bridge-gold-500 transition-all duration-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-                      >
-                        {/* Left Details */}
-                        <div className="space-y-2 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {/* Tracking Token */}
-                            <div className="flex items-center gap-1 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-1 rounded-lg text-xs font-mono font-bold text-bridge-charcoal-800">
-                              <span>{item.trackingToken}</span>
-                              <button
-                                onClick={() => handleCopy(item.trackingToken)}
-                                className="text-bridge-charcoal-400 hover:text-bridge-gold-700 active:scale-90 transition-all p-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bridge-gold-500"
-                                title="Copy tracking token"
-                              >
-                                {copiedToken === item.trackingToken ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            </div>
-
-                            {/* Category Badge */}
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${catBadgeClass}`}
-                            >
-                              {CATEGORY_LABELS[item.category] || item.category}
-                            </span>
-
-                            {/* Lifecycle Status */}
-                            <Badge variant={statusInfo.variant} size="sm">
-                              {statusInfo.label}
-                            </Badge>
-
-                            {/* Single Demo Tag if applicable */}
-                            {item.isDemo && (
-                              <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md">
-                                Demo Record
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Description */}
-                          <p className="text-xs sm:text-sm text-bridge-charcoal-800 font-medium line-clamp-2 leading-relaxed">
-                            {item.description}
-                          </p>
-
-                          {/* Metadata Row */}
-                          <div className="flex items-center gap-4 text-xs text-bridge-charcoal-500 flex-wrap pt-1">
-                            <span>
-                              <strong className="text-bridge-charcoal-700 font-semibold">Location:</strong>{' '}
-                              {item.locationArea} {item.addressText ? `(${item.addressText})` : ''}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              <strong className="text-bridge-charcoal-700 font-semibold">Reported:</strong>{' '}
-                              {formattedDate}
-                            </span>
-                            {item.verificationResult?.duplicateRisk && (
-                              <>
-                                <span>•</span>
-                                <span className="inline-flex items-center gap-1 font-semibold text-bridge-charcoal-700">
-                                  <ShieldCheck className="w-3.5 h-3.5 text-bridge-gold-700" />
-                                  <span>
-                                    Risk:{' '}
-                                    <span
-                                      className={
-                                        item.verificationResult.duplicateRisk === 'HIGH'
-                                          ? 'text-rose-600'
-                                          : item.verificationResult.duplicateRisk === 'MEDIUM'
-                                          ? 'text-amber-600'
-                                          : 'text-emerald-600'
-                                      }
-                                    >
-                                      {item.verificationResult.duplicateRisk}
-                                    </span>
-                                  </span>
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Right Action: Open Inline Drawer */}
-                        <div className="shrink-0 flex items-center gap-2 pt-2 lg:pt-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenTracker(item.trackingToken)}
-                            icon={<ChevronRight className="w-3.5 h-3.5" />}
-                          >
-                            Track Timeline
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {filteredComplaints.map(renderComplaintCard)}
                 </div>
               )}
             </CardBody>
@@ -574,7 +687,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
               </div>
 
               <Button
-                variant="primary"
+                variant="gold"
                 size="sm"
                 onClick={() => setIsReportModalOpen(true)}
                 icon={<PlusCircle className="w-4 h-4" />}

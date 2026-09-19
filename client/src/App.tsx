@@ -8,6 +8,7 @@ import { AuthModal } from './components/auth/AuthModal';
 import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
 import { CitizenTrackingDrawer } from './components/citizen/CitizenTrackingDrawer';
 import { TrackComplaintPage } from './pages/TrackComplaintPage';
+import { FlowingBackground } from './components/common/FlowingBackground';
 import type { CitizenUser, AuthMode } from './types/auth';
 import { apiGetMe, clearStoredToken } from './services/api';
 
@@ -162,11 +163,23 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Active Citizen Sub-Section ('home' | 'my-complaints' | 'map')
+  const [citizenActiveSection, setCitizenActiveSection] = useState<'home' | 'my-complaints' | 'map'>('home');
+
   return (
-    <div className="min-h-screen flex flex-col bg-bridge-ivory-50 text-bridge-charcoal-900 selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900">
+    <div className="min-h-screen flex flex-col bg-bridge-ivory-50 text-bridge-charcoal-900 selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900 relative">
+      {/* Ambient flowing background — decorative only, pointer-events: none, z-index: 0 */}
+      <FlowingBackground />
+
       {/* Top Navigation Bar */}
       <Navbar
-        activeTab={trackPortalOpen ? 'track' : activeTab}
+        activeTab={
+          trackPortalOpen
+            ? 'track'
+            : citizenActiveSection === 'my-complaints'
+            ? 'my-complaints'
+            : activeTab
+        }
         currentUser={currentUser}
         onTabChange={handleTabChange}
         onOpenTrackGrievance={() => setTrackPortalOpen(true)}
@@ -180,6 +193,11 @@ export function App() {
         onOpenReportGrievance={() => {
           setOpenCitizenReportTrigger((prev) => prev + 1);
         }}
+        onSelectCitizenTab={(section) => {
+          setCitizenActiveSection(section);
+          setTrackPortalOpen(false);
+          setActiveTab('dashboard');
+        }}
       />
 
       {/* Main Unified Workspace Area */}
@@ -190,6 +208,8 @@ export function App() {
             key={`citizen-dash-${openCitizenReportTrigger}`}
             currentUser={currentUser}
             initialOpenReportModal={openCitizenReportTrigger > 0}
+            activeSection={citizenActiveSection}
+            onSectionChange={setCitizenActiveSection}
             onNavigateToTrack={(token) => {
               setTrackPortalToken(token || null);
               setTrackPortalOpen(true);

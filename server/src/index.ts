@@ -8,6 +8,7 @@ import type { ComplaintInput, ExistingComplaint } from './types/verification.js'
 import { authRouter } from './routes/authRoutes.js';
 import { complaintRouter } from './routes/complaintRoutes.js';
 import { officerRouter } from './routes/officerRoutes.js';
+import { followthroughRouter } from './routes/followthroughRoutes.js';
 import { initDatabase } from './db/sqlite.js';
 import { seedDemoData } from './db/seedDemoData.js';
 
@@ -35,6 +36,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/complaints', complaintRouter);
 app.use('/api/officer', officerRouter);
+app.use('/api/followthrough', followthroughRouter);
 
 // 1. Health-check endpoint
 app.get('/api/health', (_req, res) => {

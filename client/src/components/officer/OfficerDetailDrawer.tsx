@@ -19,19 +19,25 @@ import {
   Building2,
   Clock,
   Compass,
+  Timer,
+  Activity,
 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import {
   apiGetOfficerComplaintById,
   apiUpdateOfficerReview,
+  apiGetFollowThroughDossier,
   type OfficerComplaintDetail,
   type ComplaintRecord,
+  type FollowThroughDossier,
 } from '../../services/api';
 import type { CitizenUser } from '../../types/auth';
 import { DuplicateClusterInspector } from './DuplicateClusterInspector';
 import { ReviewActionPanel } from './ReviewActionPanel';
 import { AuthenticatedEvidenceImage } from '../common/AuthenticatedEvidenceImage';
+import { FollowThroughPanel } from '../followthrough/FollowThroughPanel';
+import { ComplaintTimeline } from '../followthrough/ComplaintTimeline';
 
 interface OfficerDetailDrawerProps {
   complaintId: string | null;
@@ -53,6 +59,8 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
   const [notePreFill, setNotePreFill] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
+  const [dossier, setDossier] = useState<FollowThroughDossier | null>(null);
+  const [dossierLoading, setDossierLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!complaintId) return;
@@ -69,6 +77,20 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
         if (isMounted) {
           setErrorMsg(err.message || 'Failed to load complaint details.');
           setIsLoading(false);
+        }
+      });
+
+    apiGetFollowThroughDossier(complaintId)
+      .then((d) => {
+        if (isMounted) {
+          setDossier(d);
+          setDossierLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDossier(null);
+          setDossierLoading(false);
         }
       });
 
@@ -89,6 +111,17 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
       .catch((err: any) => {
         setErrorMsg(err.message || 'Failed to load complaint details.');
         setIsLoading(false);
+      });
+
+    setDossierLoading(true);
+    apiGetFollowThroughDossier(complaintId)
+      .then((d) => {
+        setDossier(d);
+        setDossierLoading(false);
+      })
+      .catch(() => {
+        setDossier(null);
+        setDossierLoading(false);
       });
   };
 
@@ -114,6 +147,7 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
       setDetail((prev) =>
         prev ? { ...prev, complaint: res.complaint } : null
       );
+      apiGetFollowThroughDossier(detail.complaint.id).then(setDossier).catch(() => {});
       onUpdated();
     } finally {
       setIsUpdating(false);
@@ -687,6 +721,58 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                       </div>
                     )}
 
+                    {/* Temporal Evidence Verification (Stage 3 Extension) */}
+                    {complaint.verificationResult?.temporalEvidence && (
+                      <div className="bg-gradient-to-br from-bridge-warm-ivory to-white border border-bridge-almond-300 rounded-xl p-3.5 shadow-sm space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-bridge-gold-600" />
+                            <span className="text-xs font-semibold text-bridge-charcoal-900 tracking-wide uppercase">
+                              Temporal Evidence Verification
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                              complaint.verificationResult.temporalEvidence.status === 'VALID'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : complaint.verificationResult.temporalEvidence.status === 'FUTURE_DATED' ||
+                                  complaint.verificationResult.temporalEvidence.status === 'DISCREPANCY' ||
+                                  complaint.verificationResult.temporalEvidence.status === 'EXCESSIVE_AGE'
+                                ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                : complaint.verificationResult.temporalEvidence.status === 'INVALID'
+                                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                : 'bg-slate-50 text-slate-700 border-slate-300'
+                            }`}
+                          >
+                            {complaint.verificationResult.temporalEvidence.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-500 block">EXIF Capture Timestamp:</span>
+                            <strong className="font-mono text-bridge-charcoal-800">
+                              {complaint.verificationResult.temporalEvidence.exifDateTime || 'Not Embedded'}
+                            </strong>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                            <span className="text-bridge-charcoal-500 block">Observed Date Delta:</span>
+                            <strong className="font-mono text-bridge-charcoal-800">
+                              {complaint.verificationResult.temporalEvidence.diffDaysWithObservedDate !== undefined
+                                ? `${complaint.verificationResult.temporalEvidence.diffDaysWithObservedDate} days`
+                                : 'N/A'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {complaint.verificationResult.temporalEvidence.signals.length > 0 && (
+                          <div className="text-[11px] text-bridge-charcoal-700 bg-white/70 p-2 rounded-lg border border-bridge-almond-200/80">
+                            {complaint.verificationResult.temporalEvidence.signals[0]}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Rule 7 Mandatory Integrity Notice */}
                     <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-950 leading-relaxed">
                       <div className="flex items-start gap-2.5">
@@ -797,6 +883,162 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                 </div>
               )}
 
+              {/* SECTION: OPERATIONAL SLA & DELAY-RISK INTELLIGENCE (ML-2) */}
+              {complaint.delayRisk && (
+                <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
+                    <div className="flex items-center gap-2">
+                      <Timer className="w-4 h-4 text-bridge-gold-600" />
+                      <h3 className="text-sm font-semibold text-bridge-charcoal-800">
+                        Operational SLA &amp; Delay-Risk Intelligence
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                          complaint.delayRisk.slaStatus === 'BREACHED'
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : complaint.delayRisk.slaStatus === 'AT_RISK'
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        }`}
+                      >
+                        SLA: {complaint.delayRisk.slaStatus.replace(/_/g, ' ')}
+                      </span>
+                      <span
+                        className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                          complaint.delayRisk.riskLevel === 'BREACHED'
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : complaint.delayRisk.riskLevel === 'HIGH'
+                            ? 'bg-orange-100 text-orange-900 border-orange-300'
+                            : complaint.delayRisk.riskLevel === 'MEDIUM'
+                            ? 'bg-amber-50 text-amber-800 border-amber-300'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        }`}
+                      >
+                        {complaint.delayRisk.riskLevel} DELAY RISK
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Metrics Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-bridge-almond-50/60 p-3 rounded-lg border border-bridge-almond-200">
+                    <div>
+                      <span className="text-bridge-charcoal-400 block text-[11px]">SLA Benchmark</span>
+                      <span className="font-semibold text-bridge-charcoal-800">
+                        {complaint.delayRisk.slaTargetHours} hours
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-bridge-charcoal-400 block text-[11px]">Elapsed Duration</span>
+                      <span className="font-semibold text-bridge-charcoal-800">
+                        {complaint.delayRisk.elapsedHours} hours
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-bridge-charcoal-400 block text-[11px]">Turnaround Window</span>
+                      <span
+                        className={`font-semibold ${
+                          complaint.delayRisk.remainingHours <= 0
+                            ? 'text-rose-700'
+                            : complaint.delayRisk.remainingHours <= complaint.delayRisk.slaTargetHours * 0.25
+                            ? 'text-amber-700'
+                            : 'text-bridge-charcoal-800'
+                        }`}
+                      >
+                        {complaint.delayRisk.remainingHours > 0
+                          ? `${complaint.delayRisk.remainingHours}h remaining`
+                          : `${Math.abs(complaint.delayRisk.remainingHours)}h overdue`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-bridge-charcoal-400 block text-[11px]">Risk Index Score</span>
+                      <span className="font-mono font-bold text-bridge-charcoal-800">
+                        {complaint.delayRisk.riskScore} / 100
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* SLA Consumption Meter */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-bridge-charcoal-600 font-medium flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-bridge-gold-600" />
+                        SLA Window Consumption:
+                      </span>
+                      <span className="font-mono text-bridge-charcoal-700 font-semibold">
+                        {Math.round((complaint.delayRisk.elapsedHours / complaint.delayRisk.slaTargetHours) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-bridge-almond-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className={`h-2.5 rounded-full transition-all duration-300 ${
+                          complaint.delayRisk.slaStatus === 'BREACHED'
+                            ? 'bg-rose-500'
+                            : complaint.delayRisk.slaStatus === 'AT_RISK'
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.round((complaint.delayRisk.elapsedHours / complaint.delayRisk.slaTargetHours) * 100)
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contributing Signals & Recommended Action */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {/* Contributing Factors */}
+                    <div className="bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl p-3.5 space-y-2">
+                      <span className="font-bold text-bridge-charcoal-900 block flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-bridge-gold-600" />
+                        Contributing Delay Factors ({complaint.delayRisk.contributingFactors.length})
+                      </span>
+                      <ul className="space-y-1.5 text-[11px] text-bridge-charcoal-700">
+                        {complaint.delayRisk.contributingFactors.map((factor, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                            <span className="text-bridge-gold-700 font-bold shrink-0">•</span>
+                            <span>{factor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Protocol Action */}
+                    <div className="bg-bridge-gold-50/70 border border-bridge-gold-200 rounded-xl p-3.5 space-y-2 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-bridge-gold-950 block flex items-center gap-1.5 mb-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-bridge-gold-700" />
+                          Recommended Protocol:
+                        </span>
+                        <p className="text-[11px] text-bridge-gold-900 leading-relaxed">
+                          {complaint.delayRisk.recommendedAction}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-bridge-gold-200/60 text-[10px] text-bridge-charcoal-500 font-mono">
+                        Model: {complaint.delayRisk.modelVersion} (Heuristic Baseline)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rule 3 & 8 Transparent Limitations Notice */}
+                  {complaint.delayRisk.limitations && complaint.delayRisk.limitations.length > 0 && (
+                    <div className="bg-bridge-almond-50/50 border border-bridge-almond-200 rounded-xl p-3 text-[11px] text-bridge-charcoal-500 space-y-1">
+                      <span className="font-semibold text-bridge-charcoal-700 block">
+                        Transparency &amp; ML Model Governance Notice:
+                      </span>
+                      <p className="leading-relaxed">
+                        {complaint.delayRisk.limitations.join(' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* SECTION 4: DUPLICATE CLUSTER INSPECTOR */}
               <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm">
                 <DuplicateClusterInspector
@@ -805,6 +1047,54 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   onConfirmDuplicate={handleConfirmDuplicate}
                   onMarkDistinct={handleMarkDistinct}
                 />
+              </div>
+
+              {/* SECTION 4B: LIFECYCLE EVENT LEDGER & DORMANCY MONITORING */}
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 shadow-civic-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-bridge-almond-100">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-bridge-gold-600" />
+                    <h3 className="text-sm font-semibold text-bridge-charcoal-800">
+                      Lifecycle Event Ledger &amp; Dormancy Monitoring
+                    </h3>
+                  </div>
+                  {dossierLoading && (
+                    <div className="flex items-center gap-1.5 text-xs text-bridge-charcoal-500">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-bridge-gold-600" />
+                      <span>Syncing activity...</span>
+                    </div>
+                  )}
+                </div>
+
+                {dossier ? (
+                  <div className="space-y-6">
+                    <FollowThroughPanel
+                      sla={dossier.sla}
+                      inactivity={dossier.inactivity}
+                      delayRisk={dossier.delayRisk || complaint.delayRisk}
+                      isOfficer={true}
+                    />
+
+                    <div className="pt-2">
+                      <h4 className="text-xs font-bold text-bridge-charcoal-700 uppercase tracking-wider mb-3">
+                        Chronological Audit Trail &amp; Activity Events
+                      </h4>
+                      <ComplaintTimeline
+                        timeline={dossier.timeline}
+                        isCitizenView={false}
+                      />
+                    </div>
+                  </div>
+                ) : dossierLoading ? (
+                  <div className="py-8 text-center text-xs text-bridge-charcoal-500">
+                    <Loader2 className="w-5 h-5 animate-spin text-bridge-gold-600 mx-auto mb-2" />
+                    Loading follow-through activity ledger...
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-bridge-charcoal-500 bg-bridge-almond-50/50 border border-dashed border-bridge-almond-200 rounded-xl">
+                    No activity records logged yet for this grievance.
+                  </div>
+                )}
               </div>
 
               {/* SECTION 5: REVIEW ACTIONS & LIFECYCLE COMMIT */}

@@ -1,4 +1,5 @@
 import type { IssueCategory, VerificationResult } from './verification.js';
+import type { DelayRiskPredictionResult } from '../services/ml/delayRiskPredictor.js';
 
 export type ComplaintStatus =
   | 'SUBMITTED'
@@ -36,6 +37,7 @@ export interface ComplaintRecord {
   imagePhash?: string;
   status: ComplaintStatus;
   verificationResult?: VerificationResult;
+  delayRisk?: DelayRiskPredictionResult;
   assignedOfficerId?: string;
   assignedDepartment?: string;
   reviewNotes?: string;
@@ -117,10 +119,30 @@ export interface PublicTrackResult {
     withinServiceArea?: boolean;
     distanceMeters?: number;
   };
+  temporalEvidence?: {
+    status: string;
+    hasTimestamp: boolean;
+    exifDateTime?: string;
+    parsedCaptureDate?: string;
+    reviewRequired: boolean;
+    signals: string[];
+    diffDaysWithObservedDate?: number;
+    evidenceAgeDays?: number;
+  };
+  slaTracking?: PublicSlaTracking;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
   disclaimer: string;
+}
+
+export interface PublicSlaTracking {
+  slaTargetHours: number;
+  elapsedHours: number;
+  remainingHours: number;
+  slaProgressPercent: number;
+  status: 'ON_TRACK' | 'AT_RISK' | 'BREACHED';
+  standardResolutionWindow: string;
 }
 
 export interface OfficerReviewInput {

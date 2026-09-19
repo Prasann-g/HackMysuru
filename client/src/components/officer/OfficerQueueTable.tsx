@@ -72,6 +72,13 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
     });
   };
 
+  const handleDelayRiskChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onFilterChange({
+      ...filters,
+      delayRisk: e.target.value === 'ALL' ? undefined : e.target.value,
+    });
+  };
+
   const handleLocalityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onFilterChange({
       ...filters,
@@ -149,6 +156,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
             {(filters.q ||
               filters.status ||
               filters.duplicateRisk ||
+              filters.delayRisk ||
               filters.locationArea ||
               filters.category) && (
                 <Button
@@ -165,7 +173,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
         </div>
 
         {/* Dropdown Filters Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-xs">
           {/* Status */}
           <div>
             <select
@@ -194,6 +202,21 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
               <option value="HIGH">High Duplicate Risk</option>
               <option value="MEDIUM">Medium Duplicate Risk</option>
               <option value="LOW">Low Duplicate Risk</option>
+            </select>
+          </div>
+
+          {/* Delay Risk */}
+          <div>
+            <select
+              value={filters.delayRisk || 'ALL'}
+              onChange={handleDelayRiskChange}
+              className="w-full bg-white border border-bridge-almond-300 rounded-lg px-2.5 py-1.5 text-xs text-bridge-charcoal-700 hover:border-bridge-almond-400 focus:outline-none focus:ring-2 focus:ring-bridge-gold-500 transition-all duration-150 cursor-pointer"
+            >
+              <option value="ALL">All Delay Risks</option>
+              <option value="LOW">Low Delay Risk</option>
+              <option value="MEDIUM">Medium Delay Risk</option>
+              <option value="HIGH">High Delay Risk</option>
+              <option value="BREACHED">SLA Breached</option>
             </select>
           </div>
 
@@ -239,13 +262,14 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
               <th className="py-3 px-4">Observed Date</th>
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4">Duplicate Risk</th>
+              <th className="py-3 px-4">SLA & Delay Risk</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-bridge-almond-100">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-bridge-charcoal-500">
+                <td colSpan={7} className="py-12 text-center text-bridge-charcoal-500">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-6 h-6 border-2 border-bridge-gold-500 border-t-transparent rounded-full animate-spin mb-2" />
                     <span>Loading municipal complaints queue...</span>
@@ -254,7 +278,7 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
               </tr>
             ) : complaints.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-bridge-charcoal-500">
+                <td colSpan={7} className="py-12 text-center text-bridge-charcoal-500">
                   <div className="max-w-sm mx-auto space-y-2">
                     <AlertCircle className="w-8 h-8 text-bridge-charcoal-300 mx-auto" />
                     <p className="font-semibold text-bridge-charcoal-700 text-sm">
@@ -350,6 +374,47 @@ export const OfficerQueueTable: React.FC<OfficerQueueTableProps> = ({
                             {item.verificationResult.matches.length > 1 ? 'es' : ''}
                           </div>
                         )}
+                    </td>
+
+                    {/* SLA & Delay Risk */}
+                    <td className="py-3 px-4">
+                      {item.delayRisk ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                                item.delayRisk.riskLevel === 'BREACHED'
+                                  ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                  : item.delayRisk.riskLevel === 'HIGH'
+                                  ? 'bg-orange-100 text-orange-800 border-orange-300'
+                                  : item.delayRisk.riskLevel === 'MEDIUM'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                  : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              }`}
+                            >
+                              {item.delayRisk.riskLevel === 'BREACHED'
+                                ? 'SLA BREACHED'
+                                : `${item.delayRisk.riskLevel} RISK`}
+                            </span>
+                            <span className="font-mono text-[10px] text-bridge-charcoal-500">
+                              {item.delayRisk.riskScore}/100
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-bridge-charcoal-600">
+                            {item.delayRisk.slaStatus === 'BREACHED' ? (
+                              <span className="text-rose-700 font-medium">
+                                Overdue ({Math.abs(item.delayRisk.remainingHours)}h past {item.delayRisk.slaTargetHours}h SLA)
+                              </span>
+                            ) : (
+                              <span>
+                                {item.delayRisk.remainingHours}h remaining ({item.delayRisk.slaTargetHours}h benchmark)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-bridge-charcoal-400">Assessing...</span>
+                      )}
                     </td>
 
                     {/* Action */}

@@ -25,17 +25,29 @@ export const MYSURU_SERVICE_BOUNDS = {
 
 /**
  * Validates whether latitude and longitude are within standard geographical ranges.
+ * Strictly checks for undefined, NaN, non-finite values, and boundary limits.
  */
 export function isValidCoordinate(latitude?: number, longitude?: number): boolean {
   if (
     latitude === undefined ||
     longitude === undefined ||
+    typeof latitude !== 'number' ||
+    typeof longitude !== 'number' ||
     isNaN(latitude) ||
-    isNaN(longitude)
+    isNaN(longitude) ||
+    !isFinite(latitude) ||
+    !isFinite(longitude)
   ) {
     return false;
   }
   return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+}
+
+/**
+ * Checks for "Null Island" coordinates (0, 0), commonly emitted by uninitialized GPS hardware.
+ */
+export function isNullIsland(latitude?: number, longitude?: number): boolean {
+  return latitude === 0 && longitude === 0;
 }
 
 /**
@@ -113,6 +125,7 @@ export async function validateGeoEvidence(
 
   const signals: string[] = [];
   const limitations: string[] = [
+    'Device GPS is authoritative only for service-area intake validation. EXIF GPS is supplementary evidence and never overrides device GPS.',
     'EXIF GPS metadata is non-authoritative: camera coordinates can be stripped or modified by third-party messaging apps.',
     'Absence of EXIF GPS coordinates does not indicate fraud or inauthenticity.',
     'Distance calculation uses the spherical Haversine formula across great-circle coordinates.',
@@ -125,6 +138,11 @@ export async function validateGeoEvidence(
       latitude: capturedLatitude!,
       longitude: capturedLongitude!,
     };
+    if (isNullIsland(capturedLatitude, capturedLongitude)) {
+      signals.push(
+        'NULL_ISLAND_COORDINATES: Uninitialized GPS coordinates (0.00000, 0.00000) detected. Device location could not be established.'
+      );
+    }
     withinServiceArea = isWithinMysuruServiceArea(capturedLatitude, capturedLongitude);
     if (!withinServiceArea) {
       signals.push(

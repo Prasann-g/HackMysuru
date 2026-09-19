@@ -28,7 +28,13 @@ import {
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Card, CardBody } from '../ui/Card';
-import { apiTrackComplaint, type PublicTrackResult } from '../../services/api';
+import {
+  apiTrackComplaint,
+  apiGetComplaintTimeline,
+  type PublicTrackResult,
+  type TimelineEvent,
+} from '../../services/api';
+import { ComplaintTimeline } from '../followthrough/ComplaintTimeline';
 
 interface CitizenTrackingDrawerProps {
   isOpen: boolean;
@@ -145,6 +151,8 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
   const [copiedToken, setCopiedToken] = useState<boolean>(false);
   const [manualToken, setManualToken] = useState<string>(token || '');
   const [prevToken, setPrevToken] = useState<string | null>(token);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState<boolean>(false);
 
   if (token !== prevToken) {
     setPrevToken(token);
@@ -205,6 +213,31 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
       isMounted = false;
     };
   }, [isOpen, token]);
+
+  // Load chronological timeline when complaint record is loaded
+  useEffect(() => {
+    if (!data?.id) return;
+
+    let isMounted = true;
+
+    apiGetComplaintTimeline(data.id)
+      .then((events) => {
+        if (isMounted) {
+          setTimeline(events);
+          setTimelineLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setTimeline([]);
+          setTimelineLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [data?.id]);
 
   const handleManualSearch = (targetToken: string) => {
     const clean = targetToken.trim();
@@ -629,8 +662,99 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                       );
                     })}
                   </div>
+
+                  {/* Public Municipal SLA Turnaround Window */}
+                  {data.slaTracking && (
+                    <div className="mt-4 pt-4 border-t border-bridge-almond-100 bg-bridge-ivory-50/70 rounded-xl p-4 border border-bridge-almond-200/80 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-bridge-gold-700" />
+                          <span className="text-xs font-bold text-bridge-charcoal-900">
+                            Standard Municipal Resolution Window
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border self-start sm:self-auto ${
+                            data.slaTracking.status === 'BREACHED'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : data.slaTracking.status === 'AT_RISK'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          }`}
+                        >
+                          {data.slaTracking.status === 'BREACHED'
+                            ? 'Turnaround Window Extended'
+                            : data.slaTracking.status === 'AT_RISK'
+                            ? 'Resolution in Progress'
+                            : 'Within Standard Window'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Benchmark Target</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.slaTargetHours} hours
+                          </span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-bridge-almond-200">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Elapsed Time</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.elapsedHours} hours
+                          </span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-bridge-almond-200 col-span-2 sm:col-span-1">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Estimated Target</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.remainingHours > 0
+                              ? `~${data.slaTracking.remainingHours}h remaining`
+                              : 'Under Active Follow-up'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="w-full bg-bridge-almond-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              data.slaTracking.status === 'BREACHED'
+                                ? 'bg-rose-500'
+                                : data.slaTracking.status === 'AT_RISK'
+                                ? 'bg-amber-500'
+                                : 'bg-emerald-500'
+                            }`}
+                            style={{
+                              width: `${Math.min(100, data.slaTracking.slaProgressPercent)}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-bridge-charcoal-400 leading-tight">
+                          {data.slaTracking.benchmarkNotice}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardBody>
               </Card>
+
+              {/* Follow-Through Chronological Event Ledger (Citizen View) */}
+              <div className="bg-white border border-bridge-almond-200 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-bridge-gold-600" />
+                    <h4 className="text-xs font-bold text-bridge-charcoal-800 uppercase tracking-wider">
+                      Follow-Through Activity Log
+                    </h4>
+                  </div>
+                  {timelineLoading && (
+                    <div className="flex items-center gap-1.5 text-xs text-bridge-charcoal-500">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-bridge-gold-600" />
+                      <span>Updating log...</span>
+                    </div>
+                  )}
+                </div>
+                <ComplaintTimeline timeline={timeline} isCitizenView={true} />
+              </div>
 
               {/* Grievance Core Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -838,6 +962,44 @@ export const CitizenTrackingDrawer: React.FC<CitizenTrackingDrawerProps> = ({
                         </strong>
                       </span>
                     </div>
+                  </div>
+                )}
+
+                {/* Temporal Evidence Status (if returned by backend) */}
+                {data.temporalEvidence && (
+                  <div className="p-3 bg-white border border-bridge-gold-200/80 rounded-xl space-y-1.5 text-xs">
+                    <span className="text-[10px] font-bold text-bridge-charcoal-600 uppercase tracking-wider block">
+                      Temporal &amp; Timestamp Evidence
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                      <Badge
+                        variant={
+                          data.temporalEvidence.status === 'VALID'
+                            ? 'verified'
+                            : data.temporalEvidence.status === 'FUTURE_DATED' ||
+                              data.temporalEvidence.status === 'DISCREPANCY' ||
+                              data.temporalEvidence.status === 'EXCESSIVE_AGE' ||
+                              data.temporalEvidence.status === 'INVALID'
+                            ? 'review'
+                            : 'neutral'
+                        }
+                        size="sm"
+                      >
+                        TIME: {data.temporalEvidence.status}
+                      </Badge>
+                      <span className="text-bridge-charcoal-600">
+                        {data.temporalEvidence.hasTimestamp && data.temporalEvidence.exifDateTime
+                          ? `Recorded: ${data.temporalEvidence.exifDateTime}`
+                          : data.temporalEvidence.status === 'MISSING'
+                          ? 'No embedded timestamp (standard for messaging uploads)'
+                          : 'Timestamp correlation unavailable'}
+                      </span>
+                    </div>
+                    {data.temporalEvidence.signals.length > 0 && (
+                      <p className="text-[10px] text-bridge-charcoal-500 mt-1">
+                        {data.temporalEvidence.signals[0]}
+                      </p>
+                    )}
                   </div>
                 )}
 

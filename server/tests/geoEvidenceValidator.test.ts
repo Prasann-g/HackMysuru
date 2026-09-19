@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import {
   calculateHaversineDistanceMeters,
   isValidCoordinate,
+  isNullIsland,
   isWithinMysuruServiceArea,
   MYSURU_SERVICE_BOUNDS,
   validateGeoEvidence,
@@ -61,6 +62,15 @@ describe('Phase 2 — Stage 2: GeoEvidenceValidator (Geo-Tagged Evidence Verific
       expect(isValidCoordinate(12.3, -180.1)).toBe(false);
       expect(isValidCoordinate(NaN, 76.6)).toBe(false);
       expect(isValidCoordinate(undefined, 76.6)).toBe(false);
+      expect(isValidCoordinate(Infinity, 76.6)).toBe(false);
+      expect(isValidCoordinate(-Infinity, 76.6)).toBe(false);
+      expect(isValidCoordinate('12.3' as any, 76.6)).toBe(false);
+    });
+
+    it('detects Null Island (0, 0) uninitialized GPS coordinates', () => {
+      expect(isNullIsland(0, 0)).toBe(true);
+      expect(isNullIsland(12.305175, 76.655184)).toBe(false);
+      expect(isWithinMysuruServiceArea(0, 0)).toBe(false);
     });
 
     it('calculates zero distance for identical coordinates', () => {
@@ -91,6 +101,7 @@ describe('Phase 2 — Stage 2: GeoEvidenceValidator (Geo-Tagged Evidence Verific
       expect(isWithinMysuruServiceArea(28.6139, 77.2090)).toBe(false); // New Delhi
       expect(isWithinMysuruServiceArea(undefined, 76.65)).toBe(false);
       expect(isWithinMysuruServiceArea(12.30, NaN)).toBe(false);
+      expect(isWithinMysuruServiceArea(0, 0)).toBe(false);
     });
   });
 
@@ -227,6 +238,45 @@ describe('Phase 2 — Stage 2: GeoEvidenceValidator (Geo-Tagged Evidence Verific
       expect(result.withinServiceArea).toBe(false);
       expect(result.reviewRequired).toBe(true);
       expect(result.signals.some((s) => s.includes('OUT_OF_BOUNDS_LOCATION'))).toBe(true);
+    });
+
+    it('emits NULL_ISLAND_COORDINATES signal when uninitialized (0, 0) coordinates are supplied', async () => {
+      const plainImage = await createTestImage();
+      const result = await validateGeoEvidence({
+        hasImage: true,
+        imageBuffer: plainImage,
+        capturedLatitude: 0,
+        capturedLongitude: 0,
+      });
+
+      expect(result.withinServiceArea).toBe(false);
+      expect(result.status).toBe('OUT_OF_BOUNDS');
+      expect(result.signals.some((s) => s.includes('NULL_ISLAND_COORDINATES'))).toBe(true);
+    });
+
+    it('enforces that EXIF GPS is supplementary: generates MISMATCH without overriding captured GPS', async () => {
+      // Photo has EXIF GPS from Hubballi (15.3647, 75.1240)
+      const hubballiCoords = { lat: 15.3647, lon: 75.124 };
+      const photoWithExif = await createTestImage(hubballiCoords);
+
+      // Reported intake GPS is from Mysuru Palace (12.305175, 76.655184)
+      const result = await validateGeoEvidence({
+        hasImage: true,
+        imageBuffer: photoWithExif,
+        capturedLatitude: 12.305175,
+        capturedLongitude: 76.655184,
+      });
+
+      // Status must be MISMATCH because distance is ~400km
+      expect(result.status).toBe('MISMATCH');
+      expect(result.reviewRequired).toBe(true);
+      expect(result.distanceMeters).toBeGreaterThan(1500);
+
+      // CRITICAL: capturedCoordinates are strictly preserved and withinServiceArea reflects intake GPS
+      expect(result.capturedCoordinates?.latitude).toBe(12.305175);
+      expect(result.capturedCoordinates?.longitude).toBe(76.655184);
+      expect(result.withinServiceArea).toBe(true);
+      expect(result.limitations.some((l) => l.includes('never overrides device GPS'))).toBe(true);
     });
   });
 

@@ -103,18 +103,19 @@ In production-first mode, default and demo credentials tables have been removed 
 
 ## Core Demo Flows
 
-1. **Citizen** → Log in → Report a civic issue with a photo → Receive tracking token
-2. **Duplicate detection** → Submit the same photo again → See HTTP 409 with explanation
-3. **Officer** → Log in → View complaint queue → Open complaint with verification signals → Update status
-4. **Public tracking** → Enter tracking token → See sanitised complaint status (zero PII)
-5. **Analytics** → Navigate to Dashboard → See complaint statistics, category breakdown, area map
+1. **Citizen** → Log in → Report a civic issue with GPS photo evidence → Receive tracking token
+2. **Duplicate detection** → Submit duplicate or near-duplicate report → Receive explainable signals or rejection
+3. **Follow-Through Tracking** → Citizen views chronological activity ledger and SLA milestones with zero exposed internal notes
+4. **Officer Operations** → Log in → View triage queue → Inspect evidence forensics, duplicate clusters, SLA window consumption, dormancy indicators, and full activity event ledger
+5. **Officer Review & Lifecycle Commit** → Update status, reassign department, or log notes → Automatic real-time ledger updates
+6. **Analytics & Public Visibility** → View public metrics, area breakdown, and interactive complaint map
 
 ---
 
 ## Running Tests
 
 ```bash
-# Backend (Vitest) — 102 tests
+# Backend (Vitest) — 17 test files, 224 passed
 npm --prefix server test
 
 # Client lint

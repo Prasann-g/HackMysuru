@@ -792,6 +792,78 @@ export const TrackComplaintPage: React.FC<TrackComplaintPageProps> = ({
                       );
                     })}
                   </div>
+
+                  {/* Public SLA Tracking Window */}
+                  {data.slaTracking && (
+                    <div className="mt-5 pt-4 border-t border-bridge-almond-100 bg-bridge-ivory-50/60 rounded-xl p-4 border border-bridge-almond-200/80 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-bridge-gold-700" />
+                          <span className="text-xs font-bold text-bridge-charcoal-900">
+                            Standard Municipal Resolution Window
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border self-start sm:self-auto ${
+                            data.slaTracking.status === 'BREACHED'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : data.slaTracking.status === 'AT_RISK'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          }`}
+                        >
+                          {data.slaTracking.status === 'BREACHED'
+                            ? 'Turnaround Window Extended'
+                            : data.slaTracking.status === 'AT_RISK'
+                            ? 'Resolution in Progress'
+                            : 'Within Standard Window'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Benchmark Window</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.slaTargetHours} hours
+                          </span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Elapsed Time</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.elapsedHours} hours
+                          </span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-bridge-almond-200 col-span-2 sm:col-span-1">
+                          <span className="text-bridge-charcoal-400 block text-[10px]">Current Status</span>
+                          <span className="font-semibold text-bridge-charcoal-800">
+                            {data.slaTracking.remainingHours > 0
+                              ? `~${data.slaTracking.remainingHours}h remaining`
+                              : 'Under Active Escalation'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="w-full bg-bridge-almond-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              data.slaTracking.status === 'BREACHED'
+                                ? 'bg-rose-500'
+                                : data.slaTracking.status === 'AT_RISK'
+                                ? 'bg-amber-500'
+                                : 'bg-emerald-500'
+                            }`}
+                            style={{
+                              width: `${Math.min(100, data.slaTracking.slaProgressPercent)}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-bridge-charcoal-400 leading-tight">
+                          {data.slaTracking.benchmarkNotice}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </section>
 
                 {/* Section 3: Grievance Details & Evidence */}
@@ -1022,6 +1094,44 @@ export const TrackComplaintPage: React.FC<TrackComplaintPageProps> = ({
                                 : 'Outside supported jurisdiction'}
                             </span>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Temporal Evidence Verification */}
+                      {data.temporalEvidence && (
+                        <div className="p-3.5 bg-white border border-bridge-gold-200/90 rounded-xl space-y-1.5">
+                          <span className="text-[10px] font-bold text-bridge-charcoal-600 uppercase tracking-wider block">
+                            Temporal &amp; Timestamp Evidence
+                          </span>
+                          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+                            <Badge
+                              variant={
+                                data.temporalEvidence.status === 'VALID'
+                                  ? 'verified'
+                                  : data.temporalEvidence.status === 'FUTURE_DATED' ||
+                                    data.temporalEvidence.status === 'DISCREPANCY' ||
+                                    data.temporalEvidence.status === 'EXCESSIVE_AGE' ||
+                                    data.temporalEvidence.status === 'INVALID'
+                                  ? 'review'
+                                  : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              TIME: {data.temporalEvidence.status}
+                            </Badge>
+                            <span className="text-bridge-charcoal-600 font-medium">
+                              {data.temporalEvidence.hasTimestamp && data.temporalEvidence.exifDateTime
+                                ? `Captured: ${data.temporalEvidence.exifDateTime}`
+                                : data.temporalEvidence.status === 'MISSING'
+                                ? 'No embedded capture timestamp (standard for messaging app uploads)'
+                                : 'Temporal correlation unavailable'}
+                            </span>
+                          </div>
+                          {data.temporalEvidence.signals.length > 0 && (
+                            <p className="text-[11px] text-bridge-charcoal-600 mt-1 leading-snug">
+                              {data.temporalEvidence.signals[0]}
+                            </p>
+                          )}
                         </div>
                       )}
 

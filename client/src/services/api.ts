@@ -159,6 +159,29 @@ export interface CreateComplaintPayload {
   };
 }
 
+export interface DelayRiskResult {
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'BREACHED';
+  riskScore: number;
+  slaTargetHours: number;
+  elapsedHours: number;
+  remainingHours: number;
+  slaStatus: 'ON_TRACK' | 'AT_RISK' | 'BREACHED';
+  contributingFactors: string[];
+  recommendedAction: string;
+  limitations: string[];
+  modelVersion: string;
+  isRealMl: boolean;
+}
+
+export interface PublicSlaTracking {
+  slaTargetHours: number;
+  elapsedHours: number;
+  remainingHours: number;
+  slaProgressPercent: number;
+  status: 'ON_TRACK' | 'AT_RISK' | 'BREACHED';
+  benchmarkNotice: string;
+}
+
 export interface ComplaintRecord {
   id: string;
   trackingToken: string;
@@ -250,6 +273,16 @@ export interface ComplaintRecord {
       signals: string[];
       limitations: string[];
     };
+    temporalEvidence?: {
+      status: 'VALID' | 'MISSING' | 'FUTURE_DATED' | 'DISCREPANCY' | 'EXCESSIVE_AGE' | 'INVALID' | 'UNAVAILABLE';
+      hasTimestamp: boolean;
+      exifDateTime?: string;
+      parsedCaptureDate?: string;
+      reviewRequired: boolean;
+      signals: string[];
+      diffDaysWithObservedDate?: number;
+      evidenceAgeDays?: number;
+    };
   };
   assignedDepartment?: string;
   assignedOfficerId?: string;
@@ -268,6 +301,7 @@ export interface ComplaintRecord {
   duplicateClusterId?: string;
   primaryComplaintId?: string;
   resolutionAction?: string;
+  delayRisk?: DelayRiskResult;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -323,6 +357,17 @@ export interface PublicTrackResult {
     withinServiceArea?: boolean;
     distanceMeters?: number;
   };
+  temporalEvidence?: {
+    status: string;
+    hasTimestamp: boolean;
+    exifDateTime?: string;
+    parsedCaptureDate?: string;
+    reviewRequired: boolean;
+    signals: string[];
+    diffDaysWithObservedDate?: number;
+    evidenceAgeDays?: number;
+  };
+  slaTracking?: PublicSlaTracking;
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -461,6 +506,7 @@ export interface OfficerComplaintsFilter {
   locationArea?: string;
   category?: string;
   duplicateRisk?: string;
+  delayRisk?: string;
   q?: string;
 }
 
@@ -484,6 +530,7 @@ export async function apiGetOfficerComplaints(
   if (filters?.locationArea) queryParams.set('locationArea', filters.locationArea);
   if (filters?.category) queryParams.set('category', filters.category);
   if (filters?.duplicateRisk) queryParams.set('duplicateRisk', filters.duplicateRisk);
+  if (filters?.delayRisk) queryParams.set('delayRisk', filters.delayRisk);
   if (filters?.q) queryParams.set('q', filters.q);
 
   const qs = queryParams.toString();
@@ -599,5 +646,148 @@ export async function apiGetPublicAnalytics(): Promise<PublicAnalyticsResponse> 
   }
   return data;
 }
+
+// ----------------------------------------------------------------------------
+// Follow-Through Engine & Lifecycle Timeline API
+// ----------------------------------------------------------------------------
+
+export interface TimelineEvent {
+  id: string;
+  eventType: string;
+  timestamp: string;
+  title: string;
+  description: string;
+  actor?: {
+    name?: string;
+    role?: string;
+  };
+  statusTransition?: {
+    from?: string;
+    to?: string;
+  };
+  details?: Record<string, any>;
+  source: {
+    table: string;
+    recordId: string;
+  };
+}
+
+export type SlaState = 'ON_TRACK' | 'DUE_SOON' | 'OVERDUE' | 'COMPLETED' | 'UNKNOWN';
+
+export interface SlaIndicator {
+  slaStartTime: string;
+  slaDueTime: string;
+  targetHours: number;
+  elapsedHours: number;
+  remainingHours: number;
+  overdue: boolean;
+  slaState: SlaState;
+  disclaimer: string;
+}
+
+export type ActivityState = 'ACTIVE' | 'INACTIVE' | 'COMPLETED';
+
+export interface InactivityIndicator {
+  lastMeaningfulActivityAt: string;
+  inactivityHours: number;
+  thresholdHours: number;
+  activityState: ActivityState;
+  explanation: string;
+}
+
+export interface FollowThroughDossier {
+  complaintId: string;
+  trackingToken: string;
+  currentStatus: string;
+  category: string;
+  observed: {
+    createdAt: string;
+    observedDate: string;
+    resolvedAt?: string;
+    lastActivityAt: string;
+    assignedDepartment?: string;
+    assignedOfficerId?: string;
+  };
+  timeline: TimelineEvent[];
+  sla: SlaIndicator;
+  inactivity: InactivityIndicator;
+  delayRisk: DelayRiskResult;
+  generatedAt: string;
+}
+
+export async function apiGetComplaintTimeline(complaintId: string): Promise<TimelineEvent[]> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/timeline`, {
+    headers,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve complaint timeline.');
+  }
+
+  return data.timeline || [];
+}
+
+export async function apiGetFollowThroughDossier(complaintId: string): Promise<FollowThroughDossier> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/dossier`, {
+    headers,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve follow-through dossier.');
+  }
+
+  return data;
+}
+
+export async function apiGetOfficerOverdueComplaints(): Promise<Array<{ complaint: ComplaintRecord; sla: SlaIndicator }>> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Authentication required.');
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/followthrough/officer/overdue`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve overdue complaints queue.');
+  }
+
+  return data.items || [];
+}
+
+export async function apiGetOfficerInactiveComplaints(): Promise<Array<{ complaint: ComplaintRecord; inactivity: InactivityIndicator }>> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Authentication required.');
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/followthrough/officer/inactive`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve inactive complaints queue.');
+  }
+
+  return data.items || [];
+}
+
 
 

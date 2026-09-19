@@ -112,6 +112,27 @@ export function initDatabase(dbPath: string = CONFIG.DB_PATH): DatabaseSync {
     );
     CREATE INDEX IF NOT EXISTS idx_audit_cluster ON complaint_resolution_audit(cluster_id);
     CREATE INDEX IF NOT EXISTS idx_audit_primary ON complaint_resolution_audit(primary_complaint_id);
+
+    -- 4. Complaint Activity Log Table (Follow-through historical event ledger)
+    CREATE TABLE IF NOT EXISTS complaint_activity_log (
+      id TEXT PRIMARY KEY,
+      complaint_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      source_table TEXT NOT NULL,
+      source_record_id TEXT NOT NULL,
+      actor_id TEXT,
+      actor_name TEXT,
+      actor_role TEXT,
+      old_status TEXT,
+      new_status TEXT,
+      notes TEXT,
+      metadata TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_activity_complaint ON complaint_activity_log(complaint_id);
+    CREATE INDEX IF NOT EXISTS idx_activity_created ON complaint_activity_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_activity_source ON complaint_activity_log(source_table, source_record_id);
   `);
 
   // Safe migration for image evidence and cluster columns on existing databases

@@ -276,5 +276,99 @@ describe('Civic Trust Verification Engine Foundation (Step 4.2)', () => {
       expect(result.recommendedAction).toContain('Officer review recommended');
       expect(result.uncertainties.some((u) => u.includes('repetitive or non-standard'))).toBe(true);
     });
+
+    it('escalates to REQUIRES_HUMAN_REVIEW when temporal evidence is FUTURE_DATED', () => {
+      const input: ComplaintInput = {
+        category: 'pothole',
+        description: 'Legitimate distinct road depression in Saraswathipuram 1st Main.',
+        observedDate: '2026-09-18',
+        temporalEvidence: {
+          hasTimestamp: true,
+          submissionDate: '2026-09-18T12:00:00Z',
+          observedDate: '2026-09-18',
+          status: 'FUTURE_DATED',
+          reviewRequired: true,
+          signals: ['TEMPORAL_FUTURE_TIMESTAMP: Evidence capture timestamp is in the future.'],
+          uncertainties: ['Device clock might be unsynchronized.'],
+          limitations: ['Timezone evaluated in IST.'],
+        },
+      };
+
+      const result = verifyComplaint(input, existingPool);
+      expect(result.outcome).toBe('REQUIRES_HUMAN_REVIEW');
+      expect(result.recommendedAction).toContain('future-dated');
+      expect(result.temporalEvidence?.status).toBe('FUTURE_DATED');
+    });
+
+    it('escalates to REQUIRES_HUMAN_REVIEW when temporal evidence indicates EXCESSIVE_AGE', () => {
+      const input: ComplaintInput = {
+        category: 'pothole',
+        description: 'Legitimate distinct road depression in Saraswathipuram 1st Main.',
+        observedDate: '2026-09-18',
+        temporalEvidence: {
+          hasTimestamp: true,
+          submissionDate: '2026-09-18T12:00:00Z',
+          observedDate: '2026-09-18',
+          status: 'EXCESSIVE_AGE',
+          reviewRequired: true,
+          signals: ['TEMPORAL_EXCESSIVE_AGE: Evidence photo captured 200 days prior.'],
+          uncertainties: [],
+          limitations: [],
+        },
+      };
+
+      const result = verifyComplaint(input, existingPool);
+      expect(result.outcome).toBe('REQUIRES_HUMAN_REVIEW');
+      expect(result.recommendedAction).toContain('over 180 days prior');
+    });
+
+    it('preserves signal transparency and prioritizes image reuse in recommendedAction when image-reuse and temporal issues coexist', () => {
+      const existingWithImage: ExistingComplaint[] = [
+        {
+          id: 'MCC-2026-0044',
+          category: 'pothole',
+          description: 'Water logging near railway underpass causing vehicular stoppage.',
+          observedDate: '2026-09-10',
+          locationArea: 'Mandi Mohalla',
+          status: 'SUBMITTED',
+          imageSha256: 'abc123def456exactimagesha256',
+        },
+      ];
+
+      const input: ComplaintInput = {
+        category: 'pothole',
+        description: 'Deep road cavity and asphalt breakdown in Saraswathipuram 1st Main Road.',
+        observedDate: '2026-09-18',
+        hasImage: true,
+        imageSha256: 'abc123def456exactimagesha256',
+        temporalEvidence: {
+          hasTimestamp: true,
+          submissionDate: '2026-09-18T12:00:00Z',
+          observedDate: '2026-09-18',
+          status: 'FUTURE_DATED',
+          reviewRequired: true,
+          signals: ['TEMPORAL_FUTURE_TIMESTAMP: Evidence capture timestamp is in the future.'],
+          uncertainties: ['Device clock might be unsynchronized.'],
+          limitations: ['Timezone evaluated in IST.'],
+        },
+      };
+
+      const result = verifyComplaint(input, existingWithImage);
+
+      // Outcome escalates to REQUIRES_HUMAN_REVIEW
+      expect(result.outcome).toBe('REQUIRES_HUMAN_REVIEW');
+
+      // Recommended action prioritizes the image reuse signal for field dispatch safety
+      expect(result.recommendedAction).toContain('Image reuse signal detected');
+      expect(result.recommendedAction).toContain('MCC-2026-0044');
+
+      // Full transparency: BOTH image reuse signal and temporal signal are preserved in signals
+      expect(result.signals.some((s) => s.includes('EXACT_IMAGE_REUSE'))).toBe(true);
+      expect(result.signals.some((s) => s.includes('TEMPORAL_FUTURE_TIMESTAMP'))).toBe(true);
+
+      // Temporal evidence object and status remain fully accessible for municipal officer review
+      expect(result.temporalEvidence?.status).toBe('FUTURE_DATED');
+      expect(result.temporalEvidence?.reviewRequired).toBe(true);
+    });
   });
 });

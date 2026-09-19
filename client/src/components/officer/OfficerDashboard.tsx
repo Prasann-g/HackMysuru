@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Building2,
   AlertTriangle,
-  CheckCircle2,
   Clock,
   Layers,
   RotateCcw,
@@ -74,17 +73,17 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
 
   // Compute live KPIs from the retrieved complaints dataset
   const totalCount = complaints.length;
-  const pendingReviewCount = complaints.filter(
-    (c) => c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW'
-  ).length;
-  const highDuplicateCount = complaints.filter(
-    (c) => c.verificationResult?.duplicateRisk === 'HIGH'
+  const pendingTriageCount = complaints.filter(
+    (c) => c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW' || c.status === 'NEEDS_CLARIFICATION'
   ).length;
   const inProgressCount = complaints.filter(
     (c) => c.status === 'IN_PROGRESS' || c.status === 'FORWARDED'
   ).length;
-  const resolvedCount = complaints.filter(
-    (c) => c.status === 'RESOLVED' || c.status === 'CLOSED'
+  const atRiskCount = complaints.filter(
+    (c) => c.delayRisk?.riskLevel === 'HIGH' || c.delayRisk?.slaStatus === 'AT_RISK'
+  ).length;
+  const breachedCount = complaints.filter(
+    (c) => c.delayRisk?.riskLevel === 'BREACHED' || c.delayRisk?.slaStatus === 'BREACHED'
   ).length;
 
   return (
@@ -144,9 +143,9 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Total Queue */}
+      {/* 5 Operational KPI Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {/* 1. Total in Queue */}
         <div className="kpi-card kpi-glow-default">
           <div className="kpi-card-inner">
             <div className="flex items-center justify-between mb-3">
@@ -156,39 +155,25 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
             <div className="text-2xl font-bold text-bridge-charcoal-900 leading-none">
               {totalCount}
             </div>
-            <span className="text-[11px] text-bridge-charcoal-400 mt-1.5">Current matching filters</span>
+            <span className="text-[11px] text-bridge-charcoal-400 mt-1.5">All matching filters</span>
           </div>
         </div>
 
-        {/* Pending Review */}
+        {/* 2. Pending Triage */}
         <div className="kpi-card kpi-glow-amber">
           <div className="kpi-card-inner">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-amber-800">Pending Review</span>
+              <span className="text-xs font-medium text-amber-800">Pending Triage</span>
               <Clock className="w-4 h-4 text-amber-600 kpi-icon" />
             </div>
             <div className="text-2xl font-bold text-amber-900 leading-none">
-              {pendingReviewCount}
+              {pendingTriageCount}
             </div>
-            <span className="text-[11px] text-amber-700/80 mt-1.5">Awaiting officer triage</span>
+            <span className="text-[11px] text-amber-700/80 mt-1.5">Awaiting officer action</span>
           </div>
         </div>
 
-        {/* Duplicate Alerts */}
-        <div className="kpi-card kpi-glow-rose">
-          <div className="kpi-card-inner">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-rose-700">Duplicate Alerts</span>
-              <ShieldAlert className="w-4 h-4 text-rose-600 kpi-icon" />
-            </div>
-            <div className="text-2xl font-bold text-rose-900 leading-none">
-              {highDuplicateCount}
-            </div>
-            <span className="text-[11px] text-rose-600/80 mt-1.5">Requires consolidation</span>
-          </div>
-        </div>
-
-        {/* In Progress */}
+        {/* 3. In Progress */}
         <div className="kpi-card kpi-glow-gold">
           <div className="kpi-card-inner">
             <div className="flex items-center justify-between mb-3">
@@ -198,21 +183,35 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
             <div className="text-2xl font-bold text-bridge-gold-900 leading-none">
               {inProgressCount}
             </div>
-            <span className="text-[11px] text-bridge-gold-700/80 mt-1.5">Active field remediation</span>
+            <span className="text-[11px] text-bridge-gold-700/80 mt-1.5">Active field work order</span>
           </div>
         </div>
 
-        {/* Resolved */}
-        <div className="kpi-card kpi-glow-emerald col-span-2 lg:col-span-1">
+        {/* 4. At Risk */}
+        <div className="kpi-card kpi-glow-rose">
           <div className="kpi-card-inner">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-emerald-800">Resolved</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 kpi-icon" />
+              <span className="text-xs font-medium text-amber-800">At Risk</span>
+              <AlertTriangle className="w-4 h-4 text-amber-600 kpi-icon" />
             </div>
-            <div className="text-2xl font-bold text-emerald-900 leading-none">
-              {resolvedCount}
+            <div className="text-2xl font-bold text-amber-900 leading-none">
+              {atRiskCount}
             </div>
-            <span className="text-[11px] text-emerald-700/80 mt-1.5">Remediated &amp; verified</span>
+            <span className="text-[11px] text-amber-700/80 mt-1.5">Approaching SLA deadline</span>
+          </div>
+        </div>
+
+        {/* 5. SLA Breached */}
+        <div className="kpi-card kpi-glow-rose col-span-2 sm:col-span-1">
+          <div className="kpi-card-inner">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-rose-700">SLA Breached</span>
+              <ShieldAlert className="w-4 h-4 text-rose-600 kpi-icon" />
+            </div>
+            <div className="text-2xl font-bold text-rose-900 leading-none">
+              {breachedCount}
+            </div>
+            <span className="text-[11px] text-rose-600/80 mt-1.5">Resolution SLA exceeded</span>
           </div>
         </div>
       </div>

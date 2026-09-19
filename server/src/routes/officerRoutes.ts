@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { complaintStore } from '../db/complaintStore.js';
 import { userStore } from '../db/userStore.js';
+import { assessDelayRisk } from '../services/delayRiskEngine.js';
+import { followthroughRepository } from '../modules/followthrough/followthrough.repository.js';
 import type { ComplaintStatus, OfficerReviewInput } from '../types/complaint.js';
 
 export const officerRouter = Router();
@@ -11,11 +13,12 @@ officerRouter.use(requireAuth, requireRole(['OFFICER', 'ADMIN']));
 
 // 1. Officer Review Queue with Filtering and Search
 officerRouter.get('/complaints', async (req, res) => {
-  const { status, locationArea, category, duplicateRisk, q } = req.query as {
+  const { status, locationArea, category, duplicateRisk, delayRisk, q } = req.query as {
     status?: string;
     locationArea?: string;
     category?: string;
     duplicateRisk?: string;
+    delayRisk?: string;
     q?: string;
   };
 
@@ -28,9 +31,19 @@ officerRouter.get('/complaints', async (req, res) => {
       q,
     });
 
+    // Compute live delay risk for each complaint in queue
+    const complaintsWithRisk = complaints.map((c) => ({
+      ...c,
+      delayRisk: assessDelayRisk(c),
+    }));
+
+    const filtered = delayRisk
+      ? complaintsWithRisk.filter((c) => c.delayRisk.riskLevel === delayRisk.toUpperCase())
+      : complaintsWithRisk;
+
     res.status(200).json({
-      count: complaints.length,
-      complaints,
+      count: filtered.length,
+      complaints: filtered,
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to retrieve complaints queue.', details: err.message });
@@ -50,9 +63,13 @@ officerRouter.get('/complaints/:id', async (req, res) => {
 
     const matchedCandidates = await complaintStore.findMatchesForComplaint(id);
     const citizen = await userStore.findById(complaint.citizenId);
+    const complaintWithRisk = {
+      ...complaint,
+      delayRisk: assessDelayRisk(complaint),
+    };
 
     res.status(200).json({
-      complaint,
+      complaint: complaintWithRisk,
       matchedCandidates,
       citizen: citizen
         ? {
@@ -98,18 +115,48 @@ officerRouter.patch('/complaints/:id/review', async (req, res) => {
       return;
     }
 
+    const isStatusChange = Boolean(status && status !== existing.status);
+    const now = new Date().toISOString();
+
     const updated = await complaintStore.update(id, {
       status: status || existing.status,
       assignedDepartment: assignedDepartment !== undefined ? assignedDepartment : existing.assignedDepartment,
       assignedOfficerId: assignedOfficerId !== undefined ? assignedOfficerId : (existing.assignedOfficerId || req.user!.userId),
       reviewNotes: reviewNotes !== undefined ? reviewNotes : existing.reviewNotes,
+      resolvedAt: status === 'RESOLVED' && !existing.resolvedAt ? now : existing.resolvedAt,
+      resolvedByOfficerId: status === 'RESOLVED' && !existing.resolvedByOfficerId ? req.user!.userId : existing.resolvedByOfficerId,
     });
+
+    // Record activity log for Follow-through lifecycle tracking (only after update succeeds)
+    try {
+      await followthroughRepository.logActivity({
+        id: `ACT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        complaintId: id,
+        eventType: isStatusChange ? 'STATUS_CHANGED' : 'OFFICER_REVIEW',
+        sourceTable: 'complaints',
+        sourceRecordId: id,
+        actorId: req.user!.userId,
+        actorName: req.user?.email,
+        actorRole: 'OFFICER',
+        oldStatus: existing.status,
+        newStatus: status || existing.status,
+        notes: reviewNotes !== undefined ? reviewNotes : (isStatusChange ? `Status changed to ${status}.` : 'Officer review committed.'),
+        metadata: {
+          assignedDepartment: assignedDepartment !== undefined ? assignedDepartment : existing.assignedDepartment,
+          assignedOfficerId: assignedOfficerId !== undefined ? assignedOfficerId : existing.assignedOfficerId,
+        },
+        createdAt: now,
+      });
+    } catch (logErr: any) {
+      console.error('[officerRoutes] Failed to log review activity:', logErr.message);
+    }
 
     res.status(200).json({
       message: 'Complaint review updated successfully.',
       complaint: updated,
     });
   } catch (err: any) {
-    res.status(500).json({ error: 'Failed to update complaint review.', details: err.message });
+    console.error('[officerRoutes] Failed to update complaint review:', err.message);
+    res.status(500).json({ error: 'Failed to update complaint review.' });
   }
 });
