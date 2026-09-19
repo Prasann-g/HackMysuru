@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Copy,
   Check,
@@ -9,17 +9,32 @@ import {
   ImageOff,
   Tag,
   HelpCircle,
+  AlertTriangle,
+  AlertCircle,
+  ShieldCheck,
+  History,
+  Loader2,
+  Link,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { AuthenticatedEvidenceImage } from '../common/AuthenticatedEvidenceImage';
-import type { ComplaintRecord } from '../../services/api';
+import {
+  apiResolveDuplicateCluster,
+  apiGetComplaintDuplicateAudits,
+  type ComplaintRecord,
+  type ComplaintResolutionAuditRecord,
+  type ResolutionActionType,
+} from '../../services/api';
 
 interface DuplicateClusterInspectorProps {
   currentComplaint: ComplaintRecord;
   matchedCandidates: ComplaintRecord[];
   onConfirmDuplicate?: (candidate: ComplaintRecord) => void;
   onMarkDistinct?: (candidate: ComplaintRecord) => void;
+  onResolved?: () => void;
 }
 
 export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps> = ({
@@ -27,9 +42,39 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
   matchedCandidates,
   onConfirmDuplicate,
   onMarkDistinct,
+  onResolved,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState<{
+    actionType: ResolutionActionType;
+    candidate: ComplaintRecord;
+  } | null>(null);
+  const [decisionNotes, setDecisionNotes] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [auditRecords, setAuditRecords] = useState<ComplaintResolutionAuditRecord[]>([]);
+  const [isLoadingAudits, setIsLoadingAudits] = useState<boolean>(false);
+  const [showAuditHistory, setShowAuditHistory] = useState<boolean>(false);
+
   const matchesInfo = currentComplaint.verificationResult?.matches || [];
+
+  const fetchAudits = useCallback(() => {
+    setIsLoadingAudits(true);
+    apiGetComplaintDuplicateAudits(currentComplaint.id)
+      .then((records) => {
+        setAuditRecords(records);
+        setIsLoadingAudits(false);
+      })
+      .catch(() => {
+        setAuditRecords([]);
+        setIsLoadingAudits(false);
+      });
+  }, [currentComplaint.id]);
+
+  useEffect(() => {
+    fetchAudits();
+  }, [fetchAudits]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text).catch(() => {
@@ -39,6 +84,60 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleInitiateAction = (actionType: ResolutionActionType, candidate: ComplaintRecord) => {
+    setActionError(null);
+    setActionSuccess(null);
+    if (actionType === 'MERGE_DUPLICATES') {
+      setDecisionNotes(
+        `Site inspection and photographic review confirmed grievance #${candidate.id} and #${currentComplaint.id} describe the identical occurrence.`
+      );
+      onConfirmDuplicate?.(candidate);
+    } else if (actionType === 'MARK_DISTINCT') {
+      setDecisionNotes(
+        `Field inspection verified complaint #${currentComplaint.id} is a distinct occurrence from #${candidate.id} despite geographic proximity.`
+      );
+      onMarkDistinct?.(candidate);
+    } else if (actionType === 'MARK_RELATED') {
+      setDecisionNotes(
+        `Grievance #${currentComplaint.id} and #${candidate.id} are related incidents in the same locality, linked for coordinated municipal field crew dispatch.`
+      );
+    }
+    setActiveAction({ actionType, candidate });
+  };
+
+  const handleExecuteResolution = async (
+    actionType: ResolutionActionType,
+    candidate: ComplaintRecord
+  ) => {
+    if (decisionNotes.trim().length < 5) {
+      setActionError(
+        'Decision notes must be at least 5 characters long explaining the adjudication rationale.'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      const res = await apiResolveDuplicateCluster(currentComplaint.id, {
+        actionType,
+        targetComplaintId: candidate.id,
+        decisionNotes: decisionNotes.trim(),
+      });
+      setActionSuccess(res.message);
+      setActiveAction(null);
+      fetchAudits();
+      if (onResolved) {
+        onResolved();
+      }
+      setTimeout(() => setActionSuccess(null), 5000);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to record duplicate resolution.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (matchedCandidates.length === 0) {
     return (
       <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-5 text-emerald-800">
@@ -46,7 +145,7 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
           <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <h4 className="font-semibold text-emerald-900 text-sm">
-              No Duplicate Clusters Detected
+              No duplicate clusters require review.
             </h4>
             <p className="text-xs text-emerald-700 leading-relaxed">
               Deterministic similarity indexing, geographic proximity, and perceptual image hashing
@@ -67,6 +166,22 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
 
   return (
     <div className="space-y-5">
+      {actionSuccess && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-medium">{actionSuccess}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionSuccess(null)}
+            className="text-emerald-600 hover:text-emerald-800 p-1 text-sm font-bold leading-none cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Cluster Overview Header */}
       <div className="bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -127,6 +242,29 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                   <Badge variant={riskBadgeVariant} size="sm">
                     {matchMeta?.riskLevel || 'MEDIUM'} DUPLICATE OVERLAP
                   </Badge>
+
+                  {/* Existing Adjudication Badges */}
+                  {currentComplaint.primaryComplaintId === candidate.id && (
+                    <Badge variant="duplicate" size="sm">
+                      CONSOLIDATED AS DUPLICATE (MASTER #{candidate.id})
+                    </Badge>
+                  )}
+                  {candidate.primaryComplaintId === currentComplaint.id && (
+                    <Badge variant="verified" size="sm">
+                      MASTER ANCHOR (CONSOLIDATED #{candidate.id})
+                    </Badge>
+                  )}
+                  {(currentComplaint.resolutionAction === 'MARK_DISTINCT' || candidate.resolutionAction === 'MARK_DISTINCT') && (
+                    <Badge variant="verified" size="sm">
+                      VERIFIED DISTINCT
+                    </Badge>
+                  )}
+                  {(currentComplaint.resolutionAction === 'MARK_RELATED' || candidate.resolutionAction === 'MARK_RELATED') &&
+                    Boolean(currentComplaint.duplicateClusterId && currentComplaint.duplicateClusterId === candidate.duplicateClusterId) && (
+                    <Badge variant="info" size="sm">
+                      LINKED IN CLUSTER
+                    </Badge>
+                  )}
 
                   {similarityPct !== null && (
                     <span className="text-xs font-semibold text-bridge-charcoal-700 bg-bridge-almond-100 px-2.5 py-0.5 rounded-full">
@@ -409,41 +547,231 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                 </div>
               )}
 
-              {/* Action Buttons for Officer Triage Decision */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-bridge-almond-100">
-                <div className="text-[11px] text-bridge-charcoal-500">
-                  Select an action to record your verification decision for this cluster match.
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {onMarkDistinct && (
+              {/* Action Buttons & Consequential Confirmation Flow */}
+              {activeAction?.candidate.id === candidate.id ? (
+                <div className="bg-bridge-almond-50 border border-bridge-gold-300 rounded-xl p-4 space-y-3 mt-3 animate-fadeIn">
+                  <div className="flex items-center justify-between pb-2 border-b border-bridge-gold-200">
+                    <span className="text-xs font-bold text-bridge-charcoal-900 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-bridge-gold-700" />
+                      Confirm Adjudication: {activeAction.actionType.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-[11px] font-mono text-bridge-charcoal-500">
+                      Candidate #{candidate.id}
+                    </span>
+                  </div>
+
+                  {activeAction.actionType === 'MERGE_DUPLICATES' && (
+                    <div className="p-3 bg-amber-100/70 border border-amber-300 rounded-lg text-amber-900 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="font-semibold">Consequential Resolution Notice:</p>
+                        <p className="text-[11px] leading-relaxed">
+                          This will close grievance <strong>#{currentComplaint.id}</strong> with status <code>CLOSED</code>, consolidate it under master complaint <strong>#{candidate.id}</strong>, and record a persisted audit entry. Reopening is not automated.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeAction.actionType === 'MARK_DISTINCT' && (
+                    <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900 text-xs flex items-start gap-2">
+                      <Split className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <p className="text-[11px] leading-relaxed">
+                        Both grievances will remain active in their respective queues. Their algorithmic similarity signals will be annotated with official distinct verification in the audit ledger.
+                      </p>
+                    </div>
+                  )}
+
+                  {activeAction.actionType === 'MARK_RELATED' && (
+                    <div className="p-2.5 bg-bridge-gold-50 border border-bridge-gold-200 rounded-lg text-bridge-charcoal-800 text-xs flex items-start gap-2">
+                      <Link className="w-4 h-4 text-bridge-gold-700 shrink-0 mt-0.5" />
+                      <p className="text-[11px] leading-relaxed">
+                        Both grievances will be linked in cluster <strong>{clusterIdentifier}</strong> for coordinated municipal field crew dispatch without closing either record.
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-bridge-charcoal-700 mb-1">
+                      Officer Review Rationale &amp; Field Notes <span className="text-rose-600">*</span> (min 5 chars)
+                    </label>
+                    <textarea
+                      value={decisionNotes}
+                      onChange={(e) => setDecisionNotes(e.target.value)}
+                      placeholder="Enter physical site inspection verification particulars or justification..."
+                      className="w-full text-xs p-2.5 rounded-lg border border-bridge-almond-300 bg-white focus:ring-2 focus:ring-bridge-gold-500 focus:border-bridge-gold-500 focus:outline-none"
+                      rows={3}
+                    />
+                  </div>
+
+                  {actionError && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{actionError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => onMarkDistinct(candidate)}
+                      onClick={() => {
+                        setActiveAction(null);
+                        setActionError(null);
+                      }}
+                      disabled={isSubmitting}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleExecuteResolution(activeAction.actionType, candidate)}
+                      disabled={isSubmitting || decisionNotes.trim().length < 5}
+                      className="text-xs"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                          Recording...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1" />
+                          Confirm &amp; Record Decision
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-bridge-almond-100">
+                  <div className="text-[11px] text-bridge-charcoal-500">
+                    Record official verification decision for this cluster match.
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInitiateAction('MARK_DISTINCT', candidate)}
                       className="text-xs"
                     >
                       <Split className="w-3.5 h-3.5 mr-1 text-bridge-charcoal-600" />
-                      Mark Distinct Grievance
+                      Mark Distinct
                     </Button>
-                  )}
-                  {onConfirmDuplicate && (
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="outline"
                       size="sm"
-                      onClick={() => onConfirmDuplicate(candidate)}
-                      className="text-xs font-semibold text-rose-800 bg-rose-50 border-rose-200 hover:bg-rose-100"
+                      onClick={() => handleInitiateAction('MARK_RELATED', candidate)}
+                      className="text-xs"
                     >
-                      <Copy className="w-3.5 h-3.5 mr-1 text-rose-700" />
-                      Confirm Duplicate of {candidate.id}
+                      <Link className="w-3.5 h-3.5 mr-1 text-bridge-charcoal-600" />
+                      Link in Cluster
                     </Button>
-                  )}
+                    {currentComplaint.status !== 'CLOSED' && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleInitiateAction('MERGE_DUPLICATES', candidate)}
+                        className="text-xs font-semibold text-rose-800 bg-rose-50 border-rose-200 hover:bg-rose-100"
+                      >
+                        <Copy className="w-3.5 h-3.5 mr-1 text-rose-700" />
+                        Confirm Duplicate of #{candidate.id}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
+      </div>
+
+      {/* Persisted Cluster Resolution Audit History */}
+      <div className="bg-white border border-bridge-almond-200 rounded-xl p-4 shadow-civic-sm space-y-3">
+        <button
+          type="button"
+          onClick={() => setShowAuditHistory((prev) => !prev)}
+          className="w-full flex items-center justify-between text-left cursor-pointer focus:outline-none"
+        >
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-bridge-gold-600" />
+            <span className="text-xs font-bold text-bridge-charcoal-800">
+              Persisted Cluster Resolution Audit History
+            </span>
+            <Badge variant="neutral" size="sm">
+              {auditRecords.length} Decision{auditRecords.length === 1 ? '' : 's'}
+            </Badge>
+          </div>
+          {showAuditHistory ? (
+            <ChevronUp className="w-4 h-4 text-bridge-charcoal-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-bridge-charcoal-400" />
+          )}
+        </button>
+
+        {showAuditHistory && (
+          <div className="pt-2 border-t border-bridge-almond-100 space-y-3 animate-fadeIn">
+            {isLoadingAudits ? (
+              <div className="flex items-center gap-2 py-3 text-xs text-bridge-charcoal-500">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-bridge-gold-600" />
+                <span>Loading audit trail...</span>
+              </div>
+            ) : auditRecords.length === 0 ? (
+              <p className="text-xs text-bridge-charcoal-400 italic py-2">
+                No prior duplicate resolution decisions recorded for this grievance or cluster.
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {auditRecords.map((audit) => (
+                  <div
+                    key={audit.id}
+                    className="p-3 bg-bridge-almond-50/70 border border-bridge-almond-200 rounded-lg text-xs space-y-1.5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            audit.actionType === 'MERGE_DUPLICATES'
+                              ? 'duplicate'
+                              : audit.actionType === 'MARK_DISTINCT'
+                              ? 'verified'
+                              : 'info'
+                          }
+                          size="sm"
+                        >
+                          {audit.actionType.replace(/_/g, ' ')}
+                        </Badge>
+                        <span className="font-mono text-[11px] text-bridge-charcoal-500">
+                          Primary: #{audit.primaryComplaintId}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-bridge-charcoal-400 font-mono">
+                        {new Date(audit.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <p className="text-bridge-charcoal-800 font-medium text-[11px]">
+                      {audit.decisionNotes}
+                    </p>
+
+                    <div className="text-[10px] text-bridge-charcoal-500 flex flex-wrap justify-between pt-1 border-t border-bridge-almond-200/60">
+                      <span>
+                        Adjudicated by: <strong className="text-bridge-charcoal-700">{audit.officerName}</strong>
+                      </span>
+                      <span className="font-mono">Audit ID: {audit.id}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

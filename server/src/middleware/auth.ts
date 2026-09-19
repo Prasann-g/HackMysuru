@@ -36,7 +36,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    req.user = payload;
+    // Real-time synchronization: use live database role and ward while preserving JWT claims
+    req.user = {
+      ...payload,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      ward: user.ward || payload.ward,
+    };
     next();
   } catch (err: any) {
     res.status(401).json({

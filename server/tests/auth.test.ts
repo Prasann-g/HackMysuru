@@ -351,4 +351,111 @@ describe('Civic Trust Authentication & Role Architecture (Step 4.3A)', () => {
     expect(data.authorized).toBe(true);
     expect(data.user.role).toBe('OFFICER');
   });
+
+  // 16. Real-time RBAC: Officer demoted to CITIZEN loses officer access immediately
+  it('immediately revokes officer access (HTTP 403) with the same valid JWT when role is changed to CITIZEN in the database', async () => {
+    // 1. Login as officer and verify officer access
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'officer.ward48@mcc.gov.in',
+        password: 'Officer@Mysuru48',
+      }),
+    });
+    const { token: officerToken, user: initialUser } = await loginRes.json();
+
+    const initialRes = await fetch(`${baseUrl}/api/auth/officer-queue`, {
+      headers: { Authorization: `Bearer ${officerToken}` },
+    });
+    expect(initialRes.status).toBe(200);
+
+    // 2. Demote officer to CITIZEN in the database
+    const userRecord = await userStore.findById(initialUser.id);
+    expect(userRecord).toBeDefined();
+    await userStore.save({
+      ...userRecord!,
+      role: 'CITIZEN',
+    });
+
+    try {
+      // 3. Using the SAME JWT, officer access must now return HTTP 403 immediately
+      const postDemotionRes = await fetch(`${baseUrl}/api/auth/officer-queue`, {
+        headers: { Authorization: `Bearer ${officerToken}` },
+      });
+      expect(postDemotionRes.status).toBe(403);
+      const errData = await postDemotionRes.json();
+      expect(errData.error).toContain('Access denied');
+
+      // 4. Verify /api/auth/me reflects the new CITIZEN role
+      const meRes = await fetch(`${baseUrl}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${officerToken}` },
+      });
+      expect(meRes.status).toBe(200);
+      const meData = await meRes.json();
+      expect(meData.user.role).toBe('CITIZEN');
+    } finally {
+      // 5. Restore officer role in the database
+      await userStore.save({
+        ...userRecord!,
+        role: 'OFFICER',
+      });
+    }
+
+    // 6. Accessing with the same JWT now succeeds again
+    const restoredRes = await fetch(`${baseUrl}/api/auth/officer-queue`, {
+      headers: { Authorization: `Bearer ${officerToken}` },
+    });
+    expect(restoredRes.status).toBe(200);
+  });
+
+  // 17. Real-time Deactivation: Deactivated account immediately blocked (HTTP 401)
+  it('immediately blocks authentication (HTTP 401) when an account is marked inactive in the database', async () => {
+    // 1. Login as officer
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'officer.sanitation@mcc.gov.in',
+        password: 'CleanMysuru2026',
+      }),
+    });
+    const { token: officerToken, user: initialUser } = await loginRes.json();
+
+    // 2. Verify initial access succeeds
+    const initialRes = await fetch(`${baseUrl}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${officerToken}` },
+    });
+    expect(initialRes.status).toBe(200);
+
+    // 3. Deactivate user in database
+    const userRecord = await userStore.findById(initialUser.id);
+    expect(userRecord).toBeDefined();
+    await userStore.save({
+      ...userRecord!,
+      isActive: false,
+    });
+
+    try {
+      // 4. Using the same JWT, request must immediately fail with HTTP 401
+      const blockedRes = await fetch(`${baseUrl}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${officerToken}` },
+      });
+      expect(blockedRes.status).toBe(401);
+      const blockedData = await blockedRes.json();
+      expect(blockedData.error).toContain('no longer active');
+    } finally {
+      // 5. Restore active status
+      await userStore.save({
+        ...userRecord!,
+        isActive: true,
+      });
+    }
+
+    // 6. Verify access restored
+    const restoredRes = await fetch(`${baseUrl}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${officerToken}` },
+    });
+    expect(restoredRes.status).toBe(200);
+  });
 });

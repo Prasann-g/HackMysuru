@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   MapPin,
   Building,
+  Building2,
   Navigation,
   CheckCircle2,
   RefreshCw,
@@ -11,9 +12,11 @@ import {
   Upload,
   X,
   Info,
+  ShieldCheck,
 } from 'lucide-react';
 import { MYSURU_LOCALITIES, isWithinMysuruServiceArea, type GpsStatus } from './types';
 import { Button } from '../ui/Button';
+import { apiLookupWardForCoordinates } from '../../services/api';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE_MB = 10;
@@ -68,6 +71,25 @@ export const Section3PlaceEvidence: React.FC<Section3Props> = ({
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Live Ward resolution preview state
+  const [detectedWard, setDetectedWard] = useState<{
+    wardNumber: string | null;
+    wardName: string | null;
+    status: 'matched' | 'outside_boundary' | 'boundary_unavailable';
+  } | null>(null);
+  const [wardLoading, setWardLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (latitude !== null && longitude !== null && isWithinMysuruServiceArea(latitude, longitude)) {
+      setWardLoading(true);
+      apiLookupWardForCoordinates(latitude, longitude)
+        .then((res) => setDetectedWard(res))
+        .finally(() => setWardLoading(false));
+    } else {
+      setDetectedWard(null);
+    }
+  }, [latitude, longitude]);
 
   // ------- GPS -------
   const requestGps = () => {
@@ -222,18 +244,86 @@ export const Section3PlaceEvidence: React.FC<Section3Props> = ({
 
           {gpsStatus === 'success' && latitude !== null && longitude !== null && (
             isWithinMysuruServiceArea(latitude, longitude) ? (
-              <div className="mt-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-2 animate-fadeIn">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="mt-3 space-y-2 animate-fadeIn">
+                {/* Coordinates & Precision Tier Banner */}
+                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      <strong>GPS Coordinates:</strong> {latitude.toFixed(5)}° N, {longitude.toFixed(5)}° E
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                    {/* Precision Tier Badge */}
+                    {gpsAccuracy !== null && (
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                          gpsAccuracy <= 50
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : gpsAccuracy <= 200
+                            ? 'bg-amber-100 text-amber-800 border-amber-300'
+                            : 'bg-rose-100 text-rose-800 border-rose-300'
+                        }`}
+                      >
+                        {gpsAccuracy <= 50
+                          ? `High Precision (~${gpsAccuracy}m)`
+                          : gpsAccuracy <= 200
+                          ? `Moderate Precision (~${gpsAccuracy}m)`
+                          : `Low Precision (~${gpsAccuracy}m)`}
+                      </span>
+                    )}
+
+                    <span className="text-[10px] font-semibold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                      Mysuru Bounds Verified
+                    </span>
+                  </div>
+                </div>
+
+                {/* Detected Ward Resolution Preview */}
+                <div className="p-3 rounded-xl bg-bridge-almond-50 border border-bridge-almond-200 text-xs text-bridge-charcoal-800 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-bridge-gold-700 shrink-0" />
+                    <span>
+                      <strong>Ward Jurisdiction:</strong>{' '}
+                      {wardLoading ? (
+                        <span className="text-bridge-charcoal-500 italic">Detecting MCC Ward boundary...</span>
+                      ) : detectedWard?.status === 'matched' ? (
+                        <span>
+                          Ward {detectedWard.wardNumber} — {detectedWard.wardName} (mysuru-mcc-wards-65)
+                        </span>
+                      ) : detectedWard?.status === 'outside_boundary' ? (
+                        <span className="text-amber-700">Outside ward polygons (Held for General Verification)</span>
+                      ) : (
+                        <span className="text-bridge-charcoal-500">Ward boundary service standby</span>
+                      )}
+                    </span>
+                  </div>
+
+                  {detectedWard?.status === 'matched' && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-bridge-gold-100 text-bridge-gold-800 px-2 py-0.5 rounded border border-bridge-gold-200 shrink-0">
+                      Ward {detectedWard.wardNumber}
+                    </span>
+                  )}
+                </div>
+
+                {/* Location Consistency Notice (If citizen entered locality differs from detected ward) */}
+                {detectedWard?.wardName && locationArea.trim() && !detectedWard.wardName.toLowerCase().includes(locationArea.trim().toLowerCase()) && !locationArea.trim().toLowerCase().includes(detectedWard.wardName.toLowerCase()) && (
+                  <div className="p-2.5 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2">
+                    <Info className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Location Context Signal:</strong> Device GPS coordinates map to Ward {detectedWard.wardNumber} ({detectedWard.wardName}), while entered locality is &quot;{locationArea}&quot;. Both signals will be provided to the verification engine for explainable officer review.
+                    </div>
+                  </div>
+                )}
+
+                {/* Rule 7 Non-Authoritative Evidence Notice */}
+                <div className="px-1 text-[10px] text-bridge-charcoal-500 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-bridge-gold-600 shrink-0" />
                   <span>
-                    <strong>GPS Captured:</strong> {latitude.toFixed(5)}° N,{' '}
-                    {longitude.toFixed(5)}° E
-                    {gpsAccuracy && ` (~${gpsAccuracy}m)`} — Within Mysuru Bounds
+                    Geospatial evidence signal: GPS coordinates and timestamps are recorded as citizen-submitted evidence.
                   </span>
                 </div>
-                <span className="text-[10px] font-semibold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded shrink-0">
-                  Mysuru Verified
-                </span>
               </div>
             ) : (
               <div className="mt-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-2 animate-fadeIn">

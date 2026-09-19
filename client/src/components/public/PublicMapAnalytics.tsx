@@ -18,6 +18,7 @@ import { Card, CardHeader, CardBody } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { apiGetPublicAnalytics, type PublicAnalyticsResponse, type PublicComplaintSummary } from '../../services/api';
+import { MysuruCivicMap } from '../map/MysuruCivicMap';
 
 interface PublicMapAnalyticsProps {
   onNavigateToReport: () => void;
@@ -435,7 +436,10 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               </Card>
             </div>
 
-            {/* 4. Neighborhood Area Distribution & Geo-Location Explorer */}
+            {/* 4. Interactive Mysuru Civic Map & Spatial Explorer */}
+            <MysuruCivicMap onSelectComplaint={onNavigateToTrack} />
+
+            {/* 5. Neighborhood Area Distribution & Locality Density */}
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -572,7 +576,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
               </CardBody>
             </Card>
 
-            {/* 5. Sanitized Public Transparency Log */}
+            {/* 6. Sanitized Public Transparency Log */}
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

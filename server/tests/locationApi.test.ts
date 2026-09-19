@@ -3,12 +3,14 @@ import type { Server } from 'node:http';
 import { app } from '../src/index.js';
 import { sqliteUserStore } from '../src/db/userStore.js';
 import { complaintStore } from '../src/db/complaintStore.js';
+import { followthroughRepository } from '../src/modules/followthrough/followthrough.repository.js';
 
 describe('GPS & Ward Resolution API Endpoints (locationApi.test.ts)', () => {
   let server: Server;
   let baseUrl: string;
   let citizenToken: string;
   let otherCitizenToken: string;
+  let officerToken: string;
   let testComplaintId: string;
 
   beforeAll(async () => {
@@ -52,6 +54,18 @@ describe('GPS & Ward Resolution API Endpoints (locationApi.test.ts)', () => {
     });
     const citData2 = await citRes2.json();
     otherCitizenToken = citData2.token;
+
+    // Log in pre-seeded officer
+    const offRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'officer.ward48@mcc.gov.in',
+        password: 'Officer@Mysuru48',
+      }),
+    });
+    const offData = await offRes.json();
+    officerToken = offData.token;
 
     // Create a base complaint with Citizen 1 (no GPS coordinates initially)
     const now = new Date().toISOString();
@@ -97,6 +111,23 @@ describe('GPS & Ward Resolution API Endpoints (locationApi.test.ts)', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${otherCitizenToken}`,
+        },
+        body: JSON.stringify({
+          latitude: 12.349695,
+          longitude: 76.609568,
+        }),
+      });
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('authorized');
+    });
+
+    it('rejects officer attempting to modify citizen complaint location with 403', async () => {
+      const res = await fetch(`${baseUrl}/api/complaints/${testComplaintId}/location`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${officerToken}`,
         },
         body: JSON.stringify({
           latitude: 12.349695,
@@ -161,6 +192,14 @@ describe('GPS & Ward Resolution API Endpoints (locationApi.test.ts)', () => {
       expect(updated?.wardId).toBe(6354);
       expect(updated?.boundaryVersion).toBe('mysuru-mcc-wards-65');
       expect(updated?.routingDecision?.authorityType).toBe('MCC');
+
+      // Verify activity log event recorded in followthrough repository
+      const activities = await followthroughRepository.getActivitiesForComplaint(testComplaintId);
+      const locationEvent = activities.find((a) => a.eventType === 'LOCATION_UPDATED');
+      expect(locationEvent).toBeDefined();
+      expect(locationEvent?.actorRole).toBe('CITIZEN');
+      expect(locationEvent?.metadata?.wardNumber).toBe('1');
+      expect(locationEvent?.metadata?.newCoordinates?.latitude).toBeCloseTo(12.349695, 5);
     });
 
     it('handles outside-boundary coordinate gracefully without failing or assigning default ward', async () => {

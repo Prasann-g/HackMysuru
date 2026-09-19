@@ -142,6 +142,11 @@ export interface PublicTrackResult {
     evidenceAgeDays?: number;
   };
   slaTracking?: PublicSlaTracking;
+  duplicateResolution?: {
+    actionType: string;
+    isMaster: boolean;
+    notice: string;
+  };
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -162,6 +167,14 @@ export interface OfficerReviewInput {
   assignedDepartment?: string;
   assignedOfficerId?: string;
   reviewNotes?: string;
+}
+
+export interface OfficerDuplicateResolutionInput {
+  actionType: 'MERGE_DUPLICATES' | 'MARK_DISTINCT' | 'MARK_RELATED';
+  targetComplaintId: string;
+  decisionNotes: string;
+  clusterId?: string;
+  isCurrentSecondary?: boolean;
 }
 
 export interface PublicComplaintSummary {
@@ -194,4 +207,27 @@ export interface PublicAnalyticsData {
   verifiedRatePercent: number;
   recentComplaints: PublicComplaintSummary[];
   generatedAt: string;
+}
+
+export interface PublicMapComplaintItem {
+  id: string;
+  trackingToken: string;
+  category: IssueCategory;
+  customCategory?: string;
+  description: string;
+  locationArea: string;
+  addressText?: string;
+  latitude: number;
+  longitude: number;
+  wardNumber?: string;
+  wardName?: string;
+  wardId?: number;
+  status: ComplaintStatus;
+  observedDate: string;
+  createdAt: string;
+  assignedDepartment?: string;
+  verificationOutcome?: string;
+  duplicateRisk?: string;
+  isDemo?: boolean;
+  distanceMeters?: number;
 }

@@ -142,6 +142,11 @@ export class FollowthroughService {
         description = isCitizenView
           ? 'Grievance administrative cycle concluded.'
           : act.notes || 'Complaint closed.';
+      } else if (act.eventType === 'LOCATION_UPDATED') {
+        title = 'Location Refined';
+        description = isCitizenView
+          ? (act.metadata?.wardNumber ? `Grievance location updated to Ward ${act.metadata.wardNumber} (${act.metadata.wardName || ''}).` : 'Grievance GPS location refined by submitter.')
+          : act.notes || 'Complaint GPS location updated by submitter.';
       }
 
       rawEvents.push({

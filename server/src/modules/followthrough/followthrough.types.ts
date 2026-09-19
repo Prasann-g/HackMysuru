@@ -15,7 +15,8 @@ export type ActivityEventType =
   | 'OFFICER_REVIEW'
   | 'DUPLICATE_ACTION'
   | 'RESOLVED'
-  | 'CLOSED';
+  | 'CLOSED'
+  | 'LOCATION_UPDATED';
 
 export interface ActivityLogRecord {
   id: string;

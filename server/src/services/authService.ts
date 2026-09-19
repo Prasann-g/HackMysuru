@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { CONFIG } from '../config.js';
 import { userStore } from '../db/userStore.js';
+import type { IUserStore } from '../db/interfaces.js';
 import type {
   AuthResponse,
   AuthTokenPayload,
@@ -162,13 +163,14 @@ export async function registerOfficer(input: OfficerRegisterInput): Promise<Auth
   };
 }
 
-export async function loginUser(input: LoginInput): Promise<AuthResponse> {
+export async function loginUser(input: LoginInput, customStore?: IUserStore): Promise<AuthResponse> {
   if (!input.email || !input.password) {
     throw new Error('Email and password are required.');
   }
 
+  const store = customStore || userStore;
   const normalizedEmail = input.email.trim().toLowerCase();
-  const user = await userStore.findByEmail(normalizedEmail);
+  const user = await store.findByEmail(normalizedEmail);
 
   if (!user) {
     // Constant-time mitigation: generic error message
@@ -186,7 +188,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
 
   // Update last login timestamp
   user.lastLoginAt = new Date().toISOString();
-  await userStore.save(user);
+  await store.save(user);
 
   const tokenPayload: AuthTokenPayload = {
     userId: user.id,

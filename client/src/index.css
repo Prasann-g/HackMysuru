@@ -1,3 +1,4 @@
+@import 'leaflet/dist/leaflet.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -348,3 +349,73 @@
  * sets animation-duration to 0.01ms for all elements, which effectively
  * freezes the flowing shapes without any extra code here.
  */
+
+/* CivicBridge Leaflet Customization */
+.leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  color: #1C1E21 !important;
+  border: 1px solid #EAE2D5 !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(28, 30, 33, 0.12), 0 8px 10px -6px rgba(28, 30, 33, 0.08) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background: #FFFFFF !important;
+  border: 1px solid #EAE2D5 !important;
+}
+
+.leaflet-container {
+  font-family: inherit !important;
+  background-color: #FAF8F5 !important;
+}
+
+/* User Location GPS Radar Pulse */
+@keyframes gps-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px rgba(197, 160, 89, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(197, 160, 89, 0);
+  }
+}
+
+.gps-radar-dot {
+  width: 16px;
+  height: 16px;
+  background-color: #B08C44;
+  border: 3px solid #FFFFFF;
+  border-radius: 50%;
+  animation: gps-pulse 2s infinite;
+}
+
+/* Custom Marker Cluster Pin */
+.civic-cluster-marker {
+  background: #1C1E21;
+  color: #FDFBF7;
+  border: 2px solid #C5A059;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 4px 10px rgba(28, 30, 33, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.civic-cluster-marker:hover {
+  transform: scale(1.1);
+}

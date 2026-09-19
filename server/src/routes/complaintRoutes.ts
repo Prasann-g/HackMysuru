@@ -25,6 +25,7 @@ import {
   validateGeoEvidence,
   isValidCoordinate,
   isWithinMysuruServiceArea,
+  calculateHaversineDistanceMeters,
 } from '../utils/geoEvidenceValidator.js';
 import { validateTemporalEvidence } from '../utils/temporalEvidenceValidator.js';
 import { calculateSlaMetrics } from '../utils/slaBenchmarks.js';
@@ -34,6 +35,7 @@ import {
   createFallbackRoutingDecision,
 } from '../services/routingEngine.js';
 import { getWardForCoordinates } from '../services/wardService.js';
+import { verifyToken } from '../services/authService.js';
 import type { RoutingDecision } from '../types/routing.js';
 import type {
   EvidenceQualityAnalysis,
@@ -44,6 +46,7 @@ import type {
   ComplaintRecord,
   CreateComplaintInput,
   PublicTrackResult,
+  PublicMapComplaintItem,
 } from '../types/complaint.js';
 import type { IssueCategory } from '../types/verification.js';
 import { SYNTHETIC_DISCLAIMER } from '../db/seedDemoData.js';
@@ -533,6 +536,48 @@ complaintRouter.get('/track/:token', async (req, res) => {
         standardResolutionWindow: sla.standardResolutionWindow,
       };
     })(),
+    duplicateResolution: (() => {
+      const action = complaint.resolutionAction;
+      if (!action || action === 'NONE') {
+        if (complaint.duplicateClusterId) {
+          return {
+            actionType: 'CLUSTER_ACTIVE',
+            isMaster: true,
+            notice: 'This grievance is actively being addressed by the assigned municipal division.',
+          };
+        }
+        return undefined;
+      }
+
+      if (action === 'MERGE_DUPLICATES') {
+        const isMaster = !complaint.primaryComplaintId;
+        return {
+          actionType: 'MERGE_DUPLICATES',
+          isMaster,
+          notice: isMaster
+            ? 'This grievance is actively being addressed as the primary work order for your locality.'
+            : 'This grievance has been consolidated with an active grievance in your ward for coordinated field remediation.',
+        };
+      }
+
+      if (action === 'MARK_RELATED') {
+        return {
+          actionType: 'MARK_RELATED',
+          isMaster: false,
+          notice: 'This grievance has been linked with related ward remediation work in your area.',
+        };
+      }
+
+      if (action === 'MARK_DISTINCT') {
+        return {
+          actionType: 'MARK_DISTINCT',
+          isMaster: false,
+          notice: 'Grievance verified as an independent occurrence.',
+        };
+      }
+
+      return undefined;
+    })(),
     isDemo: complaint.isDemo,
     createdAt: complaint.createdAt,
     updatedAt: complaint.updatedAt,
@@ -565,6 +610,179 @@ complaintRouter.get('/public-analytics', async (_req, res) => {
   } catch (err: any) {
     res.status(500).json({
       error: 'Failed to compute public municipal analytics.',
+      details: err.message,
+    });
+  }
+});
+
+// 4c. Public & Authorized Interactive Map Grievances
+complaintRouter.get('/map', async (req, res) => {
+  try {
+    const {
+      latitude,
+      longitude,
+      radius,
+      bbox,
+      ward,
+      category,
+      status,
+    } = req.query;
+
+    // 1. Determine caller authorization context safely
+    let callerUser: { userId: string; role: string } | undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7).trim();
+        callerUser = verifyToken(token);
+      } catch {
+        // Fallback gracefully to public access if token is invalid
+      }
+    }
+
+    // 2. Fetch complaints from active store
+    const allComplaints = await complaintStore.listForOfficer({});
+
+    // 3. Filter by authorization & visibility rules (Correction 3 & Rule 12)
+    // - Unauthenticated: only authentic records (is_demo = false)
+    // - Authenticated Citizen: authentic records + citizen's own records (including source test complaint)
+    // - Authenticated Officer/Admin: all records
+    const accessibleComplaints = allComplaints.filter((c) => {
+      if (!c.isDemo) return true;
+      if (callerUser && (callerUser.role === 'OFFICER' || callerUser.role === 'ADMIN')) {
+        return true;
+      }
+      if (callerUser && callerUser.role === 'CITIZEN' && c.citizenId === callerUser.userId) {
+        return true;
+      }
+      return false;
+    });
+
+    // 4. Coordinates Filter: must have valid, finite coordinates
+    let mapCandidates = accessibleComplaints.filter(
+      (c) =>
+        c.latitude !== undefined &&
+        c.longitude !== undefined &&
+        isValidCoordinate(c.latitude, c.longitude)
+    );
+
+    // 5. Category Filter
+    if (category && typeof category === 'string' && category !== 'ALL') {
+      mapCandidates = mapCandidates.filter(
+        (c) => c.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    // 6. Status Filter
+    if (status && typeof status === 'string' && status !== 'ALL') {
+      mapCandidates = mapCandidates.filter(
+        (c) => c.status.toUpperCase() === status.toUpperCase()
+      );
+    }
+
+    // 7. Ward Filter (by ward number or ward name)
+    if (ward && typeof ward === 'string' && ward !== 'ALL') {
+      const cleanWard = ward.trim().toLowerCase();
+      mapCandidates = mapCandidates.filter((c) => {
+        const wNum = c.wardNumber ? String(c.wardNumber).trim().toLowerCase() : '';
+        const wName = c.wardName ? c.wardName.trim().toLowerCase() : '';
+        return wNum === cleanWard || wName === cleanWard || wName.includes(cleanWard);
+      });
+    }
+
+    // 8. Bounding Box Filter (minLng,minLat,maxLng,maxLat)
+    if (bbox && typeof bbox === 'string') {
+      const parts = bbox.split(',').map((p) => Number(p.trim()));
+      if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
+        const [minLng, minLat, maxLng, maxLat] = parts;
+        mapCandidates = mapCandidates.filter(
+          (c) =>
+            c.longitude! >= minLng &&
+            c.longitude! <= maxLng &&
+            c.latitude! >= minLat &&
+            c.latitude! <= maxLat
+        );
+      }
+    }
+
+    // 9. Distance Calculation & Radius Filter (if user coordinates provided)
+    let userLat: number | undefined;
+    let userLng: number | undefined;
+    if (latitude !== undefined && longitude !== undefined) {
+      const parsedLat = Number(latitude);
+      const parsedLng = Number(longitude);
+      if (isValidCoordinate(parsedLat, parsedLng)) {
+        userLat = parsedLat;
+        userLng = parsedLng;
+      }
+    }
+
+    let radiusKm: number | undefined;
+    if (radius !== undefined) {
+      const parsedRadius = Number(radius);
+      if (Number.isFinite(parsedRadius) && parsedRadius > 0) {
+        radiusKm = parsedRadius;
+      }
+    }
+
+    // Map each complaint to PublicMapComplaintItem with strict Rule 12 PII sanitization
+    let items: PublicMapComplaintItem[] = mapCandidates.map((c) => {
+      let distanceMeters: number | undefined;
+      if (userLat !== undefined && userLng !== undefined) {
+        distanceMeters = calculateHaversineDistanceMeters(
+          userLat,
+          userLng,
+          c.latitude!,
+          c.longitude!
+        );
+      }
+
+      return {
+        id: c.id,
+        trackingToken: c.trackingToken,
+        category: c.category,
+        customCategory: c.customCategory,
+        description: c.description,
+        locationArea: c.locationArea,
+        addressText: c.addressText,
+        latitude: c.latitude!,
+        longitude: c.longitude!,
+        wardNumber: c.wardNumber || c.routingDecision?.wardNumber,
+        wardName: c.wardName || c.routingDecision?.wardName,
+        wardId: c.wardId || c.routingDecision?.wardId,
+        status: c.status,
+        observedDate: c.observedDate,
+        createdAt: c.createdAt,
+        assignedDepartment: c.assignedDepartment || c.routingDecision?.department,
+        verificationOutcome: c.verificationResult?.outcome,
+        duplicateRisk: c.verificationResult?.duplicateRisk,
+        isDemo: c.isDemo,
+        distanceMeters,
+      };
+    });
+
+    // Apply radius filtering if specified and user location provided
+    if (radiusKm !== undefined && userLat !== undefined && userLng !== undefined) {
+      const maxMeters = radiusKm * 1000;
+      items = items.filter(
+        (it) => it.distanceMeters !== undefined && it.distanceMeters <= maxMeters
+      );
+      items.sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity));
+    }
+
+    res.status(200).json({
+      total: items.length,
+      complaints: items,
+      userLocation:
+        userLat !== undefined && userLng !== undefined
+          ? { latitude: userLat, longitude: userLng }
+          : undefined,
+      radiusKm,
+    });
+  } catch (err: any) {
+    console.error('[complaintRoutes /map Error]:', err);
+    res.status(500).json({
+      error: 'Failed to retrieve map complaints.',
       details: err.message,
     });
   }
@@ -697,7 +915,8 @@ complaintRouter.patch('/:id/location', requireAuth, async (req, res) => {
       return;
     }
 
-    if (req.user?.role === 'CITIZEN' && complaint.citizenId !== req.user.userId) {
+    // Strict ownership: Only the submitting citizen can update their complaint coordinates
+    if (complaint.citizenId !== req.user?.userId) {
       res.status(403).json({ error: 'You are not authorized to modify this complaint.' });
       return;
     }
@@ -735,6 +954,32 @@ complaintRouter.patch('/:id/location', requireAuth, async (req, res) => {
     };
 
     const updated = await complaintStore.update(id, updates);
+
+    // Non-blocking best-effort follow-through activity log
+    try {
+      await followthroughRepository.logActivity({
+        id: `ACT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        complaintId: id,
+        eventType: 'LOCATION_UPDATED',
+        sourceTable: 'complaints',
+        sourceRecordId: id,
+        actorId: req.user!.userId,
+        actorName: req.user?.email,
+        actorRole: 'CITIZEN',
+        notes: `GPS location refined: (${latNum.toFixed(6)}, ${lonNum.toFixed(6)})${isMatched ? ` in Ward ${ward.wardNumber} (${ward.wardName})` : ''}.`,
+        metadata: {
+          previousCoordinates: { latitude: complaint.latitude, longitude: complaint.longitude },
+          newCoordinates: { latitude: latNum, longitude: lonNum },
+          wardNumber: ward.wardNumber,
+          wardName: ward.wardName,
+          locationAccuracy,
+          locationSource,
+        },
+        createdAt: new Date().toISOString(),
+      });
+    } catch (logErr: any) {
+      console.warn('[complaintRoutes] Non-blocking location update activity log failed:', logErr.message);
+    }
 
     res.status(200).json({
       message: 'Complaint location updated successfully.',

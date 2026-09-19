@@ -14,6 +14,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import {
   apiGetOfficerComplaints,
+  apiTrackComplaint,
   type ComplaintRecord,
   type OfficerComplaintsFilter,
 } from '../../services/api';
@@ -302,10 +303,18 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
             onNavigateToReport={() => {}}
             onNavigateToTrack={(token) => {
               if (token) {
-                // Find if complaint exists in queue and open detail drawer
+                // Find if complaint exists in queue or by token
                 const found = complaints.find((c) => c.trackingToken === token || c.id === token);
                 if (found) {
                   setSelectedComplaintId(found.id);
+                } else {
+                  apiTrackComplaint(token)
+                    .then((res) => {
+                      if (res && res.id) setSelectedComplaintId(res.id);
+                    })
+                    .catch(() => {
+                      setSelectedComplaintId(token);
+                    });
                 }
               }
             }}

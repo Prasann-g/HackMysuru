@@ -374,6 +374,11 @@ export interface PublicTrackResult {
     evidenceAgeDays?: number;
   };
   slaTracking?: PublicSlaTracking;
+  duplicateResolution?: {
+    actionType: string;
+    isMaster: boolean;
+    notice: string;
+  };
   isDemo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -490,6 +495,120 @@ export async function apiGetDemoPool(): Promise<ComplaintRecord[]> {
   const data = await res.json();
   if (!res.ok) return [];
   return data.complaints || [];
+}
+
+// ----------------------------------------------------------------------------
+// Interactive Map & Geospatial API
+// ----------------------------------------------------------------------------
+
+export interface PublicMapComplaintItem {
+  id: string;
+  trackingToken: string;
+  category: string;
+  customCategory?: string;
+  description: string;
+  locationArea: string;
+  addressText?: string;
+  latitude: number;
+  longitude: number;
+  wardNumber?: string;
+  wardName?: string;
+  wardId?: number;
+  status: string;
+  observedDate: string;
+  createdAt: string;
+  assignedDepartment?: string;
+  verificationOutcome?: string;
+  duplicateRisk?: string;
+  isDemo?: boolean;
+  distanceMeters?: number;
+}
+
+export interface MapComplaintsFilter {
+  latitude?: number;
+  longitude?: number;
+  radius?: number; // km
+  bbox?: string;
+  ward?: string;
+  category?: string;
+  status?: string;
+}
+
+export interface MapComplaintsResponse {
+  total: number;
+  complaints: PublicMapComplaintItem[];
+  userLocation?: {
+    latitude: number;
+    longitude: number;
+  };
+  radiusKm?: number;
+}
+
+export async function apiGetMapComplaints(
+  filters?: MapComplaintsFilter
+): Promise<MapComplaintsResponse> {
+  const token = getStoredToken();
+  const queryParams = new URLSearchParams();
+
+  if (filters?.latitude !== undefined && filters?.longitude !== undefined) {
+    queryParams.set('latitude', String(filters.latitude));
+    queryParams.set('longitude', String(filters.longitude));
+  }
+  if (filters?.radius !== undefined && filters.radius > 0) {
+    queryParams.set('radius', String(filters.radius));
+  }
+  if (filters?.bbox) queryParams.set('bbox', filters.bbox);
+  if (filters?.ward && filters.ward !== 'ALL') queryParams.set('ward', filters.ward);
+  if (filters?.category && filters.category !== 'ALL') queryParams.set('category', filters.category);
+  if (filters?.status && filters.status !== 'ALL') queryParams.set('status', filters.status);
+
+  const qs = queryParams.toString();
+  const url = `${API_BASE_URL}/api/complaints/map${qs ? `?${qs}` : ''}`;
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, { headers });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to retrieve map complaints.');
+  }
+
+  return data;
+}
+
+export async function apiGetWardsGeoJson(): Promise<any | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/wards/geojson`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function apiLookupWardForCoordinates(
+  lat: number,
+  lng: number
+): Promise<{
+  wardId: number | null;
+  wardName: string | null;
+  wardNumber: string | null;
+  status: 'matched' | 'outside_boundary' | 'boundary_unavailable';
+} | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/routing/ward-lookup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude: lat, longitude: lng }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -634,6 +753,94 @@ export async function apiRerouteComplaint(
   }
 
   return data;
+}
+
+export type ResolutionActionType = 'MERGE_DUPLICATES' | 'MARK_DISTINCT' | 'MARK_RELATED';
+
+export interface ComplaintResolutionAuditRecord {
+  id: string;
+  clusterId: string;
+  primaryComplaintId: string;
+  secondaryComplaintIds: string[];
+  actionType: ResolutionActionType;
+  officerId: string;
+  officerName: string;
+  decisionNotes: string;
+  previousStates: Record<string, any>;
+  createdAt: string;
+}
+
+export interface OfficerDuplicateResolutionPayload {
+  actionType: ResolutionActionType;
+  targetComplaintId: string;
+  decisionNotes: string;
+  clusterId?: string;
+  isCurrentSecondary?: boolean;
+}
+
+export interface DuplicateResolutionResponse {
+  message: string;
+  auditRecord: ComplaintResolutionAuditRecord;
+  clusterId: string;
+  actionType: ResolutionActionType;
+  primaryComplaintId: string;
+  secondaryComplaintIds: string[];
+  updatedComplaint?: ComplaintRecord;
+}
+
+export async function apiResolveDuplicateCluster(
+  id: string,
+  payload: OfficerDuplicateResolutionPayload
+): Promise<DuplicateResolutionResponse> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Authentication required as an MCC officer.');
+  }
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/duplicate-resolution`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to resolve duplicate cluster.');
+  }
+
+  return data;
+}
+
+export async function apiGetComplaintDuplicateAudits(
+  id: string
+): Promise<ComplaintResolutionAuditRecord[]> {
+  const token = getStoredToken();
+  if (!token) {
+    throw new Error('Authentication required as an MCC officer.');
+  }
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/duplicate-audit`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch duplicate audit history.');
+  }
+
+  return data.audits || [];
 }
 
 // ----------------------------------------------------------------------------

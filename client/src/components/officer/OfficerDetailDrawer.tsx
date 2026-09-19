@@ -1057,6 +1057,10 @@ export const OfficerDetailDrawer: React.FC<OfficerDetailDrawerProps> = ({
                   matchedCandidates={detail?.matchedCandidates || []}
                   onConfirmDuplicate={handleConfirmDuplicate}
                   onMarkDistinct={handleMarkDistinct}
+                  onResolved={() => {
+                    handleRetry();
+                    onUpdated();
+                  }}
                 />
               </div>
 

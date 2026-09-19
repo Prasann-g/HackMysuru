@@ -10,6 +10,7 @@
     "seed:demo": "tsx src/db/seedDemoData.ts",
     "supabase:check": "tsx src/db/supabase.ts",
     "db:migrate:supabase": "tsx src/db/migrateSqliteToSupabase.ts",
+    "provision:officer": "tsx scripts/provision_officer.ts",
     "test": "vitest run"
   },
   "dependencies": {
