@@ -1,177 +1,107 @@
-# CivicBridge
+# `<CIVIC BRIDGE>` — `<one-line tagline>`
 
-**AI-powered civic complaint verification platform for Mysuru.**  
-Built for HackMysuru 1.0.
+> HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
+> Team `<TEAM GLAUX>` (`<HM26-7CE3>`)
 
----
+| 📎 Submission links | 📋 Templates | 🏗️ Architecture | 🛡️ Hard constraints | ⚙️ Setup | 🤖 AI usage | ⚠️ Limitations |
+|---|---|---|---|---|---|---|
+| [resource.md](./resource.md) | [resource-templates/](./resource-templates/) | [docs/architecture.md](./docs/architecture.md) | [docs/constraints.md](./docs/constraints.md) | [docs/setup.md](./docs/setup.md) | [ai.md](./ai.md) | [docs/limitations.md](./docs/limitations.md) |
 
-## What it does
-
-CivicBridge helps citizens submit civic complaints (potholes, garbage dumping, broken streetlights, etc.) and uses explainable AI signals to flag possible duplicates before they reach municipal officers. Officers get a prioritised review queue with verification context. The public can track complaints and view anonymised municipal analytics.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + TypeScript + Tailwind CSS (Vite) |
-| Backend | Node.js + Express + TypeScript |
-| Database | Supabase (PostgreSQL) + SQLite (offline fallback) |
-| Storage | Supabase Storage (complaint evidence images) |
-| Auth | JWT + bcrypt |
-| AI/Verification | Jaccard similarity, SHA-256 image dedup, dHash perceptual hashing |
+<!--
+This README is the overview. Detailed content lives in the linked files so each stays short.
+Keep the section ORDER below. Reviewers look for each section in the same place in every repo.
+-->
 
 ---
 
-## Prerequisites
+## 1. Problem Understanding
 
-- Node.js 18+
-- npm 9+
+<!-- Which sub-problem did you pick and WHY that one? 5–8 sentences. -->
 
----
+**Chosen sub-problem:** `<Verification>`
 
-## Quick Start
+- **The gap we saw:** `<What actually goes wrong today, in Mysuru terms>`
+- **Why it matters:** `<Consequence: delay, bounced complaints, lost trust, health risk>`
+- **Why we chose this over the others:** `<Your reasoning>`
+- **What "solved" looks like for us:** `<A measurable outcome, e.g. "a citizen never has to pick an office">`
 
-### 1. Configure the backend
+## 2. Target Users & Mysuru Context
+
+| User | Their situation | What they need from us |
+|---|---|---|
+| `<Resident in a ward at the MCC–panchayat edge>` | `<No idea which office owns the drain; patchy 4G>` | `<Report once, see who owns it, see status>` |
+| `<Panchayat / MCC officer>` | `<...>` | `<...>` |
+| `<Sanitation / field worker>` | `<Basic Android phone, low data>` | `<...>` |
+
+**Local context we designed for:** `<jurisdiction overlap, connectivity, Kannada/English, device types, literacy>`
+
+## 3. Solution Overview
+
+<!-- Plain language. A non-engineer should follow this. -->
+
+`<2–4 sentence summary>`
+
+**Core flow:**
+1. `<Citizen does X>`
+2. `<System does Y>`
+3. `<Staff does Z>`
+4. `<Citizen sees outcome>`
+
+**Screenshots:** `<2–4 images under docs/images/, each < 1 MB>`
+
+## 4. Architecture
+
+`<One-sentence summary, e.g. "Offline-first PWA → REST API → PostgreSQL/PostGIS, with a rules-based routing service.">`
+
+➡️ Diagram, components, data model and APIs: **[docs/architecture.md](./docs/architecture.md)**
+
+## 5. Tech Stack & AI Usage
+
+**Stack:** `<React PWA · FastAPI · PostgreSQL + PostGIS · Render>` (full rationale in [docs/architecture.md](./docs/architecture.md#tech-stack))
+
+**AI tools used in development:** `<ChatGPT, Copilot, ...>`
+**AI inside the product:** `<e.g. YOLOv8 for bin detection / none>`
+
+➡️ Full disclosure: **[ai.md](./ai.md)**
+
+## 6. Decision Log (Summary)
+
+<!-- The full 1-page Decision Log is a PDF on Google Drive, linked in resource.md. ≤ 3 lines here. -->
+
+- **Chose:** `<approach>`, **over:** `<rejected alternative>`
+- **Because:** `<the trade-off in one line>`
+- **First thing to break at city scale:** `<one line>`
+
+➡️ Full decision log: **[resource.md](./resource.md#4-submission-artifacts-google-drive)** · Template: **[decision-log-template.md](./resource-templates/decision-log-template.md)**
+
+## 7. Setup & Run
 
 ```bash
-cp server/.env.example server/.env
+git clone <repo-url> && cd <repo>
+<one-line install> && <one-line run>
 ```
 
-Edit `server/.env` and fill in real values:
+➡️ Prerequisites, environment variables, seed data and offline testing: **[docs/setup.md](./docs/setup.md)**
 
-```env
-DATA_STORE=supabase
+## 8. Known Limitations
 
-SUPABASE_URL=https://<your-project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+- `<AI accuracy may vary>`
+- `<GPS/location may be inaccurate>`
+- `<Internet connectivity is required>`
 
-JWT_SECRET=<a-strong-random-secret>
-OFFICER_INVITE_SECRET=<invite-code-for-officer-registration>
-```
-
-> ⚠️ **Never commit `server/.env` to Git.** It is excluded by `.gitignore`.
-
-### 2. Configure the frontend
-
-```bash
-cp client/.env.example client/.env
-```
-
-Edit `client/.env`:
-
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-> For a remotely hosted environment, set `VITE_API_URL=https://<your-server-host>`.
-
-### 3. Install dependencies
-
-```bash
-npm install
-npm --prefix server install
-npm --prefix client install
-```
-
-### 4. Start development servers
-
-In two separate terminals:
-
-```bash
-# Terminal 1 — Backend
-npm --prefix server run dev
-# Starts on http://localhost:5000
-
-# Terminal 2 — Frontend
-npm --prefix client run dev
-# Starts on http://localhost:5173
-```
-
-Open **http://localhost:5173** in your browser.
+➡️ Full list, edge cases and scaling roadmap: **[docs/limitations.md](./docs/limitations.md)**
 
 ---
 
-## Authentication & Role Access
+## Team
 
-In production-first mode, default and demo credentials tables have been removed for data security:
+| Name | Role | GitHub |
+|---|---|---|
+| `<PRASANN>` | `<frontend>` | `@<...>` |
+| `<KOMAL>` | `<backend>` | `@<...>` |
+| `<HONNESHA>` | `<database>` | `@<...>` |
+| `<ARJUN>` | `<AIML>` | `@<...>` |
 
-- **Citizens:** Register or authenticate directly through the Citizen Portal using mobile number or email with password. Authenticated citizens can track their personal submissions, view review stages, and access profile details.
-- **Municipal Officers:** MCC administrative officers sign in to access the Officer Queue and Review Action Panel. New officer account registration requires a valid municipal invite key matching `OFFICER_INVITE_SECRET`.
+## License
 
-
-## Core Demo Flows
-
-1. **Citizen** → Log in → Report a civic issue with GPS photo evidence → Receive tracking token
-2. **Duplicate detection** → Submit duplicate or near-duplicate report → Receive explainable signals or rejection
-3. **Follow-Through Tracking** → Citizen views chronological activity ledger and SLA milestones with zero exposed internal notes
-4. **Officer Operations** → Log in → View triage queue → Inspect evidence forensics, duplicate clusters, SLA window consumption, dormancy indicators, and full activity event ledger
-5. **Officer Review & Lifecycle Commit** → Update status, reassign department, or log notes → Automatic real-time ledger updates
-6. **Analytics & Public Visibility** → View public metrics, area breakdown, and interactive complaint map
-
----
-
-## Running Tests
-
-```bash
-# Backend (Vitest) — 17 test files, 224 passed
-npm --prefix server test
-
-# Client lint
-npm --prefix client run lint
-
-# Client production build
-npm --prefix client run build
-
-# Server TypeScript build
-npm --prefix server run build
-```
-
----
-
-## Project Structure
-
-```
-HackMysuru/
-├── client/                  # React frontend (Vite)
-│   ├── src/
-│   │   ├── components/      # UI components by feature area
-│   │   ├── services/api.ts  # All backend API calls
-│   │   └── App.tsx          # Root routing
-│   └── .env.example
-├── server/                  # Express API backend
-│   ├── src/
-│   │   ├── db/              # Dual-driver stores (SQLite + Supabase)
-│   │   ├── middleware/      # Auth, file upload
-│   │   ├── routes/          # API route handlers
-│   │   ├── services/        # Verification engine, auth service
-│   │   └── index.ts
-│   ├── tests/               # Vitest test suite
-│   └── .env.example
-├── supabase/
-│   └── schema.sql           # Supabase PostgreSQL schema
-└── AGENTS.md                # Project agent rulebook
-```
-
----
-
-## Data Integrity
-
-- Supabase baseline: **13 users**, **11 complaints**, **7 evidence images**
-- SQLite fallback database: `server/data/civictrust.db`
-- Switch between backends: `DATA_STORE=sqlite` or `DATA_STORE=supabase` in `server/.env`
-
----
-
-## Security Notes
-
-- All citizen PII is excluded from public-facing endpoints
-- Photo evidence is labelled as citizen-submitted evidence only — authenticity unverified
-- JWT tokens expire per `JWT_EXPIRES_IN` (default: `7d`)
-- Officer registration requires an invite code
-- Supabase service role key is **never** sent to the frontend
-
----
-
-*CivicBridge — HackMysuru 1.0*
+`<MIT / Apache-2.0 / None>`. You retain full ownership of your code.
