@@ -1,5 +1,3 @@
----
-
 ## 1. Team Details
 
 | Field | Value |
@@ -12,10 +10,10 @@
 
 | # | Member | Program & Year | GitHub Handle | Primary Role |
 |---|---|---|---|---|
-| 1 | `<PRASANN>` (Lead) | `<BCA 2ND YEAR>` | `@<handle>` | `<backend>` |
-| 2 | `<KOMAL>` | `<BCA 2ND YEAR>` | `@<handle>` | `<BACKEND>` |
-| 3 | `<HONNESHA>` | `<BCA 2ND YEAR>` | `@<handle>` | `<DATABASE>` |
-| 4 | `<ARJUNU>` | `<BCA 2ND YEAR>` | `@<handle>` | `<AIML>` |
+| 1 | `<PRASANN>` (Lead) | `<BCA 2ND YEAR>` | `@<prasann-g>` | `<backend>` |
+| 2 | `<KOMAL>` | `<BCA 2ND YEAR>` | `@<handle>` | `<NULL>` |
+| 3 | `<HONNESHA>` | `<BCA 2ND YEAR>` | `@<Honnesha-bit>` | `<DATABASE>` |
+| 4 | `<ARJUNU>` | `<BCA 2ND YEAR>` | `@<arjun-jain>` | `<AIML>` |
 
 ---
 
@@ -32,12 +30,12 @@
 | Document | What it covers |
 |---|---|
 | [README.md](./README.md) | Problem, users, solution overview|
-| [ai.md](./ai.md) | AI tools used in development and AI/ML inside the product |
-| [docs/architecture.md](./docs/architecture.md) | Diagram, components, data model, APIs, tech stack |
-| [docs/constraints.md](./docs/constraints.md) | How we handle the five hard constraints |
-| [docs/setup.md](./docs/setup.md) | Local setup, seed data |
-| [docs/limitations.md](./docs/limitations.md) | Known gaps, edge cases, scaling roadmap |
-| [resource-templates/](./resource-templates/) | Templates & guides for the video, decision log, and presentation |
+| [ai.md](/ai.md) | AI tools used in development and AI/ML inside the product |
+| [docs/architecture.md](/architecture.md) | Diagram, components, data model, APIs, tech stack |
+| [docs/constraints.md](/constraints.md) | How we handle the five hard constraints |
+| [docs/setup.md](/setup.md) | Local setup, seed data |
+| [docs/limitations.md](/limitations.md) | Known gaps, edge cases, scaling roadmap |
+| [resource-templates/](/resource-templates/) | Templates & guides for the video, decision log, and presentation |
 
 ---
 
@@ -47,7 +45,7 @@
 |---|---|---|---|---|
 | 1 | [Pitch + Code Walkthrough Video](./resource-templates/video-guide.md) (≤ 10 min, MP4) | `<https://drive.google.com/file/d/.../view>` | `<HM26-7CE3>_video.mp4` | `<a1b2c3d4e5f60718>` |
 | 2 | [Decision Log](./resource-templates/decision-log-template.md) (1 page, PDF) | `<https://drive.google.com/file/d/.../view>` | `<HM26-7CE3>_decision-log.pdf` | `<...>` |
-| 3 | [Presentation](./resource-templates/presentation-template.md) (≤ 10 slides, PDF) | `<https://drive.google.com/file/d/.../view>` | `<HM26-7CE3>_presentation.pdf` | `<...>` |
+| 3 | [Presentation](./resource-templates/presentation-template.md) (≤ 10 slides, PDF) | `<https://docs.google.com/presentation/d/1hx1AJUzDQ445izv_EJzeJdRKBW4-fbMW/edit?usp=sharing&ouid=117887920251800204222&rtpof=true&sd=true>` | `<HM26-7CE3>_presentation.pdf` | `<...>` |
 
 <!--
 Get the hash:

@@ -1,4 +1,4 @@
-# `<CIVIC BRIDGE>` — `<one-line tagline>`
+# `<CIVIC BRIDGE>`
 
 > HackMysuru 1.0 · Phase 1 · Civic Governance & Clean Mysuru
 > Team `<TEAM GLAUX>` (`<HM26-7CE3>`)
@@ -97,10 +97,10 @@ git clone <repo-url> && cd <repo>
 
 | Name | Role | GitHub |
 |---|---|---|
-| `<PRASANN>` | `<frontend>` | `@<...>` |
-| `<KOMAL>` | `<backend>` | `@<...>` |
-| `<HONNESHA>` | `<database>` | `@<...>` |
-| `<ARJUN>` | `<AIML>` | `@<...>` |
+| `<PRASANN>` | `<frontend>` | `@<prasann-g>` |
+| `<KOMAL>` | `<backend>` | `@<NULL>` |
+| `<HONNESHA>` | `<database>` | `@<honnesha-bit>` |
+| `<ARJUN>` | `<AIML>` | `@<arjun-jain>` |
 
 ## License
 
