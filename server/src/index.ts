@@ -14,8 +14,10 @@ import { getMysuruWardsGeoJson } from './services/wardService.js';
 import { initDatabase } from './db/sqlite.js';
 import { seedDemoData } from './db/seedDemoData.js';
 
-// Initialize SQLite database
-initDatabase();
+// Initialize SQLite database only when SQLite is the active datastore
+if (CONFIG.DATA_STORE !== 'supabase') {
+  initDatabase();
+}
 
 // Only seed synthetic demo data if explicitly commanded via environment variable
 if (process.env.SEED_DEMO_DATA === 'true') {
@@ -28,10 +30,31 @@ export const app = express();
 // This ensures req.ip correctly reflects the client's IP instead of the load balancer.
 app.set('trust proxy', 1);
 
+// Allowed origins parser: supports single origin, comma-separated origins, or regex match for Vercel preview deploys
+const allowedOrigins = CONFIG.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean);
+
 // Middlewares
 app.use(
   cors({
-    origin: CONFIG.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      // Direct match in configured origins
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+        return;
+      }
+      // Allow Vercel preview URLs if any vercel.app domain is configured in origins
+      const allowsVercelPreviews = allowedOrigins.some((o) => o.includes('.vercel.app'));
+      if (allowsVercelPreviews && /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin '${origin}' not allowed by CORS`));
+    },
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
