@@ -22,6 +22,7 @@ import type { CitizenUser } from '../../types/auth';
 import { OfficerQueueTable } from './OfficerQueueTable';
 import { OfficerDetailDrawer } from './OfficerDetailDrawer';
 import { PublicMapAnalytics } from '../public/PublicMapAnalytics';
+import { InspectDossierCard } from './InspectDossierCard';
 
 interface OfficerDashboardProps {
   currentOfficer: CitizenUser;
@@ -104,18 +105,23 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
                   MCC Grievance Verification &amp; Review Console
                 </h1>
                 <Badge variant="verified" size="sm">
-                  MCC OFFICER
+                  {currentOfficer.role === 'ADMIN' ? 'MCC ADMINISTRATOR' : 'MCC OFFICER'}
                 </Badge>
                 <span className="text-xs text-bridge-charcoal-500 font-mono bg-bridge-almond-100 px-2 py-0.5 rounded">
-                  {currentOfficer.department || 'MCC Engineering Division'}
+                  {currentOfficer.department || (currentOfficer.role === 'ADMIN' ? 'Executive Administration' : 'MCC Engineering Division')}
                 </span>
               </div>
               <p className="text-xs text-bridge-charcoal-500 mt-1">
-                Authenticated Officer: <strong className="text-bridge-charcoal-700">{currentOfficer.name}</strong> ({currentOfficer.email})
-                {currentOfficer.ward && (
+                Authenticated {currentOfficer.role === 'ADMIN' ? 'Administrator' : 'Officer'}: <strong className="text-bridge-charcoal-700">{currentOfficer.name}</strong> ({currentOfficer.email})
+                {currentOfficer.ward ? (
                   <>
                     {' '}• Jurisdiction:{' '}
                     <strong className="text-bridge-gold-700">{currentOfficer.ward}</strong>
+                  </>
+                ) : (
+                  <>
+                    {' '}• Jurisdiction:{' '}
+                    <strong className="text-bridge-gold-700">All Wards (City-wide)</strong>
                   </>
                 )}
               </p>
@@ -235,6 +241,12 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
           </Button>
         </div>
       )}
+
+      {/* Inspect Dossier Quick Access Card */}
+      <InspectDossierCard
+        complaints={complaints}
+        onSelectComplaint={(id) => setSelectedComplaintId(id)}
+      />
 
       {/* Integrated Console View Switcher Tabs */}
       <div className="flex items-center gap-3 border-b border-bridge-almond-200 pb-2">

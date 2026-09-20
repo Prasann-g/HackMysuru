@@ -55,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const handleLogoClick = () => {
-    if (currentUser?.role === 'OFFICER') {
+    if (currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN') {
       onTabChange('officer');
     } else if (currentUser?.role === 'CITIZEN') {
       onTabChange('dashboard');
@@ -68,7 +68,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-bridge-almond-200 shadow-bridge-sm transition-all">
+    <header className={`sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b shadow-bridge-sm transition-all ${
+      (currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN') 
+        ? 'border-t-4 border-t-bridge-gold-500 border-b-bridge-almond-200' 
+        : 'border-b-bridge-almond-200'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Name */}
@@ -146,11 +150,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Profile
                 </button>
               </>
-            ) : currentUser?.role === 'OFFICER' ? (
+            ) : currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN' ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-bridge-gold-800 bg-bridge-gold-50 border border-bridge-gold-200 px-3 py-1 rounded-full flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-bridge-gold-700" />
-                  <span>MCC Operations Console</span>
+                  <span>{currentUser.role === 'ADMIN' ? 'MCC Administrator Console' : 'MCC Operations Console'}</span>
                 </span>
                 {currentUser.ward && (
                   <span className="text-xs text-bridge-charcoal-600 bg-bridge-almond-100 border border-bridge-almond-200 px-2.5 py-0.5 rounded-full">
@@ -237,11 +241,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </p>
                         <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                           <Badge
-                            variant={currentUser.role === 'OFFICER' ? 'review' : 'verified'}
+                            variant={currentUser.role === 'OFFICER' || currentUser.role === 'ADMIN' ? 'review' : 'verified'}
                             size="sm"
                             icon={<UserCheck className="w-3 h-3" />}
                           >
-                            {currentUser.role === 'OFFICER' ? 'MCC Officer' : 'Active Citizen'}
+                            {currentUser.role === 'ADMIN' ? 'MCC Administrator' : currentUser.role === 'OFFICER' ? 'MCC Officer' : 'Active Citizen'}
                           </Badge>
                           {currentUser.department && (
                             <span className="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-medium truncate max-w-[180px]">
@@ -357,7 +361,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
                 <Badge variant="verified" size="sm">
-                  {currentUser.role === 'OFFICER' ? 'Officer' : 'Citizen'}
+                  {currentUser.role === 'ADMIN' ? 'Admin' : currentUser.role === 'OFFICER' ? 'Officer' : 'Citizen'}
                 </Badge>
               </div>
 

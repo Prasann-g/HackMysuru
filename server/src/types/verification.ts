@@ -24,8 +24,15 @@ export interface ImageMatchDetail {
   matchType: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY';
   sha256Matched: boolean;
   hammingDistance?: number;
+  embeddingSimilarity?: number;
   explanation: string;
 }
+
+export type { DuplicateCorrelation, DuplicateConfidenceLevel } from '../utils/duplicateCorrelationEngine.js';
+import type { DuplicateCorrelation } from '../utils/duplicateCorrelationEngine.js';
+
+export type { VisualClassificationResult, VisualDamageClass, VisualClassificationStatus } from '../services/ml/roadDamageClassifier.js';
+import type { VisualClassificationResult } from '../services/ml/roadDamageClassifier.js';
 
 export interface DuplicateMatch {
   existingComplaintId: string;
@@ -36,6 +43,7 @@ export interface DuplicateMatch {
   sharedTokens: string[];
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   imageMatch?: ImageMatchDetail;
+  duplicateCorrelation?: DuplicateCorrelation;
 }
 
 export interface EvidenceQualityAnalysis {
@@ -146,6 +154,10 @@ export interface VerificationResult {
     competingCategoryKeywords?: { category: IssueCategory; keywords: string[] };
   };
   imageComparisonSignal?: ImageComparisonSignal;
+  imageComparisonCoverage?: {
+    sha256Compared: boolean;
+    dHashCompared: boolean;
+  };
   spamAnalysis?: {
     isSpam: boolean;
     riskLevel: 'CLEAN' | 'SUSPICIOUS' | 'FLAGGED_SPAM';
@@ -161,6 +173,12 @@ export interface VerificationResult {
   evidenceQuality?: EvidenceQualityAnalysis;
   geoEvidence?: GeoEvidenceResult;
   temporalEvidence?: TemporalEvidenceResult;
+  /**
+   * Road-damage visual classification result from the ML classifier hook.
+   * Status is always 'MODEL_NOT_AVAILABLE' until a trained artifact is deployed.
+   * Optional — absent on complaints submitted without image evidence.
+   */
+  visualClassification?: VisualClassificationResult;
   validationErrors?: string[];
   processedAt: string;
 }
@@ -178,9 +196,12 @@ export interface ComplaintInput {
   hasImage?: boolean;
   imageSha256?: string;
   imagePhash?: string;
+  imageEmbedding?: number[];
   evidenceQuality?: EvidenceQualityAnalysis;
   geoEvidence?: GeoEvidenceResult;
   temporalEvidence?: TemporalEvidenceResult;
+  /** Pre-computed road-damage classification result from the ML hook. */
+  visualClassification?: VisualClassificationResult;
 }
 
 export interface ExistingComplaint {
@@ -192,4 +213,8 @@ export interface ExistingComplaint {
   status: string;
   imageSha256?: string;
   imagePhash?: string;
+  imageEmbedding?: number[];
+  latitude?: number;
+  longitude?: number;
+  createdAt?: string;
 }

@@ -213,4 +213,34 @@ describe('FollowthroughService (Step 2 Implementation)', () => {
       expect(inactivity.inactivityHours).toBe(0);
     });
   });
+
+  describe('Missing Activity-Log Table & Defensive Fallback', () => {
+    it('assembleTimeline successfully renders root created and verification events when activities is empty', () => {
+      const complaintWithVerification: ComplaintRecord = {
+        ...baseComplaint,
+        verificationResult: {
+          outcome: 'RECOMMENDED_VERIFIED',
+          duplicateRisk: 'LOW',
+          signals: ['Signals present'],
+          uncertainties: [],
+          limitations: [],
+          processedAt: new Date(Date.now() - 35 * 3600 * 1000).toISOString(),
+        },
+      };
+
+      // Empty activities array simulates missing table fallback
+      const timeline = followthroughService.assembleTimeline(complaintWithVerification, [], [], false);
+      expect(timeline.length).toBe(2);
+      expect(timeline[0].eventType).toBe('COMPLAINT_CREATED');
+      expect(timeline[1].eventType).toBe('VERIFICATION_PROCESSED');
+    });
+
+    it('calculateInactivity calculates dormancy safely even when activities array is empty', () => {
+      const inactivity = followthroughService.calculateInactivity(baseComplaint, [], [], new Date());
+      expect(inactivity.activityState).toBeDefined();
+      expect(typeof inactivity.inactivityHours).toBe('number');
+      expect(inactivity.lastMeaningfulActivityAt).toBeDefined();
+    });
+  });
 });
+

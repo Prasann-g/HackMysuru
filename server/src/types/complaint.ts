@@ -17,6 +17,7 @@ export interface EvidenceMetadata {
   mimetype: string;
   submittedAt: string;
   note: string;
+  imageEmbedding?: number[];
 }
 
 export interface ComplaintRecord {

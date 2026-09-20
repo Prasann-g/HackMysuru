@@ -204,3 +204,105 @@ export async function loginUser(input: LoginInput, customStore?: IUserStore): Pr
     user: sanitizeUser(user),
   };
 }
+import { otpService } from './otpServiceInstance.js';
+import { normalizeIdentifier } from '../utils/otpUtils.js';
+import type { OtpRequestInput, OtpVerifyInput } from '../types/auth.js';
+
+export async function requestCitizenOtp(input: OtpRequestInput): Promise<{ challengeId: string }> {
+  if (!input.identifier || input.identifier.trim() === '') {
+    throw new Error('Identifier is required.');
+  }
+
+  const normalized = normalizeIdentifier(input.identifier, input.method);
+  const existing = await userStore.findByEmail(normalized);
+
+  if (input.purpose === 'REGISTER' && existing) {
+    throw new Error('An account with this identifier already exists.');
+  }
+
+  if (input.purpose === 'LOGIN' && !existing) {
+    throw new Error('No account found with this identifier. Please register.');
+  }
+
+  return otpService.createChallenge(input.identifier, input.method, input.purpose);
+}
+
+export async function verifyCitizenOtp(input: OtpVerifyInput, customStore?: IUserStore): Promise<AuthResponse> {
+  const store = customStore || userStore;
+  const normalized = normalizeIdentifier(input.identifier, input.method);
+
+  const isValid = await otpService.verifyChallenge(input.identifier, input.method, input.code);
+  
+  if (!isValid) {
+    throw new Error('Invalid OTP code.');
+  }
+
+  if (input.purpose === 'REGISTER') {
+    if (!input.name || input.name.trim().length === 0) {
+      throw new Error('Full name is required for registration.');
+    }
+    
+    const existing = await store.findByEmail(normalized);
+    if (existing) {
+      throw new Error('An account with this identifier already exists.');
+    }
+
+    const randomHash = await hashPassword(Math.random().toString(36) + Date.now().toString());
+    const now = new Date().toISOString();
+    const id = `USR-CITIZEN-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const user: UserRecord = {
+      id,
+      email: normalized,
+      passwordHash: randomHash,
+      name: input.name.trim(),
+      role: 'CITIZEN',
+      ward: input.ward?.trim() || undefined,
+      isActive: true,
+      createdAt: now,
+      lastLoginAt: now,
+    };
+
+    await store.save(user);
+
+    const tokenPayload: AuthTokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      ward: user.ward,
+    };
+
+    const token = generateToken(tokenPayload);
+
+    return {
+      token,
+      user: sanitizeUser(user),
+    };
+  } else {
+    const user = await store.findByEmail(normalized);
+    if (!user) {
+      throw new Error('User not found.');
+    }
+    
+    if (!user.isActive) {
+      throw new Error('This account has been deactivated. Please contact support.');
+    }
+
+    user.lastLoginAt = new Date().toISOString();
+    await store.save(user);
+
+    const tokenPayload: AuthTokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      ward: user.ward,
+    };
+
+    const token = generateToken(tokenPayload);
+
+    return {
+      token,
+      user: sanitizeUser(user),
+    };
+  }
+}

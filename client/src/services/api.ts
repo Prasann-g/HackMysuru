@@ -2,7 +2,56 @@ import type { CitizenUser } from '../types/auth';
 import type { RoutingDecision, OfficerReroutePayload } from '../types/routing';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const TOKEN_KEY = 'civictrust_token';
+export const TOKEN_KEY = 'civictrust_token';
+export const USER_SESSION_KEY = 'civictrust_citizen_user';
+export const UNAUTHORIZED_EVENT = 'civictrust:unauthorized';
+
+let isEvictingSession = false;
+
+/**
+ * Centralized response inspector for authenticated HTTP responses.
+ * Detects HTTP 401 responses, evicts stored token and cached user session from
+ * sessionStorage, and dispatches the 'civictrust:unauthorized' browser event.
+ * Does not trigger on ordinary 400, 403, 404, or 500 responses.
+ */
+export function handleUnauthorizedResponse<T extends Response>(res: T): T {
+  if (res.status === 401) {
+    clearStoredToken();
+    try {
+      sessionStorage.removeItem(USER_SESSION_KEY);
+    } catch {
+      // SessionStorage may be restricted in private/sandboxed windows
+    }
+
+    if (typeof window !== 'undefined' && !isEvictingSession) {
+      isEvictingSession = true;
+      try {
+        window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
+      } finally {
+        setTimeout(() => {
+          isEvictingSession = false;
+        }, 0);
+      }
+    }
+  }
+  return res;
+}
+
+/**
+ * Resets eviction debounce lock (primarily for test lifecycle isolation).
+ */
+export function resetUnauthorizedEvictionState(): void {
+  isEvictingSession = false;
+}
+
+/**
+ * Internal fetch wrapper for authenticated endpoints that passes responses
+ * through the centralized 401 unauthorized handler.
+ */
+async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init);
+  return handleUnauthorizedResponse(res);
+}
 
 export function getStoredToken(): string | null {
   try {
@@ -85,7 +134,11 @@ export async function apiGetMe(): Promise<CitizenUser | null> {
     });
 
     if (!res.ok) {
-      clearStoredToken();
+      if (res.status === 401) {
+        handleUnauthorizedResponse(res);
+      } else {
+        clearStoredToken();
+      }
       return null;
     }
 
@@ -208,6 +261,33 @@ export interface ComplaintRecord {
         matchType: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY';
         sha256Matched: boolean;
         hammingDistance?: number;
+        embeddingSimilarity?: number;
+        explanation: string;
+      };
+      duplicateCorrelation?: {
+        candidateComplaintId: string;
+        visualResemblance: {
+          sha256Match: boolean;
+          hammingDistance?: number;
+          embeddingSimilarity?: number;
+          score: number;
+          level: 'EXACT' | 'HIGH' | 'MODERATE' | 'LOW' | 'NONE';
+        };
+        locationProximity: {
+          distanceMeters?: number;
+          sameAreaText: boolean;
+          score: number;
+          level: 'IMMEDIATE' | 'NEARBY' | 'SAME_NEIGHBORHOOD' | 'SAME_WARD' | 'DISTANT' | 'UNAVAILABLE';
+        };
+        temporalProximity: {
+          diffHours?: number;
+          diffDays?: number;
+          score: number;
+          level: 'SAME_DAY' | 'WITHIN_WEEK' | 'WITHIN_MONTH' | 'WITHIN_QUARTER' | 'HISTORIC' | 'UNAVAILABLE';
+        };
+        confidenceScore: number;
+        confidenceLevel: 'HIGH_CONFIDENCE_DUPLICATE' | 'POTENTIAL_NEARBY_DUPLICATE' | 'VISUALLY_SIMILAR_DIFFERENT_LOCATION' | 'LOW_SIMILARITY';
+        isPotentialDuplicate: boolean;
         explanation: string;
       };
     }>;
@@ -220,6 +300,10 @@ export interface ComplaintRecord {
       detectedKeywords: string[];
     };
     imageComparisonSignal?: 'EXACT_IMAGE_REUSE' | 'LIKELY_VISUAL_SIMILARITY' | 'NO_IMAGE_MATCH' | 'IMAGE_COMPARISON_UNAVAILABLE';
+    imageComparisonCoverage?: {
+      sha256Compared: boolean;
+      dHashCompared: boolean;
+    };
     evidenceQuality?: {
       isValidImage: boolean;
       mimeType?: string;
@@ -284,6 +368,20 @@ export interface ComplaintRecord {
       diffDaysWithObservedDate?: number;
       evidenceAgeDays?: number;
     };
+    /**
+     * Phase 2E — Road-Damage Visual Classification hook result.
+     * status: 'MODEL_NOT_AVAILABLE' until a trained artifact is deployed.
+     * predictedClass is only present when status === 'CLASSIFIED'.
+     */
+    visualClassification?: {
+      status: 'MODEL_NOT_AVAILABLE' | 'CLASSIFIED' | 'INFERENCE_ERROR' | 'IMAGE_UNREADABLE';
+      predictedClass?: 'pothole' | 'crack' | 'normal';
+      explanation: string;
+      signals: string[];
+      limitations: string[];
+      classifierVersion: string;
+      isRealMl: boolean;
+    };
   };
   assignedDepartment?: string;
   assignedOfficerId?: string;
@@ -313,7 +411,7 @@ export async function apiGetComplaintImageBlobUrl(complaintId: string): Promise<
   const token = getStoredToken();
   if (!token) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/api/complaints/${complaintId}/image`, {
+    const res = await authFetch(`${API_BASE_URL}/api/complaints/${complaintId}/image`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -411,7 +509,7 @@ export async function apiCreateComplaint(
     formData.append('hasImage', 'true');
     formData.append('image', payload.imageFile);
 
-    res = await fetch(`${API_BASE_URL}/api/complaints`, {
+    res = await authFetch(`${API_BASE_URL}/api/complaints`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -419,7 +517,7 @@ export async function apiCreateComplaint(
       body: formData,
     });
   } else {
-    res = await fetch(`${API_BASE_URL}/api/complaints`, {
+    res = await authFetch(`${API_BASE_URL}/api/complaints`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -458,7 +556,7 @@ export async function apiGetMyComplaints(): Promise<ComplaintRecord[]> {
   const token = getStoredToken();
   if (!token) return [];
 
-  const res = await fetch(`${API_BASE_URL}/api/complaints/my`, {
+  const res = await authFetch(`${API_BASE_URL}/api/complaints/my`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -570,7 +668,7 @@ export async function apiGetMapComplaints(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { headers });
+  const res = await (token ? authFetch(url, { headers }) : fetch(url, { headers }));
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || 'Failed to retrieve map complaints.');
@@ -661,7 +759,7 @@ export async function apiGetOfficerComplaints(
   const qs = queryParams.toString();
   const url = `${API_BASE_URL}/api/officer/complaints${qs ? `?${qs}` : ''}`;
 
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -683,7 +781,7 @@ export async function apiGetOfficerComplaintById(
     throw new Error('You must be logged in as an MCC officer.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}`, {
+  const res = await authFetch(`${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -706,7 +804,7 @@ export async function apiUpdateOfficerReview(
     throw new Error('You must be logged in as an MCC officer.');
   }
 
-  const res = await fetch(
+  const res = await authFetch(
     `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/review`,
     {
       method: 'PATCH',
@@ -735,7 +833,7 @@ export async function apiRerouteComplaint(
     throw new Error('Authentication required.');
   }
 
-  const res = await fetch(
+  const res = await authFetch(
     `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/reroute`,
     {
       method: 'PATCH',
@@ -797,7 +895,7 @@ export async function apiResolveDuplicateCluster(
     throw new Error('Authentication required as an MCC officer.');
   }
 
-  const res = await fetch(
+  const res = await authFetch(
     `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/duplicate-resolution`,
     {
       method: 'POST',
@@ -825,7 +923,7 @@ export async function apiGetComplaintDuplicateAudits(
     throw new Error('Authentication required as an MCC officer.');
   }
 
-  const res = await fetch(
+  const res = await authFetch(
     `${API_BASE_URL}/api/officer/complaints/${encodeURIComponent(id)}/duplicate-audit`,
     {
       method: 'GET',
@@ -964,9 +1062,9 @@ export async function apiGetComplaintTimeline(complaintId: string): Promise<Time
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/timeline`, {
-    headers,
-  });
+  const res = await (token
+    ? authFetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/timeline`, { headers })
+    : fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/timeline`, { headers }));
 
   const data = await res.json();
   if (!res.ok) {
@@ -983,9 +1081,9 @@ export async function apiGetFollowThroughDossier(complaintId: string): Promise<F
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/dossier`, {
-    headers,
-  });
+  const res = await (token
+    ? authFetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/dossier`, { headers })
+    : fetch(`${API_BASE_URL}/api/followthrough/complaints/${encodeURIComponent(complaintId)}/dossier`, { headers }));
 
   const data = await res.json();
   if (!res.ok) {
@@ -1001,7 +1099,7 @@ export async function apiGetOfficerOverdueComplaints(): Promise<Array<{ complain
     throw new Error('Authentication required.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/followthrough/officer/overdue`, {
+  const res = await authFetch(`${API_BASE_URL}/api/followthrough/officer/overdue`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -1019,7 +1117,7 @@ export async function apiGetOfficerInactiveComplaints(): Promise<Array<{ complai
     throw new Error('Authentication required.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/followthrough/officer/inactive`, {
+  const res = await authFetch(`${API_BASE_URL}/api/followthrough/officer/inactive`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -1033,3 +1131,44 @@ export async function apiGetOfficerInactiveComplaints(): Promise<Array<{ complai
 
 
 
+export async function apiOtpRequest(payload: {
+  identifier: string;
+  method: 'EMAIL' | 'SMS';
+  purpose: 'REGISTER' | 'LOGIN';
+}): Promise<{ challengeId: string }> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/otp/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'OTP request failed.');
+  }
+
+  return data;
+}
+
+export async function apiOtpVerify(payload: {
+  identifier: string;
+  method: 'EMAIL' | 'SMS';
+  purpose: 'REGISTER' | 'LOGIN';
+  code: string;
+  name?: string;
+  ward?: string;
+}): Promise<AuthApiResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/otp/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'OTP verification failed.');
+  }
+
+  setStoredToken(data.token);
+  return data;
+}

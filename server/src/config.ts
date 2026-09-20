@@ -2,7 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // Safely load local .env file if present
-const possibleEnvPaths = [
+const possibleEnvPaths = process.env.NODE_ENV === 'test' ? [
+  path.resolve(process.cwd(), '.env.test'),
+  path.resolve(process.cwd(), 'server', '.env.test'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'server', '.env'),
+] : [
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), 'server', '.env'),
 ];
@@ -32,5 +37,11 @@ export const CONFIG = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
   SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'complaint-evidence',
+  SMTP_HOST: process.env.SMTP_HOST || '',
+  SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465,
+  SMTP_USER: process.env.SMTP_USER || '',
+  SMTP_PASS: process.env.SMTP_PASS || '',
+  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || '',
+  EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || 'CivicTrust Auth',
 };
 

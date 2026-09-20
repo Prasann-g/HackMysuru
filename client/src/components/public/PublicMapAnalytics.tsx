@@ -280,7 +280,7 @@ export const PublicMapAnalytics: React.FC<PublicMapAnalyticsProps> = ({
                       {data.verifiedRatePercent}%
                     </span>
                     <span className="text-xs text-bridge-charcoal-500 mt-1 block">
-                      AI & deterministic validated
+                      Evidence-based verification
                     </span>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-bridge-gold-50 border border-bridge-gold-200 flex items-center justify-center text-bridge-gold-800">

@@ -1,15 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
+import sharp from 'sharp';
 import { app } from '../src/index.js';
 import { userStore } from '../src/db/userStore.js';
 import { followthroughRepository } from '../src/modules/followthrough/followthrough.repository.js';
+import { getDb } from '../src/db/sqlite.js';
 import type { ComplaintRecord } from '../src/types/complaint.js';
-
-// Minimal 1x1 valid JPEG image buffer for upload tests
-const sampleJpeg = Buffer.from(
-  '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=',
-  'base64'
-);
 
 describe('Follow-Through Routes & Activity Hooks (Step 3 Integration)', () => {
   let server: Server;
@@ -35,6 +31,23 @@ describe('Follow-Through Routes & Activity Hooks (Step 3 Integration)', () => {
     });
 
     const nonce = Date.now();
+
+    // Dynamically generate a distinct JPEG to prevent false-positive SHA256 duplicate rejection
+    const dynamicJpeg = await sharp({
+      create: {
+        width: 64,
+        height: 64,
+        channels: 3,
+        background: {
+          r: (nonce % 200) + 20,
+          g: ((nonce >> 2) % 200) + 20,
+          b: ((nonce >> 4) % 200) + 20,
+        },
+      },
+    })
+      .jpeg()
+      .toBuffer();
+
     // 1. Register Citizen A
     const resA = await fetch(`${baseUrl}/api/auth/register/citizen`, {
       method: 'POST',
@@ -80,12 +93,12 @@ describe('Follow-Through Routes & Activity Hooks (Step 3 Integration)', () => {
     // 4. Create a complaint by Citizen A with valid coordinates and photographic evidence
     const form = new FormData();
     form.append('category', 'pothole');
-    form.append('description', 'Large road crater on temple road causing traffic congestion.');
+    form.append('description', `Large road crater on temple road causing traffic congestion. Reference token ${nonce}`);
     form.append('observedDate', '2026-09-18');
     form.append('locationArea', 'Kuvempunagar');
     form.append('latitude', '12.2905');
     form.append('longitude', '76.6234');
-    form.append('image', new Blob([sampleJpeg], { type: 'image/jpeg' }), 'pothole.jpg');
+    form.append('image', new Blob([dynamicJpeg], { type: 'image/jpeg' }), 'pothole.jpg');
 
     const compRes = await fetch(`${baseUrl}/api/complaints`, {
       method: 'POST',
@@ -94,6 +107,7 @@ describe('Follow-Through Routes & Activity Hooks (Step 3 Integration)', () => {
       },
       body: form,
     });
+    expect(compRes.status).toBe(201);
     const compData = await compRes.json();
     testComplaint = compData.complaint;
   });
@@ -101,6 +115,18 @@ describe('Follow-Through Routes & Activity Hooks (Step 3 Integration)', () => {
   afterAll(async () => {
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+    // Clean up isolated test complaint, activities, and test citizens from SQLite store
+    const db = getDb();
+    if (testComplaint?.id) {
+      db.prepare('DELETE FROM complaint_activity_log WHERE complaint_id = ?').run(testComplaint.id);
+      db.prepare('DELETE FROM complaints WHERE id = ?').run(testComplaint.id);
+    }
+    if (citizenAId) {
+      db.prepare('DELETE FROM users WHERE id = ?').run(citizenAId);
+    }
+    if (citizenBId) {
+      db.prepare('DELETE FROM users WHERE id = ?').run(citizenBId);
     }
   });
 

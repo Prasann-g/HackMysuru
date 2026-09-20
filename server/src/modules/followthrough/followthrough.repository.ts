@@ -60,6 +60,20 @@ export class FollowthroughRepository {
         .maybeSingle();
 
       if (selectErr) {
+        // Safe fallback if activity-log table has not yet been migrated to Supabase
+        const isTableMissing =
+          selectErr.code === 'PGRST205' ||
+          selectErr.code === '42P01' ||
+          selectErr.message?.includes('schema cache') ||
+          selectErr.message?.includes('does not exist');
+
+        if (isTableMissing) {
+          console.warn(
+            `[FollowthroughRepository] Activity log table unavailable in Supabase (${selectErr.message}). Skipping activity logging safely without failing complaint operation.`
+          );
+          return record;
+        }
+
         console.error('[FollowthroughRepository] Supabase idempotency check failed:', selectErr.message);
         throw new Error(`Failed to check activity log idempotency in Supabase: ${selectErr.message}`);
       }
@@ -86,6 +100,19 @@ export class FollowthroughRepository {
 
       const { error: insertErr } = await supabase.from('complaint_activity_log').insert(row);
       if (insertErr) {
+        const isTableMissing =
+          insertErr.code === 'PGRST205' ||
+          insertErr.code === '42P01' ||
+          insertErr.message?.includes('schema cache') ||
+          insertErr.message?.includes('does not exist');
+
+        if (isTableMissing) {
+          console.warn(
+            `[FollowthroughRepository] Activity log table unavailable in Supabase on insert (${insertErr.message}). Skipping activity logging safely.`
+          );
+          return record;
+        }
+
         console.error('[FollowthroughRepository] Supabase insert failed:', insertErr.message);
         throw new Error(`Failed to insert activity log into Supabase: ${insertErr.message}`);
       }
@@ -154,6 +181,20 @@ export class FollowthroughRepository {
         .order('created_at', { ascending: true });
 
       if (error) {
+        // Defensive check: distinguish missing table from unexpected Supabase network/auth errors
+        const isTableMissing =
+          error.code === 'PGRST205' ||
+          error.code === '42P01' ||
+          error.message?.includes('schema cache') ||
+          error.message?.includes('does not exist');
+
+        if (isTableMissing) {
+          console.warn(
+            `[FollowthroughRepository] Supabase table 'complaint_activity_log' unavailable (${error.message}). Falling back to empty activities array to preserve timeline rendering.`
+          );
+          return [];
+        }
+
         console.error('[FollowthroughRepository] Supabase getActivities error:', error.message);
         throw new Error(`Failed to retrieve activities from Supabase: ${error.message}`);
       }

@@ -7,6 +7,8 @@ import type {
   ImageComparisonSignal,
 } from '../types/verification.js';
 import { calculateHammingDistance, DHASH_THRESHOLDS } from '../utils/imageHash.js';
+import { calculateCosineSimilarity, IMAGE_EMBEDDING_THRESHOLDS } from '../utils/imageEmbedding.js';
+import { correlateDuplicateSignals } from '../utils/duplicateCorrelationEngine.js';
 import { detectSpamAndAnomalies } from '../utils/spamDetector.js';
 import { isWithinMysuruServiceArea } from '../utils/geoEvidenceValidator.js';
 
@@ -351,6 +353,8 @@ export function verifyComplaint(
 
   // 2. Image Evidence Comparison & Duplication Detection (Explainable Signals)
   let imageComparisonSignal: ImageComparisonSignal = 'IMAGE_COMPARISON_UNAVAILABLE';
+  let sha256Compared = false;
+  let dHashCompared = false;
   const hasInputImage = Boolean(input.hasImage && (input.imageSha256 || input.imagePhash));
 
   if (!hasInputImage) {
@@ -370,6 +374,8 @@ export function verifyComplaint(
     } else {
       let exactMatchesFound = 0;
       let perceptualMatchesFound = 0;
+      sha256Compared = Boolean(input.imageSha256 && candidatesWithImages.some((candidate) => candidate.imageSha256));
+      dHashCompared = Boolean(input.imagePhash && candidatesWithImages.some((candidate) => candidate.imagePhash));
 
       // Phase 2A: Check Exact SHA-256 Checksum Equality (EXACT_IMAGE_REUSE)
       if (input.imageSha256) {
@@ -469,12 +475,106 @@ export function verifyComplaint(
         }
       }
 
-      // If candidates with images exist, but zero exact or perceptual matches were found
-      if (exactMatchesFound === 0 && perceptualMatchesFound === 0) {
+      // Phase 2C: Check Image Feature Embedding Cosine Similarity (Second-level feature vector comparison)
+      let embeddingMatchesFound = 0;
+      if (input.imageEmbedding && input.imageEmbedding.length === 32) {
+        for (const candidate of candidatesWithImages) {
+          if (candidate.imageSha256 && input.imageSha256 && candidate.imageSha256 === input.imageSha256) {
+            continue;
+          }
+
+          if (candidate.imageEmbedding && candidate.imageEmbedding.length === 32) {
+            const cosineSim = calculateCosineSimilarity(input.imageEmbedding, candidate.imageEmbedding);
+            if (cosineSim !== null && cosineSim >= IMAGE_EMBEDDING_THRESHOLDS.MODERATE_SIMILARITY_COSINE) {
+              embeddingMatchesFound++;
+              if (imageComparisonSignal !== 'EXACT_IMAGE_REUSE') {
+                imageComparisonSignal = 'LIKELY_VISUAL_SIMILARITY';
+              }
+
+              const simPct = Math.round(cosineSim * 100);
+              signals.push(
+                `IMAGE_EMBEDDING_SIMILARITY: 32-dimensional spatial color & luminance feature vector indicates ${simPct}% visual similarity to complaint #${candidate.id}.`
+              );
+
+              const existingMatch = matchesMap.get(candidate.id);
+              if (existingMatch) {
+                if (!existingMatch.imageMatch) {
+                  existingMatch.imageMatch = {
+                    matchType: 'LIKELY_VISUAL_SIMILARITY',
+                    sha256Matched: false,
+                    embeddingSimilarity: cosineSim,
+                    explanation: `Image feature embedding indicates ${simPct}% visual resemblance to complaint #${candidate.id}.`,
+                  };
+                } else {
+                  existingMatch.imageMatch.embeddingSimilarity = cosineSim;
+                }
+              } else {
+                matchesMap.set(candidate.id, {
+                  existingComplaintId: candidate.id,
+                  category: candidate.category,
+                  jaccardSimilarity: 0,
+                  ngramOverlapCount: 0,
+                  matchingPhrases: [],
+                  sharedTokens: [],
+                  riskLevel: 'LOW',
+                  imageMatch: {
+                    matchType: 'LIKELY_VISUAL_SIMILARITY',
+                    sha256Matched: false,
+                    embeddingSimilarity: cosineSim,
+                    explanation: `Image feature embedding indicates ${simPct}% visual resemblance to complaint #${candidate.id}.`,
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // If candidates with images exist, but zero exact, perceptual, or embedding matches were found
+      if (exactMatchesFound === 0 && perceptualMatchesFound === 0 && embeddingMatchesFound === 0) {
         imageComparisonSignal = 'NO_IMAGE_MATCH';
         signals.push(
           'NO_IMAGE_MATCH: Submitted image does not match any existing reference images in the candidate pool.'
         );
+      }
+    }
+  }
+
+  // Phase 2D: Multi-Signal Image + GPS + Time Correlation Engine
+  // Correlate all identified candidate matches to evaluate combined spatial, temporal, and visual confidence
+  for (const [candidateId, match] of matchesMap.entries()) {
+    const candidateRecord = existingComplaints.find((c) => c.id === candidateId);
+    if (candidateRecord) {
+      const correlation = correlateDuplicateSignals(
+        {
+          id: input.id,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          locationArea: input.locationArea,
+          observedDate: input.observedDate,
+          imageSha256: input.imageSha256,
+          imagePhash: input.imagePhash,
+          imageEmbedding: input.imageEmbedding,
+        },
+        {
+          id: candidateRecord.id,
+          latitude: candidateRecord.latitude,
+          longitude: candidateRecord.longitude,
+          locationArea: candidateRecord.locationArea,
+          observedDate: candidateRecord.observedDate,
+          createdAt: candidateRecord.createdAt,
+          imageSha256: candidateRecord.imageSha256,
+          imagePhash: candidateRecord.imagePhash,
+          imageEmbedding: candidateRecord.imageEmbedding,
+        }
+      );
+
+      match.duplicateCorrelation = correlation;
+
+      if (correlation.confidenceLevel === 'VISUALLY_SIMILAR_DIFFERENT_LOCATION') {
+        signals.push(`LOCATION_GUARDRAIL: ${correlation.explanation}`);
+      } else if (correlation.confidenceLevel === 'HIGH_CONFIDENCE_DUPLICATE') {
+        signals.push(`HIGH_CONFIDENCE_CORRELATION: ${correlation.explanation}`);
       }
     }
   }
@@ -525,6 +625,12 @@ export function verifyComplaint(
   limitations.push('Text similarity computation is based on Jaccard token overlap and bi-gram phrase intersection.');
   limitations.push(
     'Perceptual difference hashing (dHash) measures 64-bit luminance gradient differences across a 9x8 grid. It is an image-processing heuristic, NOT a trained machine-learning model.'
+  );
+  limitations.push(
+    'Image feature embedding uses a 32-dimensional spatial luminance and chromatic distribution descriptor compared via cosine similarity.'
+  );
+  limitations.push(
+    'Multi-signal duplicate correlation evaluates geographic distance (Haversine formula) and temporal deltas to avoid falsely clustering standard city infrastructure across different locations.'
   );
   limitations.push(
     'Image comparison is resilient to standard recompression and scaling, but cannot reliably detect heavy cropping, 90-degree rotations, perspective distortion, or major edits. On-site human verification is required.'
@@ -649,6 +755,10 @@ export function verifyComplaint(
     recommendedAction,
     categoryAlignment: alignment,
     imageComparisonSignal,
+    imageComparisonCoverage: {
+      sha256Compared,
+      dHashCompared,
+    },
     spamAnalysis: {
       isSpam: spamCheck.isSpam,
       riskLevel: spamCheck.riskLevel,
@@ -664,6 +774,9 @@ export function verifyComplaint(
     evidenceQuality: input.evidenceQuality,
     geoEvidence: input.geoEvidence,
     temporalEvidence: input.temporalEvidence,
+    // Phase 2E — Road-Damage Visual Classification (pass-through from route handler)
+    // Status is MODEL_NOT_AVAILABLE until a trained artifact is deployed in CivicBridge-ML.
+    visualClassification: input.visualClassification,
     processedAt: new Date().toISOString(),
   };
 }

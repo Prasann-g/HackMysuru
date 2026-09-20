@@ -27,6 +27,9 @@ Thumbs.db
 *.db-shm
 data
 */data
+!server/data/
+server/data/*
+!server/data/mysuru-wards.geojson
 
 # Firebase credentials and service accounts
 *serviceAccount*.json

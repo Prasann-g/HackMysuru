@@ -398,7 +398,36 @@ describe('ML Verification — Step 2: Image Duplication Detection & Safe Deliver
     );
 
     expect(result.imageComparisonSignal).toBe('NO_IMAGE_MATCH');
+    expect(result.imageComparisonCoverage).toEqual({ sha256Compared: true, dHashCompared: true });
     expect(result.signals.some((s) => s.includes('NO_IMAGE_MATCH'))).toBe(true);
+  });
+
+  it('reports comparison coverage separately when only dHash candidates are available', async () => {
+    const shaB = computeImageSha256(imageBufB_Different);
+    const phashB = (await computeImageDHash(imageBufB_Different))!;
+    const phashA = (await computeImageDHash(imageBufA))!;
+
+    const result = verifyComplaint(
+      {
+        category: 'garbage_dumping',
+        description: 'Distinct issue with perceptual-only comparison coverage.',
+        observedDate: '2026-03-02',
+        hasImage: true,
+        imageSha256: shaB,
+        imagePhash: phashB,
+      },
+      [{
+        id: 'MCC-DHASH-ONLY-001',
+        category: 'garbage_dumping',
+        description: 'Reference image with perceptual hash only.',
+        observedDate: '2026-03-01',
+        status: 'SUBMITTED',
+        imagePhash: phashA,
+      }]
+    );
+
+    expect(result.imageComparisonSignal).toBe('NO_IMAGE_MATCH');
+    expect(result.imageComparisonCoverage).toEqual({ sha256Compared: false, dHashCompared: true });
   });
 
   it('enforces safe image delivery with RBAC and path traversal defense', async () => {

@@ -217,7 +217,7 @@ export class SupabaseComplaintStore implements IComplaintStore {
     const client = this.getClient();
     const { data, error } = await client
       .from('complaints')
-      .select('id, category, description, observed_date, location_area, status, image_sha256, image_phash')
+      .select('id, category, description, observed_date, location_area, status, image_sha256, image_phash, latitude, longitude, created_at, evidence_metadata')
       .or('status.not.in.(RESOLVED,CLOSED),image_sha256.not.is.null,image_phash.not.is.null')
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -225,16 +225,33 @@ export class SupabaseComplaintStore implements IComplaintStore {
     if (error) {
       throw new Error(`Supabase listCandidatesForVerification failed: ${error.message}`);
     }
-    return (data || []).map((r) => ({
-      id: r.id,
-      category: r.category as IssueCategory,
-      description: r.description,
-      observedDate: typeof r.observed_date === 'string' ? r.observed_date.split('T')[0] : r.observed_date,
-      locationArea: r.location_area,
-      status: r.status,
-      imageSha256: r.image_sha256 || undefined,
-      imagePhash: r.image_phash || undefined,
-    }));
+    return (data || []).map((r) => {
+      let imageEmbedding: number[] | undefined;
+      if (r.evidence_metadata) {
+        try {
+          const meta = typeof r.evidence_metadata === 'string' ? JSON.parse(r.evidence_metadata) : r.evidence_metadata;
+          if (Array.isArray(meta?.imageEmbedding)) {
+            imageEmbedding = meta.imageEmbedding;
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+      return {
+        id: r.id,
+        category: r.category as IssueCategory,
+        description: r.description,
+        observedDate: typeof r.observed_date === 'string' ? r.observed_date.split('T')[0] : r.observed_date,
+        locationArea: r.location_area,
+        status: r.status,
+        imageSha256: r.image_sha256 || undefined,
+        imagePhash: r.image_phash || undefined,
+        imageEmbedding,
+        latitude: r.latitude !== null && r.latitude !== undefined ? Number(r.latitude) : undefined,
+        longitude: r.longitude !== null && r.longitude !== undefined ? Number(r.longitude) : undefined,
+        createdAt: r.created_at || undefined,
+      };
+    });
   }
 
   public async listForOfficer(filters?: ComplaintOfficerFilters): Promise<ComplaintRecord[]> {

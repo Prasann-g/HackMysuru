@@ -24,6 +24,10 @@ if (process.env.SEED_DEMO_DATA === 'true') {
 
 export const app = express();
 
+// Trust the first proxy (e.g. AWS ALB, NGINX, Supabase Edge, or test spoofing).
+// This ensures req.ip correctly reflects the client's IP instead of the load balancer.
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(
   cors({

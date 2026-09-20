@@ -17,6 +17,8 @@ import {
   Link,
   ChevronDown,
   ChevronUp,
+  MapPin,
+  Clock,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -243,6 +245,22 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                     {matchMeta?.riskLevel || 'MEDIUM'} DUPLICATE OVERLAP
                   </Badge>
 
+                  {/* Multi-Signal Correlation Badges */}
+                  {matchMeta?.duplicateCorrelation && (
+                    <Badge
+                      variant={
+                        matchMeta.duplicateCorrelation.confidenceLevel === 'HIGH_CONFIDENCE_DUPLICATE'
+                          ? 'duplicate'
+                          : matchMeta.duplicateCorrelation.confidenceLevel === 'VISUALLY_SIMILAR_DIFFERENT_LOCATION'
+                          ? 'info'
+                          : 'review'
+                      }
+                      size="sm"
+                    >
+                      {matchMeta.duplicateCorrelation.confidenceLevel.replace(/_/g, ' ')}
+                    </Badge>
+                  )}
+
                   {/* Existing Adjudication Badges */}
                   {currentComplaint.primaryComplaintId === candidate.id && (
                     <Badge variant="duplicate" size="sm">
@@ -272,6 +290,26 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                     </span>
                   )}
 
+                  {/* Geographic Distance Pill */}
+                  {matchMeta?.duplicateCorrelation?.locationProximity?.distanceMeters !== undefined && (
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 bg-bridge-almond-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-bridge-gold-600" />
+                      {matchMeta.duplicateCorrelation.locationProximity.distanceMeters <= 1000
+                        ? `${matchMeta.duplicateCorrelation.locationProximity.distanceMeters}m apart`
+                        : `${(matchMeta.duplicateCorrelation.locationProximity.distanceMeters / 1000).toFixed(1)}km apart`}
+                    </span>
+                  )}
+
+                  {/* Temporal Delta Pill */}
+                  {matchMeta?.duplicateCorrelation?.temporalProximity?.diffDays !== undefined && (
+                    <span className="text-xs font-semibold text-bridge-charcoal-700 bg-bridge-almond-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-bridge-gold-600" />
+                      {matchMeta.duplicateCorrelation.temporalProximity.diffDays === 0
+                        ? `${matchMeta.duplicateCorrelation.temporalProximity.diffHours ?? 0}h apart`
+                        : `${matchMeta.duplicateCorrelation.temporalProximity.diffDays}d apart`}
+                    </span>
+                  )}
+
                   {/* Image Match Status Indicators */}
                   {matchMeta?.imageMatch?.matchType === 'EXACT_IMAGE_REUSE' && (
                     <span className="text-xs font-semibold text-rose-800 bg-rose-100 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
@@ -280,10 +318,17 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                     </span>
                   )}
 
-                  {matchMeta?.imageMatch?.matchType === 'LIKELY_VISUAL_SIMILARITY' && (
+                  {matchMeta?.imageMatch?.matchType === 'LIKELY_VISUAL_SIMILARITY' && matchMeta.imageMatch.hammingDistance !== undefined && (
                     <span className="text-xs font-semibold text-amber-900 bg-amber-100 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                       <Camera className="w-3.5 h-3.5 text-amber-700" />
                       Perceptual dHash Match ({matchMeta.imageMatch.hammingDistance}/64)
+                    </span>
+                  )}
+
+                  {matchMeta?.imageMatch?.embeddingSimilarity !== undefined && (
+                    <span className="text-xs font-semibold text-teal-900 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5 text-teal-600" />
+                      Embedding Similarity ({Math.round(matchMeta.imageMatch.embeddingSimilarity * 100)}%)
                     </span>
                   )}
 
@@ -517,31 +562,120 @@ export const DuplicateClusterInspector: React.FC<DuplicateClusterInspectorProps>
                 </div>
               )}
 
-              {/* Explainable Image Matching Forensic Card (when matchMeta.imageMatch exists) */}
-              {matchMeta?.imageMatch && (
+              {/* Explainable Multi-Signal Image, GPS & Time Correlation Card */}
+              {(matchMeta?.imageMatch || matchMeta?.duplicateCorrelation) && (
                 <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <Camera className="w-4 h-4 text-amber-700" />
                       <span className="text-xs font-bold text-amber-950">
-                        Image Forensic Comparison Signal
+                        Multi-Signal Duplicate Correlation (Visual + GPS + Time)
                       </span>
                     </div>
-                    <span className="text-[11px] font-mono font-medium text-amber-800 bg-white px-2 py-0.5 rounded border border-amber-200">
-                      {matchMeta.imageMatch.matchType === 'EXACT_IMAGE_REUSE'
-                        ? 'Identical SHA-256 Checksum Match'
-                        : `Perceptual dHash Distance: ${matchMeta.imageMatch.hammingDistance}/64`}
-                    </span>
+                    {matchMeta?.duplicateCorrelation && (
+                      <Badge
+                        variant={
+                          matchMeta.duplicateCorrelation.confidenceLevel === 'HIGH_CONFIDENCE_DUPLICATE'
+                            ? 'duplicate'
+                            : matchMeta.duplicateCorrelation.confidenceLevel === 'VISUALLY_SIMILAR_DIFFERENT_LOCATION'
+                            ? 'info'
+                            : 'review'
+                        }
+                        size="sm"
+                      >
+                        {matchMeta.duplicateCorrelation.confidenceLevel.replace(/_/g, ' ')}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* 3-Column Signals Overview: Visual, GPS, Time */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                    {/* Signal 1: Visual Resemblance */}
+                    <div className="bg-white/90 border border-amber-200/80 rounded-lg p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-amber-900 font-semibold text-[11px]">
+                        <Camera className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Visual Resemblance</span>
+                      </div>
+                      <div className="text-[11px] text-bridge-charcoal-700 font-mono space-y-0.5">
+                        {matchMeta?.imageMatch?.matchType === 'EXACT_IMAGE_REUSE' ? (
+                          <div className="text-rose-700 font-semibold">Exact SHA-256 Match</div>
+                        ) : (
+                          <>
+                            {matchMeta?.imageMatch?.hammingDistance !== undefined && (
+                              <div>dHash Distance: <strong>{matchMeta.imageMatch.hammingDistance}/64</strong></div>
+                            )}
+                            {matchMeta?.imageMatch?.embeddingSimilarity !== undefined && (
+                              <div>Embedding Cosine: <strong>{Math.round(matchMeta.imageMatch.embeddingSimilarity * 100)}%</strong></div>
+                            )}
+                          </>
+                        )}
+                        {!matchMeta?.imageMatch && (
+                          <div className="text-bridge-charcoal-400 italic">No visual match</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Signal 2: Geographic Distance */}
+                    <div className="bg-white/90 border border-amber-200/80 rounded-lg p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-amber-900 font-semibold text-[11px]">
+                        <MapPin className="w-3.5 h-3.5 text-bridge-gold-600" />
+                        <span>Physical Proximity</span>
+                      </div>
+                      <div className="text-[11px] text-bridge-charcoal-700 font-mono space-y-0.5">
+                        {matchMeta?.duplicateCorrelation?.locationProximity?.distanceMeters !== undefined ? (
+                          <>
+                            <div>
+                              Distance: <strong>
+                                {matchMeta.duplicateCorrelation.locationProximity.distanceMeters <= 1000
+                                  ? `${matchMeta.duplicateCorrelation.locationProximity.distanceMeters} m`
+                                  : `${(matchMeta.duplicateCorrelation.locationProximity.distanceMeters / 1000).toFixed(1)} km`}
+                              </strong>
+                            </div>
+                            <div className="text-[10px] text-bridge-charcoal-500 capitalize">
+                              Level: {matchMeta.duplicateCorrelation.locationProximity.level.replace(/_/g, ' ').toLowerCase()}
+                            </div>
+                          </>
+                        ) : (
+                          <div>Area: <strong>{candidate.locationArea || 'Same Ward'}</strong></div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Signal 3: Temporal Proximity */}
+                    <div className="bg-white/90 border border-amber-200/80 rounded-lg p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-amber-900 font-semibold text-[11px]">
+                        <Clock className="w-3.5 h-3.5 text-bridge-gold-600" />
+                        <span>Temporal Proximity</span>
+                      </div>
+                      <div className="text-[11px] text-bridge-charcoal-700 font-mono space-y-0.5">
+                        {matchMeta?.duplicateCorrelation?.temporalProximity?.diffDays !== undefined ? (
+                          <>
+                            <div>
+                              Delta: <strong>
+                                {matchMeta.duplicateCorrelation.temporalProximity.diffDays === 0
+                                  ? `${matchMeta.duplicateCorrelation.temporalProximity.diffHours ?? 0} hours`
+                                  : `${matchMeta.duplicateCorrelation.temporalProximity.diffDays} days`}
+                              </strong>
+                            </div>
+                            <div className="text-[10px] text-bridge-charcoal-500 capitalize">
+                              Timing: {matchMeta.duplicateCorrelation.temporalProximity.level.replace(/_/g, ' ').toLowerCase()}
+                            </div>
+                          </>
+                        ) : (
+                          <div>Date: <strong>{candidate.observedDate}</strong></div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <p className="text-xs text-amber-950 font-medium leading-relaxed bg-white/80 p-3 rounded-lg border border-amber-200/70">
-                    {matchMeta.imageMatch.explanation}
+                    {matchMeta?.duplicateCorrelation?.explanation || matchMeta?.imageMatch?.explanation}
                   </p>
 
                   <div className="text-[11px] text-amber-800 italic leading-relaxed flex items-start gap-1.5">
                     <HelpCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <span>
-                      Civic Integrity Note: Image hashes are deterministic evidence signals. Perceptual hashing measures gradient luminance patterns and is not a definitive proof of citizen deception or physical site state. Field inspection by ward officers remains mandatory before final decision.
+                      Civic Integrity &amp; Explainability Rule: Algorithmic perceptual hashes and embeddings are decision-support heuristics. A visually similar photo from a distant location (&gt;1.5 km) is classified as an independent occurrence to prevent misgrouping standard city infrastructure. Field verification by authorized MCC officers remains mandatory before final adjudication.
                     </span>
                   </div>
                 </div>

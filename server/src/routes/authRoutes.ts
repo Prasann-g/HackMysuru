@@ -4,11 +4,54 @@ import {
   registerOfficer,
   loginUser,
   sanitizeUser,
+  requestCitizenOtp,
+  verifyCitizenOtp,
 } from '../services/authService.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { userStore } from '../db/userStore.js';
 
+import rateLimit from 'express-rate-limit';
+
 export const authRouter = Router();
+
+const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST;
+
+const otpRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isTest ? 100 : 5, // 5 requests per IP
+  message: { error: 'Too many requests from this IP. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isTest ? 200 : 15, // 15 verification attempts per IP
+  message: { error: 'Too many verification attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+authRouter.post('/otp/request', otpRequestLimiter, async (req, res) => {
+  try {
+    const { identifier, method, purpose } = req.body;
+    const result = await requestCitizenOtp({ identifier, method, purpose });
+    res.status(200).json(result);
+  } catch (err: any) {
+    const isCooldown = err.message?.includes('Please wait');
+    res.status(isCooldown ? 429 : 400).json({ error: err.message || 'OTP request failed.' });
+  }
+});
+
+authRouter.post('/otp/verify', otpVerifyLimiter, async (req, res) => {
+  try {
+    const { identifier, method, purpose, code, name, ward } = req.body;
+    const result = await verifyCitizenOtp({ identifier, method, purpose, code, name, ward });
+    res.status(200).json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'OTP verification failed.' });
+  }
+});
 
 // 1. Citizen Registration (Public)
 authRouter.post('/register/citizen', async (req, res) => {

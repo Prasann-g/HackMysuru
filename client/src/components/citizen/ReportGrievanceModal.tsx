@@ -80,7 +80,7 @@ export const ReportGrievanceModal: React.FC<ReportGrievanceModalProps> = ({
         - Header and footer are pinned; only the content area scrolls internally
       */}
       <div
-        className="relative w-full h-full sm:h-[90vh] sm:max-h-[820px] sm:max-w-4xl md:max-w-5xl bg-bridge-ivory-50 sm:rounded-2xl shadow-bridge-modal border-0 sm:border sm:border-bridge-almond-300 flex flex-col z-10 overflow-hidden"
+        className="relative w-full h-[100dvh] sm:h-[90vh] sm:max-h-[820px] sm:max-w-4xl md:max-w-5xl bg-bridge-ivory-50 sm:rounded-2xl shadow-bridge-modal border-0 sm:border sm:border-bridge-almond-300 flex flex-col z-10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Fixed / Pinned Top Header Bar ── */}

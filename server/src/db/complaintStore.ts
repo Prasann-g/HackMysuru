@@ -211,7 +211,7 @@ export class SqliteComplaintStore implements IComplaintStore {
   public listCandidatesForVerificationSync(limit = 1000): ExistingComplaint[] {
     const db = getDb();
     const stmt = db.prepare(`
-      SELECT id, category, description, observed_date, location_area, status, image_sha256, image_phash 
+      SELECT id, category, description, observed_date, location_area, status, image_sha256, image_phash, latitude, longitude, created_at, evidence_metadata 
       FROM complaints 
       WHERE status NOT IN ('RESOLVED', 'CLOSED')
          OR image_sha256 IS NOT NULL
@@ -220,16 +220,33 @@ export class SqliteComplaintStore implements IComplaintStore {
       LIMIT ?
     `);
     const rows = stmt.all(limit) as any[];
-    return rows.map((r) => ({
-      id: r.id,
-      category: r.category as IssueCategory,
-      description: r.description,
-      observedDate: r.observed_date,
-      locationArea: r.location_area,
-      status: r.status,
-      imageSha256: r.image_sha256 || undefined,
-      imagePhash: r.image_phash || undefined,
-    }));
+    return rows.map((r) => {
+      let imageEmbedding: number[] | undefined;
+      if (r.evidence_metadata) {
+        try {
+          const meta = typeof r.evidence_metadata === 'string' ? JSON.parse(r.evidence_metadata) : r.evidence_metadata;
+          if (Array.isArray(meta?.imageEmbedding)) {
+            imageEmbedding = meta.imageEmbedding;
+          }
+        } catch {
+          // ignore parsing error
+        }
+      }
+      return {
+        id: r.id,
+        category: r.category as IssueCategory,
+        description: r.description,
+        observedDate: r.observed_date,
+        locationArea: r.location_area,
+        status: r.status,
+        imageSha256: r.image_sha256 || undefined,
+        imagePhash: r.image_phash || undefined,
+        imageEmbedding,
+        latitude: r.latitude !== null && r.latitude !== undefined ? Number(r.latitude) : undefined,
+        longitude: r.longitude !== null && r.longitude !== undefined ? Number(r.longitude) : undefined,
+        createdAt: r.created_at || undefined,
+      };
+    });
   }
 
   public async listCandidatesForVerification(limit = 1000): Promise<ExistingComplaint[]> {

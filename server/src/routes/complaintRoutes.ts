@@ -20,6 +20,7 @@ import {
   computeImageSha256,
   computeImageDHash,
 } from '../utils/imageHash.js';
+import { computeImageEmbedding } from '../utils/imageEmbedding.js';
 import { analyzeEvidenceQuality } from '../utils/evidenceQuality.js';
 import {
   validateGeoEvidence,
@@ -28,6 +29,7 @@ import {
   calculateHaversineDistanceMeters,
 } from '../utils/geoEvidenceValidator.js';
 import { validateTemporalEvidence } from '../utils/temporalEvidenceValidator.js';
+import { classifyRoadDamage } from '../services/ml/roadDamageClassifier.js';
 import { calculateSlaMetrics } from '../utils/slaBenchmarks.js';
 import { followthroughRepository } from '../modules/followthrough/followthrough.repository.js';
 import {
@@ -41,6 +43,7 @@ import type {
   EvidenceQualityAnalysis,
   GeoEvidenceResult,
   TemporalEvidenceResult,
+  VisualClassificationResult,
 } from '../types/verification.js';
 import type {
   ComplaintRecord,
@@ -182,10 +185,12 @@ complaintRouter.post(
     let imagePath: string | undefined;
     let imageSha256: string | undefined;
     let imagePhash: string | undefined;
+    let imageEmbedding: number[] | undefined;
     let evidenceMetadata = input.evidenceMetadata;
     let evidenceQuality: EvidenceQualityAnalysis | undefined;
     let geoEvidence: GeoEvidenceResult | undefined;
     let temporalEvidence: TemporalEvidenceResult | undefined;
+    let visualClassification: VisualClassificationResult | undefined;
     let diskPath: string | undefined;
 
     let magicValidation: ReturnType<typeof validateImageMagicBytes> | undefined;
@@ -200,6 +205,7 @@ complaintRouter.post(
       hasImage = true;
       imageSha256 = computeImageSha256(req.file.buffer);
       imagePhash = (await computeImageDHash(req.file.buffer)) || undefined;
+      imageEmbedding = (await computeImageEmbedding(req.file.buffer)) || undefined;
 
       // Evidence Quality & Forensic Signal Evaluation
       evidenceQuality = await analyzeEvidenceQuality(req.file.buffer);
@@ -220,6 +226,16 @@ complaintRouter.post(
         submissionDate: now,
         observedDate: input.observedDate,
       });
+
+      // Phase 2E — Road-Damage Visual Classification (safe, non-blocking)
+      // Returns MODEL_NOT_AVAILABLE until a trained artifact is deployed.
+      // Any error in the classifier must never block complaint submission.
+      try {
+        visualClassification = await classifyRoadDamage(req.file.buffer);
+      } catch {
+        // Classifier failure is non-fatal — do not block submission.
+        // visualClassification remains undefined, which is handled by the UI.
+      }
 
       // Pre-submission Exact Image Duplicate Check (Zero-Orphan Disk & Database Safety)
       const exactMatches = await complaintStore.findByImageSha256(imageSha256);
@@ -306,6 +322,7 @@ complaintRouter.post(
         mimetype: magicValidation.detectedMime || req.file.mimetype,
         submittedAt: now,
         note: 'Uploaded via citizen complaint portal',
+        imageEmbedding,
       };
     } else {
       geoEvidence = await validateGeoEvidence({
@@ -334,9 +351,12 @@ complaintRouter.post(
         hasImage,
         imageSha256,
         imagePhash,
+        imageEmbedding,
         evidenceQuality,
         geoEvidence,
         temporalEvidence,
+        // Phase 2E: road-damage visual classification result (MODEL_NOT_AVAILABLE until trained)
+        visualClassification,
       },
       verificationCandidates
     );

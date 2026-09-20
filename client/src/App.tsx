@@ -9,14 +9,29 @@ import { CitizenProfileModal } from './components/auth/CitizenProfileModal';
 import { CitizenTrackingDrawer } from './components/citizen/CitizenTrackingDrawer';
 import { TrackComplaintPage } from './pages/TrackComplaintPage';
 import { FlowingBackground } from './components/common/FlowingBackground';
+import { BrandLogo } from './components/common/BrandLogo';
 import type { CitizenUser, AuthMode } from './types/auth';
-import { apiGetMe, clearStoredToken } from './services/api';
+import { apiGetMe, clearStoredToken, getStoredToken, UNAUTHORIZED_EVENT, USER_SESSION_KEY } from './services/api';
 
 export function App() {
-  // Read existing session to avoid unauthenticated flash on refresh
+  // Explicit Authentication Hydration State (Phase 3.3.2)
+  // If a stored token is present, verify against authoritative /api/auth/me before rendering protected dashboards
+  const [isAuthHydrating, setIsAuthHydrating] = useState<boolean>(() => {
+    try {
+      return Boolean(getStoredToken());
+    } catch {
+      return false;
+    }
+  });
+
+  // Read existing session only when a valid token exists
   const [currentUser, setCurrentUser] = useState<CitizenUser | null>(() => {
     try {
-      const stored = sessionStorage.getItem('civictrust_citizen_user');
+      if (!getStoredToken()) {
+        sessionStorage.removeItem(USER_SESSION_KEY);
+        return null;
+      }
+      const stored = sessionStorage.getItem(USER_SESSION_KEY);
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -32,7 +47,7 @@ export function App() {
     } catch {
       // ignore
     }
-    return currentUser ? (currentUser.role === 'OFFICER' ? 'officer' : 'dashboard') : 'home';
+    return currentUser ? (currentUser.role === 'OFFICER' || currentUser.role === 'ADMIN' ? 'officer' : 'dashboard') : 'home';
   });
 
   // Dedicated Tracking Portal State
@@ -63,26 +78,63 @@ export function App() {
   const [landingTrackerOpen, setLandingTrackerOpen] = useState(false);
   const [landingTrackingToken, setLandingTrackingToken] = useState<string | null>(null);
 
-  // Verify server session with backend token on boot
+  // Authoritative server session verification on boot (Phase 3.3.2)
   useEffect(() => {
-    apiGetMe().then((verifiedUser) => {
-      if (verifiedUser) {
-        setCurrentUser(verifiedUser);
-        try {
-          sessionStorage.setItem('civictrust_citizen_user', JSON.stringify(verifiedUser));
-        } catch {
-          // Ignore storage error
+    const token = getStoredToken();
+    if (!token) {
+      return;
+    }
+
+    let isMounted = true;
+
+    apiGetMe()
+      .then((verifiedUser) => {
+        if (!isMounted) return;
+
+        if (verifiedUser && getStoredToken()) {
+          // Authoritative user verified from backend
+          setCurrentUser(verifiedUser);
+          try {
+            sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(verifiedUser));
+          } catch {
+            // Ignore storage error
+          }
+          setActiveTab((prev) => {
+            if (prev === 'track') return 'track';
+            return verifiedUser.role === 'OFFICER' || verifiedUser.role === 'ADMIN' ? 'officer' : 'dashboard';
+          });
+        } else {
+          // Invalid, expired, or rejected session
+          setCurrentUser(null);
+          clearStoredToken();
+          try {
+            sessionStorage.removeItem(USER_SESSION_KEY);
+          } catch {
+            // Ignore storage error
+          }
+          setActiveTab((prev) => (prev === 'track' ? 'track' : 'home'));
         }
-      } else {
+      })
+      .catch(() => {
+        if (!isMounted) return;
         setCurrentUser(null);
         clearStoredToken();
         try {
-          sessionStorage.removeItem('civictrust_citizen_user');
+          sessionStorage.removeItem(USER_SESSION_KEY);
         } catch {
           // Ignore storage error
         }
-      }
-    });
+        setActiveTab((prev) => (prev === 'track' ? 'track' : 'home'));
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsAuthHydrating(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Auth Modal State
@@ -93,21 +145,45 @@ export function App() {
   // Citizen Profile Modal State
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
+  // Centralized 401 Session Eviction Listener (Phase 3.3.1)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setCurrentUser(null);
+      clearStoredToken();
+      try {
+        sessionStorage.removeItem(USER_SESSION_KEY);
+      } catch {
+        // Ignore storage error
+      }
+      setActiveTab('home');
+      setProfileModalOpen(false);
+      setAuthModalOpen(false);
+      setIsAuthHydrating(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => {
+      window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    };
+  }, []);
+
   // Auth Success Handler
   const handleLoginSuccess = (user: CitizenUser) => {
     setCurrentUser(user);
     try {
-      sessionStorage.setItem('civictrust_citizen_user', JSON.stringify(user));
+      sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
     } catch {
       // Ignore storage error
     }
+    setIsAuthHydrating(false);
 
     // If user attempted to report, automatically trigger report modal inside CitizenDashboard
     if (user.role === 'CITIZEN' && authReason && authReason.includes('report')) {
       setActiveTab('dashboard');
       setOpenCitizenReportTrigger((prev) => prev + 1);
     } else if (activeTab !== 'track') {
-      setActiveTab(user.role === 'OFFICER' ? 'officer' : 'dashboard');
+      setActiveTab(user.role === 'OFFICER' || user.role === 'ADMIN' ? 'officer' : 'dashboard');
     }
 
     setAuthModalOpen(false);
@@ -119,12 +195,13 @@ export function App() {
     setCurrentUser(null);
     clearStoredToken();
     try {
-      sessionStorage.removeItem('civictrust_citizen_user');
+      sessionStorage.removeItem(USER_SESSION_KEY);
     } catch {
       // Ignore storage error
     }
     setActiveTab('home');
     setProfileModalOpen(false);
+    setIsAuthHydrating(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -150,7 +227,7 @@ export function App() {
     if (tab === 'track') {
       setTrackPortalOpen(true);
     } else if (tab === 'home' || tab === 'dashboard' || tab === 'officer') {
-      if (currentUser?.role === 'OFFICER') {
+      if (currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN') {
         setActiveTab('officer');
       } else if (currentUser?.role === 'CITIZEN') {
         setActiveTab('dashboard');
@@ -165,6 +242,40 @@ export function App() {
 
   // Active Citizen Sub-Section ('home' | 'my-complaints' | 'map')
   const [citizenActiveSection, setCitizenActiveSection] = useState<'home' | 'my-complaints' | 'map'>('home');
+
+  // During initial authentication verification, render clean CivicBridge loading screen
+  // Prevents flash of wrong dashboard, wrong navbar, or public guest landing page
+  if (isAuthHydrating) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Verifying CivicBridge authentication"
+        className="min-h-screen flex flex-col items-center justify-center bg-bridge-ivory-50 text-bridge-charcoal-900 relative selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900 px-4"
+      >
+        {/* Ambient flowing background — decorative only, pointer-events: none, z-index: 0 */}
+        <FlowingBackground />
+
+        <div className="relative z-10 w-full max-w-sm p-8 bg-surface-white/95 backdrop-blur-md border border-bridge-ivory-300 rounded-2xl shadow-bridge-modal text-center space-y-6">
+          <div className="flex justify-center">
+            <BrandLogo variant="full" size="lg" />
+          </div>
+
+          <div className="flex flex-col items-center justify-center space-y-3 pt-2">
+            <div className="w-8 h-8 rounded-full border-2 border-bridge-gold-200 border-t-bridge-gold-600 animate-spin" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-bridge-charcoal-900">
+                Verifying Session
+              </h3>
+              <p className="text-xs text-bridge-charcoal-600 leading-relaxed">
+                Authenticating municipal credentials with Mysuru City Corporation...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-bridge-ivory-50 text-bridge-charcoal-900 selection:bg-bridge-gold-200 selection:text-bridge-charcoal-900 relative">
@@ -215,7 +326,7 @@ export function App() {
               setTrackPortalOpen(true);
             }}
           />
-        ) : currentUser?.role === 'OFFICER' ? (
+        ) : currentUser?.role === 'OFFICER' || currentUser?.role === 'ADMIN' ? (
           /* ONE UNIFIED MCC OFFICER CONSOLE */
           <OfficerDashboard currentOfficer={currentUser} />
         ) : (

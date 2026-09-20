@@ -54,3 +54,18 @@ export interface AuthResponse {
   token: string;
   user: PublicUser;
 }
+
+export interface OtpRequestInput {
+  identifier: string;
+  method: 'EMAIL' | 'SMS';
+  purpose: 'REGISTER' | 'LOGIN';
+}
+
+export interface OtpVerifyInput {
+  identifier: string;
+  method: 'EMAIL' | 'SMS';
+  purpose: 'REGISTER' | 'LOGIN';
+  code: string;
+  name?: string; // required for REGISTER
+  ward?: string;
+}
